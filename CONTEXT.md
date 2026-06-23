@@ -1,4 +1,4 @@
-# Lift AI — context
+# Stetic — context
 
 AI gym coach. Scan your physique → get an **Aesthetic score + rank + per-muscle ratings + a personalized plan**. The scan is the viral hook; the personalized plan is the product.
 
@@ -9,9 +9,9 @@ AI gym coach. Scan your physique → get an **Aesthetic score + rank + per-muscl
 - Niche: looksmaxxing / "ascend" / aesthetic gym TikTok (David Laid, Greek god physique, mogging).
 
 ## The scoring model (locked this session)
-- **Aesthetic score (0–100)** is the single overall number. It drives the rank. Nothing competes with it as a headline (Mass is NOT a co-headline).
+- **Aesthetic score is on a 1–10 scale, one decimal** (e.g. 6.4/10) — the single overall number that drives the rank. Reads instantly and is screenshot/content-native ("I rated this physique a 6.4"). Nothing competes with it as a headline (Mass is NOT a co-headline). Internally still computed 0–100; just displayed ÷10.
 - Top of result shows: Aesthetic score + rank, then quick stats: **body fat %** (actual number, not a "leanness" bar), Symmetry, Potential.
-- **Muscle groups — Core 6 rated:** chest, back, shoulders, arms, legs, abs. Each gets a 0–100 rating bar. Highlight **strongest (green)** and **weakest (red)**.
+- **Muscle groups — Core 6 rated:** chest, back, shoulders, arms, legs, abs. Each gets a **1–10 rating** (one decimal) + bar, and they're **ranked strongest → weakest**. Highlight **strongest (green)** and **weakest (red)**. Same scale as the overall score so the card reads consistently.
 - **"Your priorities" section** holds the what-to-do (Fix first / Maintain), pulled out of the muscle rows so they stay clean.
 - **V-taper was removed** as a visible metric (too jargony; "shoulder-to-waist ratio" confused testers).
 - **Mass-monster handling:** too much total mass caps the Aesthetic score via a **"Size: Extreme"** flag, even when every muscle group rates 90+. This is a *take*, not a fact (some people like that look) — expect/embrace comment debate. We are NOT over-engineering this edge case; ~nobody downloading is a pro bodybuilder.
@@ -19,12 +19,12 @@ AI gym coach. Scan your physique → get an **Aesthetic score + rank + per-muscl
 ## Rank ladder
 Bronze → Silver → Gold → Platinum → Diamond → **Elite → Mythic → Greek God** (apex).
 - Result screen shows a "climb strip" (cleared tiers colored, next tier + points to go) for FOMO/retention.
-- Reference scores: mass monster ≈ Silver 51; David Laid ≈ Greek God 95; Brad Pitt (Troy) ≈ Mythic/Greek God 90–95; realistic intermediate user ≈ Platinum 64.
+- Reference scores (1–10): Ronnie Coleman / mass monster ≈ Silver 5.0 (capped by Size: Extreme); David Laid ≈ Greek God 9.5; Brad Pitt (Troy) ≈ Mythic/Greek God 9.0–9.5; realistic intermediate user ≈ Platinum 6.4.
 
 ## Plan logic (the differentiator)
 The plan flips based on the read:
 - **Undertrained guy** → add volume to weak/lagging groups (e.g., back, side delts) to build toward the ideal.
-- **Over-massed / dirty-bulked guy** → cut/recomp to ~10–12% bf, widen the taper (side delts/lats/upper back), tighten waist (vacuums; avoid heavy weighted obliques), maintenance volume on big groups. "Lift AI doesn't just tell everyone to lift more."
+- **Over-massed / dirty-bulked guy** → cut/recomp to ~10–12% bf, widen the taper (side delts/lats/upper back), tighten waist (vacuums; avoid heavy weighted obliques), maintenance volume on big groups. "Stetic doesn't just tell everyone to lift more."
 - Frequency + intensity over raw volume (e.g., 9 sets across 3 days beats 9 in one day; "too many sets = not training to failure").
 
 ## Competitor: Thelo

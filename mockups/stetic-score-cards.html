@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stetic — score cards</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  :root{
+    --bg:#08080a; --card:#0E0E10; --tile:#1A1A1E; --line:#26262B;
+    --txt:#F5F5F7; --mut:#9A9AA0; --acc:#C8FF3D; --amber:#FFC24B; --red:#FF5A4D;
+    --silver:#C9CDD4; --teal:#6FE0C8; --pink:#FF7AB0;
+  }
+  html,body{margin:0;background:var(--bg);min-height:100vh;padding:32px 16px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;}
+  .card{width:300px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;color:var(--txt);}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .brand{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;letter-spacing:.02em;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);}
+  .subj{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:14px;}
+  .badge{width:62px;height:62px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
+  .badge i{font-size:30px;}
+  .tier{font-size:17px;font-weight:700;}
+  .score{display:flex;align-items:baseline;gap:3px;margin-top:3px;}
+  .score b{font-size:46px;font-weight:700;line-height:1;}
+  .score span{font-size:14px;color:var(--mut);}
+  .verdict{font-size:12px;color:#D2D2D8;line-height:1.5;background:var(--tile);border-radius:10px;padding:10px 11px;margin-bottom:13px;}
+  .stats{display:flex;gap:7px;margin-bottom:14px;}
+  .stat{flex:1;text-align:center;background:var(--tile);border-radius:9px;padding:8px 0;}
+  .stat .k{font-size:10px;color:var(--mut);}
+  .stat .v{font-size:16px;font-weight:700;margin-top:1px;}
+  .label{font-size:10.5px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+  .muscles{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+  .m{padding:0;}
+  .m.hi{background:#16210c;border:1px solid #2c3a10;border-radius:8px;padding:6px 8px;}
+  .m.lo{background:#21100f;border:1px solid #3a1614;border-radius:8px;padding:6px 8px;}
+  .mrow{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+  .mrow .tag{color:var(--mut);font-weight:400;}
+  .bar{height:5px;background:var(--line);border-radius:3px;}
+  .bar>div{height:5px;border-radius:3px;}
+  .climb{display:flex;gap:3px;margin-bottom:5px;}
+  .climb div{flex:1;height:5px;border-radius:2px;background:var(--line);}
+  .next{font-size:10.5px;color:var(--mut);margin-bottom:14px;}
+  .foot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px;}
+  .foot .s{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mut);}
+  .cta{background:var(--acc);color:#0E0E10;border:none;border-radius:8px;padding:7px 12px;font-size:11.5px;font-weight:700;font-family:inherit;}
+</style>
+</head>
+<body>
+ <div class="wrap">
+
+  <!-- ============ DAVID LAID — Greek God 9.5 ============ -->
+  <div class="card">
+    <div class="top"><span class="brand"><span class="dot"></span>Stetic</span><span class="subj">David Laid</span></div>
+    <div class="hero">
+      <div class="badge" style="border:2px solid var(--acc);background:#1a2108;"><i class="ti ti-crown" style="color:var(--acc);"></i></div>
+      <div class="tier" style="color:var(--acc);">Greek God</div>
+      <div class="score"><b>9.5</b><span>/10 aesthetic</span></div>
+    </div>
+    <div class="verdict">Textbook V-taper and conditioning. This is the frame Stetic is built around — lean, wide up top, tight waist.</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Body fat</div><div class="v">8%</div></div>
+      <div class="stat"><div class="k">Symmetry</div><div class="v">96</div></div>
+      <div class="stat"><div class="k">Potential</div><div class="v" style="color:var(--acc);">9.9</div></div>
+    </div>
+    <div class="label">Muscle groups · ranked</div>
+    <div class="muscles">
+      <div class="m hi"><div class="mrow"><span style="color:var(--acc);"><i class="ti ti-arrow-up-right" style="font-size:12px;vertical-align:-1px;"></i> Shoulders <span class="tag">· strongest</span></span><span style="color:var(--acc);font-weight:700;">9.8</span></div><div class="bar"><div style="width:98%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Abs</span><span style="color:var(--acc);">9.6</span></div><div class="bar"><div style="width:96%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Back</span><span style="color:var(--acc);">9.3</span></div><div class="bar"><div style="width:93%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Chest</span><span style="color:var(--acc);">9.1</span></div><div class="bar"><div style="width:91%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Arms</span><span style="color:var(--amber);">8.9</span></div><div class="bar"><div style="width:89%;background:var(--amber);"></div></div></div>
+      <div class="m lo"><div class="mrow"><span style="color:var(--red);"><i class="ti ti-arrow-down-right" style="font-size:12px;vertical-align:-1px;"></i> Legs <span class="tag">· weakest</span></span><span style="color:var(--red);font-weight:700;">8.4</span></div><div class="bar"><div style="width:84%;background:var(--red);"></div></div></div>
+    </div>
+    <div class="climb"><div style="background:#B0764A;"></div><div style="background:var(--silver);"></div><div style="background:var(--amber);"></div><div style="background:var(--teal);"></div><div style="background:#7FD0FF;"></div><div style="background:#C08BFF;"></div><div style="background:var(--pink);"></div><div style="background:var(--acc);"></div></div>
+    <div class="next">Apex tier reached — <span style="color:var(--acc);">Greek God</span></div>
+    <div class="foot"><span class="s"><span class="dot"></span>Scanned with Stetic</span><span style="font-size:11px;color:var(--mut);">@stetic</span></div>
+  </div>
+
+  <!-- ============ BRAD PITT (Troy) — Mythic 9.1 ============ -->
+  <div class="card">
+    <div class="top"><span class="brand"><span class="dot"></span>Stetic</span><span class="subj">Brad Pitt · Troy</span></div>
+    <div class="hero">
+      <div class="badge" style="border:2px solid var(--pink);background:#210913;"><i class="ti ti-flame" style="color:var(--pink);"></i></div>
+      <div class="tier" style="color:var(--pink);">Mythic</div>
+      <div class="score"><b>9.1</b><span>/10 aesthetic</span></div>
+    </div>
+    <div class="verdict">Lean, balanced, camera-ready — the leading-man standard. Held back only by size; wants muscle, not a cut.</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Body fat</div><div class="v">7%</div></div>
+      <div class="stat"><div class="k">Symmetry</div><div class="v">94</div></div>
+      <div class="stat"><div class="k">Potential</div><div class="v" style="color:var(--acc);">9.4</div></div>
+    </div>
+    <div class="label">Muscle groups · ranked</div>
+    <div class="muscles">
+      <div class="m hi"><div class="mrow"><span style="color:var(--acc);"><i class="ti ti-arrow-up-right" style="font-size:12px;vertical-align:-1px;"></i> Abs <span class="tag">· strongest</span></span><span style="color:var(--acc);font-weight:700;">9.5</span></div><div class="bar"><div style="width:95%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Shoulders</span><span style="color:var(--acc);">9.0</span></div><div class="bar"><div style="width:90%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Chest</span><span style="color:var(--amber);">8.9</span></div><div class="bar"><div style="width:89%;background:var(--amber);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Back</span><span style="color:var(--amber);">8.6</span></div><div class="bar"><div style="width:86%;background:var(--amber);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Arms</span><span style="color:var(--amber);">8.5</span></div><div class="bar"><div style="width:85%;background:var(--amber);"></div></div></div>
+      <div class="m lo"><div class="mrow"><span style="color:var(--red);"><i class="ti ti-arrow-down-right" style="font-size:12px;vertical-align:-1px;"></i> Legs <span class="tag">· weakest</span></span><span style="color:var(--red);font-weight:700;">7.9</span></div><div class="bar"><div style="width:79%;background:var(--red);"></div></div></div>
+    </div>
+    <div class="climb"><div style="background:#B0764A;"></div><div style="background:var(--silver);"></div><div style="background:var(--amber);"></div><div style="background:var(--teal);"></div><div style="background:#7FD0FF;"></div><div style="background:#C08BFF;"></div><div style="background:var(--pink);"></div><div style="background:var(--line);"></div></div>
+    <div class="next">Next: <span style="color:var(--acc);">Greek God</span> +0.4 &nbsp;·&nbsp; add size to legs &amp; arms</div>
+    <div class="foot"><span class="s"><span class="dot"></span>Scanned with Stetic</span><span style="font-size:11px;color:var(--mut);">@stetic</span></div>
+  </div>
+
+  <!-- ============ RONNIE COLEMAN — Silver 5.0 (Size: Extreme) ============ -->
+  <div class="card">
+    <div class="top"><span class="brand"><span class="dot"></span>Stetic</span><span class="subj">Ronnie Coleman</span></div>
+    <div class="hero">
+      <div class="badge" style="border:2px solid var(--silver);background:#1c1d1f;"><i class="ti ti-shield" style="color:var(--silver);"></i></div>
+      <div class="tier" style="color:var(--silver);">Silver</div>
+      <div class="score"><b>5.0</b><span>/10 aesthetic</span></div>
+    </div>
+    <div class="verdict">Every group maxed — yet the sheer mass overwhelms the frame and breaks the line. Reads bodybuilder, not movie star. <b style="color:var(--red);">Capped: Size Extreme.</b></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Body fat</div><div class="v">5%</div></div>
+      <div class="stat" style="background:#21100f;"><div class="k">Size</div><div class="v" style="color:var(--red);">Extreme</div></div>
+      <div class="stat"><div class="k">Symmetry</div><div class="v">90</div></div>
+    </div>
+    <div class="label">Muscle groups · ranked</div>
+    <div class="muscles">
+      <div class="m hi"><div class="mrow"><span style="color:var(--acc);"><i class="ti ti-arrow-up-right" style="font-size:12px;vertical-align:-1px;"></i> Back <span class="tag">· strongest</span></span><span style="color:var(--acc);font-weight:700;">10</span></div><div class="bar"><div style="width:100%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Legs</span><span style="color:var(--acc);">9.9</span></div><div class="bar"><div style="width:99%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Chest</span><span style="color:var(--acc);">9.7</span></div><div class="bar"><div style="width:97%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Arms</span><span style="color:var(--acc);">9.6</span></div><div class="bar"><div style="width:96%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Shoulders</span><span style="color:var(--acc);">9.5</span></div><div class="bar"><div style="width:95%;background:var(--acc);"></div></div></div>
+      <div class="m lo"><div class="mrow"><span style="color:var(--red);"><i class="ti ti-arrow-down-right" style="font-size:12px;vertical-align:-1px;"></i> Waist <span class="tag">· breaks taper</span></span><span style="color:var(--red);font-weight:700;">4.2</span></div><div class="bar"><div style="width:42%;background:var(--red);"></div></div></div>
+    </div>
+    <div class="climb"><div style="background:#B0764A;"></div><div style="background:var(--silver);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div></div>
+    <div class="next">5 groups at 9.5+ — and still <span style="color:var(--silver);">Silver</span>. The mass is the problem.</div>
+    <div class="foot"><span class="s"><span class="dot"></span>Scanned with Stetic</span><span style="font-size:11px;color:var(--mut);">@stetic</span></div>
+  </div>
+
+  <!-- ============ YOU (realistic user) — Platinum 6.4 ============ -->
+  <div class="card">
+    <div class="top"><span class="brand"><span class="dot"></span>Stetic</span><span class="subj">Your analysis</span></div>
+    <div class="hero">
+      <div class="badge" style="border:2px solid var(--teal);background:#0c211d;"><i class="ti ti-diamond" style="color:var(--teal);"></i></div>
+      <div class="tier" style="color:var(--teal);">Platinum</div>
+      <div class="score"><b>6.4</b><span>/10 aesthetic</span></div>
+    </div>
+    <div class="verdict">Solid chest, but a flat back is capping your whole frame. Fix the lats and you jump a full tier.</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Body fat</div><div class="v">15%</div></div>
+      <div class="stat"><div class="k">Symmetry</div><div class="v">86</div></div>
+      <div class="stat"><div class="k">Potential</div><div class="v" style="color:var(--acc);">8.8</div></div>
+    </div>
+    <div class="label">Muscle groups · ranked</div>
+    <div class="muscles">
+      <div class="m hi"><div class="mrow"><span style="color:var(--acc);"><i class="ti ti-arrow-up-right" style="font-size:12px;vertical-align:-1px;"></i> Chest <span class="tag">· strongest</span></span><span style="color:var(--acc);font-weight:700;">7.8</span></div><div class="bar"><div style="width:78%;background:var(--acc);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Arms</span><span style="color:var(--amber);">7.0</span></div><div class="bar"><div style="width:70%;background:var(--amber);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Shoulders</span><span style="color:var(--amber);">6.2</span></div><div class="bar"><div style="width:62%;background:var(--amber);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Legs</span><span style="color:var(--amber);">6.0</span></div><div class="bar"><div style="width:60%;background:var(--amber);"></div></div></div>
+      <div class="m"><div class="mrow"><span>Abs</span><span style="color:var(--amber);">5.8</span></div><div class="bar"><div style="width:58%;background:var(--amber);"></div></div></div>
+      <div class="m lo"><div class="mrow"><span style="color:var(--red);"><i class="ti ti-arrow-down-right" style="font-size:12px;vertical-align:-1px;"></i> Back <span class="tag">· weakest</span></span><span style="color:var(--red);font-weight:700;">4.8</span></div><div class="bar"><div style="width:48%;background:var(--red);"></div></div></div>
+    </div>
+    <div class="climb"><div style="background:#B0764A;"></div><div style="background:var(--silver);"></div><div style="background:var(--amber);"></div><div style="background:var(--teal);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div><div style="background:var(--line);"></div></div>
+    <div class="next">Next: <span style="color:#7FD0FF;">Diamond</span> +0.6 &nbsp;·&nbsp; Elite · Mythic · <span style="color:var(--acc);">Greek God</span></div>
+    <div class="foot"><span class="s"><span class="dot"></span>Scanned with Stetic</span><button class="cta">Get my plan</button></div>
+  </div>
+
+ </div>
+</body>
+</html>
