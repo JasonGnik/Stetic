@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stetic — design directions</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#0a0a0c;color:#e9e9ee;font-family:'Inter',sans-serif;padding:40px 20px;}
+  h1.page{font-size:22px;font-weight:800;text-align:center;margin:0 0 4px;}
+  p.page{font-size:13px;color:#8a8a92;text-align:center;margin:0 0 36px;}
+  .board{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;align-items:flex-start;}
+  .col{width:300px;}
+  .colhead{margin-bottom:16px;}
+  .colhead .name{font-size:16px;font-weight:800;margin-bottom:3px;}
+  .colhead .desc{font-size:12px;color:#8a8a92;line-height:1.45;}
+  .colhead .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;margin-bottom:8px;}
+  .phone{width:300px;border-radius:30px;overflow:hidden;margin-bottom:18px;border:1px solid rgba(255,255,255,.06);}
+  .screen{height:600px;padding:22px 20px;display:flex;flex-direction:column;position:relative;}
+
+  /* generic atoms, themed via vars */
+  .brand{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;letter-spacing:.02em;}
+  .dot{width:8px;height:8px;border-radius:50%;}
+  .bar{height:5px;border-radius:3px;}
+  .bar>div{height:5px;border-radius:3px;}
+  .btn{border:none;border-radius:14px;padding:15px;font-family:inherit;font-size:15px;font-weight:700;width:100%;cursor:pointer;text-align:center;}
+  .reticle{position:relative;border-radius:18px;display:flex;align-items:center;justify-content:center;}
+  .corner{position:absolute;width:20px;height:20px;}
+
+  /* ---------- THEME 1: STEALTH LIME ---------- */
+  .t1{--bg:#08080A;--card:#131316;--line:#26262B;--txt:#F5F5F7;--mut:#86868C;--acc:#C8FF3D;--ink:#0B0B0C;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;}
+  .t1 .label{font-size:10px;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+  .t1 .head{font-size:30px;font-weight:900;line-height:1.04;letter-spacing:-.02em;}
+  .t1 .acc{color:var(--acc);}
+  .t1 .sub{font-size:13px;color:var(--mut);line-height:1.5;}
+  .t1 .btn{background:var(--acc);color:var(--ink);}
+  .t1 .stat{background:var(--card);border-radius:11px;}
+
+  /* ---------- THEME 2: MARBLE / CLASSICAL ---------- */
+  .t2{--bg:#0C0B0A;--card:#16130E;--line:#2A2620;--txt:#EFEAE0;--mut:#9C9384;--acc:#E3C188;--ink:#1A1610;background:radial-gradient(120% 80% at 50% 0%, #1b1813 0%, #0C0B0A 60%);color:var(--txt);font-family:'Inter',sans-serif;}
+  .t2 .serif{font-family:'Cormorant Garamond',serif;}
+  .t2 .label{font-size:10px;color:var(--mut);letter-spacing:.22em;text-transform:uppercase;font-weight:600;}
+  .t2 .head{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;line-height:1.05;letter-spacing:.01em;}
+  .t2 .acc{color:var(--acc);}
+  .t2 .sub{font-size:13px;color:var(--mut);line-height:1.55;}
+  .t2 .btn{background:linear-gradient(180deg,#E6CB95,#D4AF73);color:var(--ink);border-radius:99px;letter-spacing:.02em;}
+  .t2 .stat{background:var(--card);border:1px solid var(--line);border-radius:11px;}
+
+  /* ---------- THEME 3: CLEAN LIGHT ---------- */
+  .t3{--bg:#F3F3F5;--card:#FFFFFF;--line:#E7E7EA;--txt:#0B0B0C;--mut:#86868C;--acc:#0B0B0C;--pop:#5BD400;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;}
+  .t3 .label{font-size:10px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;font-weight:700;}
+  .t3 .head{font-size:29px;font-weight:800;line-height:1.08;letter-spacing:-.02em;}
+  .t3 .acc{color:#3aa000;}
+  .t3 .sub{font-size:13px;color:var(--mut);line-height:1.5;}
+  .t3 .btn{background:var(--acc);color:#fff;border-radius:99px;}
+  .t3 .stat{background:#F4F4F6;border-radius:11px;}
+</style>
+</head>
+<body>
+  <h1 class="page">Stetic — 3 design directions</h1>
+  <p class="page">Same product, three vibes. Each shows the intro screen + the result screen.</p>
+
+  <div class="board">
+
+  <!-- ============================ DIRECTION 1 ============================ -->
+  <div class="col">
+    <div class="colhead">
+      <span class="tag" style="background:#1c2a07;color:#C8FF3D;">Aggressive · looksmaxxing</span>
+      <div class="name">1 · Stealth Lime</div>
+      <div class="desc">All-black, acid-lime accent, heavy bold type. The "mogging / ascend" TikTok energy. Reads modern, masculine, a little ruthless. Closest to Fellow but sharper.</div>
+    </div>
+
+    <!-- intro -->
+    <div class="phone t1"><div class="screen">
+      <div class="brand"><span class="dot" style="background:var(--acc);"></span>STETIC</div>
+      <div class="reticle" style="margin:26px 0 22px;height:188px;background:linear-gradient(180deg,#15151a,#0d0d10);border:1px solid var(--line);">
+        <div class="corner" style="top:12px;left:12px;border-top:2px solid var(--acc);border-left:2px solid var(--acc);border-radius:4px 0 0 0;"></div>
+        <div class="corner" style="top:12px;right:12px;border-top:2px solid var(--acc);border-right:2px solid var(--acc);border-radius:0 4px 0 0;"></div>
+        <div class="corner" style="bottom:12px;left:12px;border-bottom:2px solid var(--acc);border-left:2px solid var(--acc);border-radius:0 0 0 4px;"></div>
+        <div class="corner" style="bottom:12px;right:12px;border-bottom:2px solid var(--acc);border-right:2px solid var(--acc);border-radius:0 0 4px 0;"></div>
+        <i class="ti ti-body-scan" style="font-size:64px;color:#3a3a40;"></i>
+      </div>
+      <div class="label" style="margin-bottom:8px;">AI physique analysis</div>
+      <div class="head">The naked eye<br>misses it.<br><span class="acc">Stetic doesn't.</span></div>
+      <div class="sub" style="margin-top:12px;">Your proportions, leanness, and weak points — scored in seconds.</div>
+      <div style="flex:1;"></div>
+      <button class="btn">Scan my physique</button>
+      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:12px;">12,000+ physiques analyzed</div>
+    </div></div>
+
+    <!-- result -->
+    <div class="phone t1"><div class="screen" style="height:auto;padding-bottom:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div class="brand"><span class="dot" style="background:var(--acc);"></span>STETIC</div><span style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;">Your analysis</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin:16px 0 14px;">
+        <div style="width:58px;height:58px;border-radius:14px;border:2px solid #FFC24B;background:#231a08;display:flex;align-items:center;justify-content:center;margin-bottom:7px;"><i class="ti ti-trophy" style="font-size:27px;color:#FFC24B;"></i></div>
+        <div style="font-size:16px;font-weight:700;color:#FFC24B;">Gold</div>
+        <div style="display:flex;align-items:baseline;gap:3px;margin-top:2px;"><span style="font-size:44px;font-weight:800;line-height:1;">7.4</span><span style="font-size:13px;color:var(--mut);">/10</span></div>
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:14px;">
+        <div class="stat" style="flex:1;text-align:center;padding:8px 0;"><div style="font-size:10px;color:var(--mut);">Body fat</div><div style="font-size:15px;font-weight:700;">12%</div></div>
+        <div class="stat" style="flex:1;text-align:center;padding:8px 0;"><div style="font-size:10px;color:var(--mut);">Symmetry</div><div style="font-size:15px;font-weight:700;">8.1</div></div>
+        <div class="stat" style="flex:1;text-align:center;padding:8px 0;"><div style="font-size:10px;color:var(--mut);">Potential</div><div style="font-size:15px;font-weight:700;color:var(--acc);">9.0</div></div>
+      </div>
+      <div class="label" style="margin-bottom:9px;">Muscle groups · ranked</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:var(--acc);">↗ Shoulders</span><span style="color:var(--acc);font-weight:700;">8.2</span></div><div class="bar" style="background:var(--line);"><div style="width:82%;background:var(--acc);"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Chest</span><span>7.8</span></div><div class="bar" style="background:var(--line);"><div style="width:78%;background:var(--acc);"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Arms</span><span style="color:#FFC24B;">7.1</span></div><div class="bar" style="background:var(--line);"><div style="width:71%;background:#FFC24B;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#FF5A4D;">↘ Back</span><span style="color:#FF5A4D;font-weight:700;">5.9</span></div><div class="bar" style="background:var(--line);"><div style="width:59%;background:#FF5A4D;"></div></div></div>
+      </div>
+      <button class="btn" style="margin-top:16px;">Get my full plan</button>
+    </div></div>
+  </div>
+
+  <!-- ============================ DIRECTION 2 ============================ -->
+  <div class="col">
+    <div class="colhead">
+      <span class="tag" style="background:#241e12;color:#E3C188;">Premium · classical</span>
+      <div class="name">2 · Marble</div>
+      <div class="desc">Warm near-black, gold accents, elegant serif. Leans into "Stetic = aesthetic / Greek god." Feels like a luxury grooming brand, not a gym app. Most differentiated — nobody in the niche looks like this.</div>
+    </div>
+
+    <!-- intro -->
+    <div class="phone t2"><div class="screen">
+      <div style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;letter-spacing:.28em;padding-left:.28em;">STETIC</div>
+      <div style="display:flex;justify-content:center;margin:30px 0 24px;">
+        <div style="width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#23201a,#100e0b);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative;">
+          <div style="position:absolute;inset:10px;border-radius:50%;border:1px solid rgba(227,193,136,.25);"></div>
+          <i class="ti ti-laurel-wreath" style="font-size:58px;color:var(--acc);"></i>
+        </div>
+      </div>
+      <div class="label" style="text-align:center;margin-bottom:10px;">AI physique analysis</div>
+      <div class="head" style="text-align:center;">Sculpt<br>the <span class="acc">ideal.</span></div>
+      <div class="sub" style="text-align:center;margin-top:12px;">The proportions the greats are built on — measured, scored, and made a plan.</div>
+      <div style="flex:1;"></div>
+      <button class="btn">Begin your analysis</button>
+      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:13px;letter-spacing:.04em;">Trusted by 12,000+ men</div>
+    </div></div>
+
+    <!-- result -->
+    <div class="phone t2"><div class="screen" style="height:auto;padding-bottom:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div class="serif" style="font-size:15px;font-weight:600;letter-spacing:.18em;">STETIC</div><span class="label">Your analysis</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin:18px 0 14px;">
+        <div class="label" style="margin-bottom:6px;">Gold tier</div>
+        <div class="serif" style="font-size:64px;font-weight:700;line-height:.9;color:var(--acc);">7.4</div>
+        <div class="sub" style="margin-top:4px;">Aesthetic score</div>
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:16px;">
+        <div class="stat" style="flex:1;text-align:center;padding:9px 0;"><div style="font-size:10px;color:var(--mut);">Body fat</div><div class="serif" style="font-size:18px;font-weight:600;">12%</div></div>
+        <div class="stat" style="flex:1;text-align:center;padding:9px 0;"><div style="font-size:10px;color:var(--mut);">Symmetry</div><div class="serif" style="font-size:18px;font-weight:600;">8.1</div></div>
+        <div class="stat" style="flex:1;text-align:center;padding:9px 0;"><div style="font-size:10px;color:var(--mut);">Potential</div><div class="serif" style="font-size:18px;font-weight:600;color:var(--acc);">9.0</div></div>
+      </div>
+      <div class="label" style="margin-bottom:10px;">Muscle groups · ranked</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span style="color:var(--acc);">Shoulders · strongest</span><span style="color:var(--acc);">8.2</span></div><div class="bar" style="background:var(--line);"><div style="width:82%;background:var(--acc);"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span>Chest</span><span>7.8</span></div><div class="bar" style="background:var(--line);"><div style="width:78%;background:#C9B68C;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span>Arms</span><span>7.1</span></div><div class="bar" style="background:var(--line);"><div style="width:71%;background:#C9B68C;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;"><span style="color:#C98A6A;">Back · weakest</span><span style="color:#C98A6A;">5.9</span></div><div class="bar" style="background:var(--line);"><div style="width:59%;background:#C98A6A;"></div></div></div>
+      </div>
+      <button class="btn" style="margin-top:18px;">Reveal my plan</button>
+    </div></div>
+  </div>
+
+  <!-- ============================ DIRECTION 3 ============================ -->
+  <div class="col">
+    <div class="colhead">
+      <span class="tag" style="background:#e7e7ea;color:#0b0b0c;">Clean · mass-market</span>
+      <div class="name">3 · Clean Light</div>
+      <div class="desc">White, black type, one punch of color. The Cal AI / modern-consumer look. Most approachable and "App Store top chart" — softens the looksmaxxing edge to reach a wider audience.</div>
+    </div>
+
+    <!-- intro -->
+    <div class="phone t3"><div class="screen">
+      <div class="brand"><span class="dot" style="background:#0b0b0c;"></span>STETIC</div>
+      <div class="reticle" style="margin:26px 0 22px;height:188px;background:#EDEDF0;border:1px solid var(--line);">
+        <div class="corner" style="top:12px;left:12px;border-top:2px solid #0b0b0c;border-left:2px solid #0b0b0c;border-radius:4px 0 0 0;"></div>
+        <div class="corner" style="top:12px;right:12px;border-top:2px solid #0b0b0c;border-right:2px solid #0b0b0c;border-radius:0 4px 0 0;"></div>
+        <div class="corner" style="bottom:12px;left:12px;border-bottom:2px solid #0b0b0c;border-left:2px solid #0b0b0c;border-radius:0 0 0 4px;"></div>
+        <div class="corner" style="bottom:12px;right:12px;border-bottom:2px solid #0b0b0c;border-right:2px solid #0b0b0c;border-radius:0 0 4px 0;"></div>
+        <i class="ti ti-body-scan" style="font-size:64px;color:#C4C4CC;"></i>
+      </div>
+      <div class="label" style="margin-bottom:8px;">AI physique analysis</div>
+      <div class="head">Find what's<br>holding your<br>physique <span class="acc">back.</span></div>
+      <div class="sub" style="margin-top:12px;">Scan, score, and get the plan to fix your weak points.</div>
+      <div style="flex:1;"></div>
+      <button class="btn">Scan my physique</button>
+      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:12px;">★★★★★ &nbsp;12,000+ analyzed</div>
+    </div></div>
+
+    <!-- result -->
+    <div class="phone t3"><div class="screen" style="height:auto;padding-bottom:22px;background:var(--bg);">
+      <div style="display:flex;justify-content:space-between;align-items:center;"><div class="brand"><span class="dot" style="background:#0b0b0c;"></span>STETIC</div><span style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;">Your analysis</span></div>
+      <div class="stat" style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0;display:flex;flex-direction:column;align-items:center;text-align:center;">
+        <div style="width:54px;height:54px;border-radius:14px;background:#FFF4DA;display:flex;align-items:center;justify-content:center;margin-bottom:7px;"><i class="ti ti-trophy" style="font-size:25px;color:#E0A300;"></i></div>
+        <div style="font-size:15px;font-weight:700;color:#C68A00;">Gold</div>
+        <div style="display:flex;align-items:baseline;gap:3px;margin-top:2px;"><span style="font-size:44px;font-weight:800;line-height:1;">7.4</span><span style="font-size:13px;color:var(--mut);">/10</span></div>
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:14px;">
+        <div class="stat" style="flex:1;text-align:center;padding:8px 0;"><div style="font-size:10px;color:var(--mut);">Body fat</div><div style="font-size:15px;font-weight:700;">12%</div></div>
+        <div class="stat" style="flex:1;text-align:center;padding:8px 0;"><div style="font-size:10px;color:var(--mut);">Symmetry</div><div style="font-size:15px;font-weight:700;">8.1</div></div>
+        <div class="stat" style="flex:1;text-align:center;padding:8px 0;"><div style="font-size:10px;color:var(--mut);">Potential</div><div style="font-size:15px;font-weight:700;color:#3aa000;">9.0</div></div>
+      </div>
+      <div class="label" style="margin-bottom:9px;">Muscle groups · ranked</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#3aa000;font-weight:600;">↗ Shoulders</span><span style="color:#3aa000;font-weight:700;">8.2</span></div><div class="bar" style="background:#ECECEF;"><div style="width:82%;background:var(--pop);"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Chest</span><span>7.8</span></div><div class="bar" style="background:#ECECEF;"><div style="width:78%;background:var(--pop);"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Arms</span><span style="color:#C68A00;">7.1</span></div><div class="bar" style="background:#ECECEF;"><div style="width:71%;background:#F0B400;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#E0483B;font-weight:600;">↘ Back</span><span style="color:#E0483B;font-weight:700;">5.9</span></div><div class="bar" style="background:#ECECEF;"><div style="width:59%;background:#FF5A4D;"></div></div></div>
+      </div>
+      <button class="btn" style="margin-top:16px;">Get my full plan</button>
+    </div></div>
+  </div>
+
+  </div>
+</body>
+</html>
