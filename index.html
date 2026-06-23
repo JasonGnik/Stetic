@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>LiftAI Scan</title>
+<style>
+:root{--bg:#0E0E10;--card:#1A1A1E;--line:#26262B;--txt:#F5F5F7;--mut:#9A9AA0;--acc:#C8FF3D;--amber:#FFC24B;--red:#FF5A4D;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;overflow:hidden;}
+.app{height:100%;max-width:480px;margin:0 auto;position:relative;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;animation:fade .25s;}
+.screen.on{display:flex;}
+@keyframes fade{from{opacity:0;}to{opacity:1;}}
+#cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
+.scan-ui{position:absolute;inset:0;display:flex;flex-direction:column;padding:max(54px,env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));}
+.guide{text-align:center;font-size:14px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+.frame{flex:1;display:flex;align-items:center;justify-content:center;}
+.shutter{width:74px;height:74px;border-radius:50%;background:var(--acc);border:5px solid #fff;margin:0 auto;}
+.shutter:active{transform:scale(.94);}
+.pill{background:var(--acc);color:#0E0E10;font-weight:600;font-size:16px;border:none;border-radius:15px;padding:15px 28px;}
+.start{margin:auto;}
+.thumbs{position:absolute;top:max(54px,env(safe-area-inset-top));right:18px;display:flex;flex-direction:column;gap:8px;}
+.thumbs img{width:44px;height:58px;object-fit:cover;border-radius:8px;border:2px solid var(--acc);}
+.banner{position:absolute;left:16px;right:16px;bottom:calc(120px + env(safe-area-inset-bottom));background:rgba(255,90,77,.94);color:#fff;font-size:13px;padding:12px 14px;border-radius:12px;text-align:center;display:none;}
+.fileBtn{display:inline-block;background:#fff;color:#0E0E10;font-weight:600;font-size:14px;border-radius:11px;padding:10px 18px;margin-top:9px;}
+#file{display:none;}
+.anaPhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.45) saturate(.85);background:#000;}
+.scanwrap{position:absolute;inset:22px;pointer-events:none;}
+.scanline{position:absolute;left:0;right:0;height:2px;background:var(--acc);box-shadow:0 0 16px 3px var(--acc);animation:scanmove 2s ease-in-out infinite;}
+@keyframes scanmove{0%{top:0;}50%{top:100%;}100%{top:0;}}
+.corner{position:absolute;width:26px;height:26px;border:2px solid var(--acc);}
+.tl{top:0;left:0;border-right:none;border-bottom:none;}.tr{top:0;right:0;border-left:none;border-bottom:none;}
+.bl{bottom:0;left:0;border-right:none;border-top:none;}.br{bottom:0;right:0;border-left:none;border-top:none;}
+.anaInfo{position:absolute;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));text-align:center;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7);}
+.pane{height:100%;overflow-y:auto;padding:max(50px,env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));}
+h1{font-size:26px;font-weight:700;letter-spacing:-.4px;}
+.sm{font-size:12px;color:var(--mut);}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-top:12px;}
+.ichip{display:inline-block;font-size:13px;padding:9px 14px;border:1px solid var(--line);border-radius:20px;margin:0 8px 8px 0;color:#DADADE;}
+.ichip.on{background:var(--acc);color:#0E0E10;border-color:var(--acc);font-weight:600;}
+.row{display:flex;justify-content:space-between;align-items:center;}
+.ta{width:100%;min-height:96px;background:#0E0E10;border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:12px;font-size:13px;font-family:inherit;line-height:1.6;resize:none;}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.segbtn{padding:6px 14px;font-size:13px;color:var(--mut);}
+.segbtn.on{background:var(--acc);color:#0E0E10;font-weight:600;}
+.stat{display:flex;gap:11px;}
+.stat>div{flex:1;background:var(--card);border-radius:14px;padding:14px;}
+.big{font-size:23px;font-weight:700;}
+.mrow{display:flex;align-items:center;gap:10px;margin-top:11px;}
+.mname{width:86px;font-size:13px;}
+.track{flex:1;position:relative;height:9px;background:#26262B;border-radius:5px;overflow:hidden;}
+.track>.pot{position:absolute;left:0;top:0;height:100%;border-radius:5px;background:var(--acc);opacity:.25;}
+.track>.fill{position:absolute;left:0;top:0;height:100%;border-radius:5px;}
+.mscore{width:64px;text-align:right;font-size:11px;color:var(--mut);}
+.drow{display:flex;gap:10px;padding:9px 0;}
+.dn{width:78px;flex-shrink:0;font-size:13px;font-weight:600;}
+.dd{font-size:13px;color:#C9C9CE;line-height:1.45;}
+.btn{background:var(--acc);color:#0E0E10;font-weight:600;font-size:16px;border:none;border-radius:15px;padding:16px;width:100%;margin-top:16px;}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:7px;}
+.macro{display:flex;gap:10px;margin-top:10px;}
+.macro>div{flex:1;background:#0E0E10;border-radius:11px;padding:11px;text-align:center;}
+.prow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid #1C1C20;font-size:14px;}
+.prow:first-of-type{border-top:none;}
+.pnow{color:var(--mut);}
+.parr{color:var(--acc);font-weight:600;}
+.upBtn{display:inline-block;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);font-weight:600;font-size:14px;border-radius:13px;padding:11px 22px;}
+.skip{color:#9A9AA0;font-size:12px;}
+.dayhdr{font-size:13px;font-weight:700;margin-top:16px;display:flex;align-items:center;gap:8px;}
+.ex{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-top:1px solid #1C1C20;}
+.exn{flex:1;}
+.extag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:8px;flex-shrink:0;}
+.t-add{background:#23300A;color:var(--acc);}
+.t-cut{background:#3A1512;color:var(--red);}
+.t-keep{background:#202024;color:#9A9AA0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<section class="screen on" id="scan">
+  <video id="cam" playsinline muted></video>
+  <div class="thumbs" id="thumbs"></div>
+  <div class="scan-ui">
+    <div class="guide" id="guide">Scan your physique</div>
+    <div class="frame" id="frame"><div id="startOpts" style="text-align:center;">
+      <button class="pill start" id="startBtn" onclick="startCam()">Start scan</button>
+      <div style="margin-top:14px;"><label class="upBtn" for="upload">Upload a photo</label></div>
+      <input type="file" id="upload" accept="image/*" style="display:none;" onchange="fromFile(event)">
+      <div style="margin-top:18px;"><a href="#" class="skip" onclick="go('result');return false;">skip to analysis (preview)</a></div>
+    </div></div>
+    <div id="shutterWrap" style="display:none;text-align:center;">
+      <div class="shutter" onclick="capture()"></div>
+      <div class="guide" id="stepLbl" style="margin-top:12px;">Front · tap to capture</div>
+    </div>
+    <button class="pill" id="contBtn" style="display:none;margin:16px auto 0;" onclick="go('info')">Continue &rarr;</button>
+    <div class="banner" id="banner">Camera needs HTTPS to run in-app. On the local link, use your normal camera instead:
+      <br><label class="fileBtn" for="file">Take a photo</label>
+    </div>
+  </div>
+  <input type="file" id="file" accept="image/*" onchange="fromFile(event)">
+  <canvas id="cv" style="display:none;"></canvas>
+</section>
+
+<section class="screen" id="info">
+  <div class="pane">
+    <div class="sm">LiftAI</div>
+    <h1 style="margin-top:2px;">A bit about your training</h1>
+    <p class="sm" style="margin-top:6px;">So we can explain your weak points, build your split, and set your nutrition.</p>
+    <div class="card"><div class="sm" style="margin-bottom:9px;">your goal</div>
+      <span class="ichip on" onclick="ipick(this)">Gain muscle</span><span class="ichip" onclick="ipick(this)">Lose fat</span><span class="ichip" onclick="ipick(this)">Maintain</span>
+    </div>
+    <div class="card"><div class="sm" style="margin-bottom:6px;">you</div>
+      <div class="row" style="padding:6px 0;"><span>Height</span><span style="font-weight:600;">5'11"</span></div>
+      <div class="row" style="padding:6px 0;border-top:1px solid #1C1C20;"><span>Weight</span><span style="font-weight:600;">130 lb</span></div>
+    </div>
+    <div class="card"><div class="sm" style="margin-bottom:9px;">days you can train</div>
+      <span class="ichip" onclick="ipick(this)">3</span><span class="ichip on" onclick="ipick(this)">4</span><span class="ichip" onclick="ipick(this)">5</span><span class="ichip" onclick="ipick(this)">6</span>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;"><span class="sm">your current routine</span>
+        <span class="seg"><span class="segbtn on" id="segType" onclick="rmode('type')">Type it</span><span class="segbtn" id="segPhoto" onclick="rmode('photo')">Photo it</span></span>
+      </div>
+      <textarea id="routineText" class="ta" placeholder="Mon - bench 4x8, incline DB 3x10, flyes 3x12, pushdowns 3x12&#10;Wed - squat 5x5, leg press 3x12, curls 3x10&#10;Fri - bench 4x6, OHP 3x8, rows 3x10, curls 3x12"></textarea>
+      <div id="routinePhoto" style="display:none;text-align:center;padding:8px 0;">
+        <label class="pill" for="rfile" style="font-size:14px;padding:13px 22px;display:inline-block;">Snap a photo of your routine</label>
+        <input type="file" id="rfile" accept="image/*" capture="environment" style="display:none;" onchange="rphoto(event)">
+        <div id="rphotoLbl" class="sm" style="margin-top:10px;">A screenshot or notes-app photo works.</div>
+      </div>
+    </div>
+    <button class="btn" onclick="done()">See my analysis</button>
+  </div>
+</section>
+
+<section class="screen" id="analyzing">
+  <img id="anaPhoto" class="anaPhoto" alt="">
+  <div class="scanwrap">
+    <div class="scanline"></div>
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  </div>
+  <div class="anaInfo">
+    <div class="big" id="anaPct" style="font-size:32px;">0%</div>
+    <div style="font-weight:600;margin-top:4px;">Analyzing your physique</div>
+    <div class="sm" id="anaStep" style="margin-top:4px;color:#D9D9DE;">Mapping muscle groups</div>
+  </div>
+</section>
+
+<section class="screen" id="result">
+  <div class="pane">
+    <div class="sm">LiftAI</div>
+    <h1 style="margin-top:2px;">Physique analysis</h1>
+    <div class="stat" style="margin-top:14px;">
+      <div><div class="sm">est. body fat</div><div class="big">20%</div></div>
+      <div><div class="sm">development</div><div class="big">38<span class="sm">/100</span></div></div>
+      <div><div class="sm">balance</div><div class="big">48<span class="sm">/100</span></div></div>
+    </div>
+
+    <div class="card">
+      <div class="sm" style="margin-bottom:4px;">muscle breakdown <span style="color:var(--acc);">· now &rarr; potential</span></div>
+      <div class="mrow"><div class="mname">Chest</div><div class="track"><span class="pot" style="width:62%;"></span><span class="fill" style="width:55%;background:var(--amber);"></span></div><div class="mscore">55 &rarr; 62</div></div>
+      <div class="mrow"><div class="mname">Quads</div><div class="track"><span class="pot" style="width:62%;"></span><span class="fill" style="width:52%;background:var(--amber);"></span></div><div class="mscore">52 &rarr; 62</div></div>
+      <div class="mrow"><div class="mname">Shoulders</div><div class="track"><span class="pot" style="width:62%;"></span><span class="fill" style="width:50%;background:var(--amber);"></span></div><div class="mscore">50 &rarr; 62</div></div>
+      <div class="mrow"><div class="mname">Triceps</div><div class="track"><span class="pot" style="width:58%;"></span><span class="fill" style="width:44%;background:var(--red);"></span></div><div class="mscore">44 &rarr; 58</div></div>
+      <div class="mrow"><div class="mname">Hamstrings</div><div class="track"><span class="pot" style="width:55%;"></span><span class="fill" style="width:42%;background:var(--red);"></span></div><div class="mscore">42 &rarr; 55</div></div>
+      <div class="mrow"><div class="mname">Abs</div><div class="track"><span class="pot" style="width:52%;"></span><span class="fill" style="width:40%;background:var(--red);"></span></div><div class="mscore">40 &rarr; 52</div></div>
+      <div class="mrow"><div class="mname">Biceps</div><div class="track"><span class="pot" style="width:58%;"></span><span class="fill" style="width:35%;background:var(--red);"></span></div><div class="mscore">35 &rarr; 58</div></div>
+      <div class="mrow"><div class="mname">Calves</div><div class="track"><span class="pot" style="width:48%;"></span><span class="fill" style="width:32%;background:var(--red);"></span></div><div class="mscore">32 &rarr; 48</div></div>
+      <div class="mrow"><div class="mname">Back</div><div class="track"><span class="pot" style="width:60%;"></span><span class="fill" style="width:30%;background:var(--red);"></span></div><div class="mscore">30 &rarr; 60</div></div>
+    </div>
+
+    <div class="card">
+      <div class="sm" style="margin-bottom:2px;">what you've got going for you</div>
+      <div class="drow"><span class="dn" style="color:var(--amber);">Chest</span><span class="dd">Your most developed area, and it tracks, your whole routine is built around pressing. Genetics help too: wide clavicles, so you carry width up top.</span></div>
+      <div class="drow"><span class="dn" style="color:var(--amber);">Frame</span><span class="dd">Naturally broad shoulders and a narrow waist. That's structure you can't train, and it means you'll look good with even a bit more muscle on it.</span></div>
+      <div class="drow"><span class="dn" style="color:var(--amber);">Quads</span><span class="dd">You squat, so legs already have a real base. They'll respond fast once the effort goes up.</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sm" style="margin-bottom:2px;">needs work</div>
+      <div class="drow"><span class="dn" style="color:var(--red);">Back</span><span class="dd">Flat, no width or thickness. This is training, not genetics, you give it maybe 2 light sets a week. Your single biggest fix: bring it up and your whole frame changes.</span></div>
+      <div class="drow"><span class="dn" style="color:var(--red);">Biceps</span><span class="dd">Barely any direct work, so they're small. Your insertions also sit a little high (that gap above the elbow), that part's genetic, but direct volume still adds the fullness.</span></div>
+      <div class="drow"><span class="dn" style="color:var(--red);">Calves</span><span class="dd">Almost never trained directly, plus high genetic insertions, the tough combo. Hard, direct calf work still puts size on them.</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sm">why you're not growing</div>
+      <div style="margin-top:6px;font-size:14px;line-height:1.6;">Three things in your split are holding you back:</div>
+      <div style="margin-top:8px;font-size:14px;line-height:1.8;">
+        <div>Your lats get <span style="color:var(--red);font-weight:600;">~2 sets a week</span> while chest soaks up most of your effort.</div>
+        <div>You hit each muscle <span style="color:var(--red);font-weight:600;">once a week</span> instead of spreading it out.</div>
+        <div>You're running <span style="color:var(--red);font-weight:600;">16+ chest sets</span> a week, and that much volume almost always means you're not taking them close to failure, so a lot of them are junk sets.</div>
+      </div>
+      <div style="margin-top:10px;font-size:14px;line-height:1.55;">This is all from the split you gave us. Fewer, harder sets in the right places is the fix.</div>
+    </div>
+
+    <div class="card">
+      <div class="sm" style="color:var(--acc);">your new plan</div>
+      <div style="margin-top:6px;font-size:14px;line-height:1.55;">Same gym time, retargeted, and we're not chasing volume. Fewer sets, each one taken to <b>1-2 reps from failure</b>. Less junk, more effort where it counts. Run it 6 weeks, deload week 7.</div>
+
+      <div class="dayhdr"><span class="tag" style="background:#3A1512;color:var(--red);">PULL A</span> Mon · back + biceps</div>
+      <div class="ex"><span class="exn">Barbell rows 3x6</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Lat pulldowns 2x10</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Face pulls 2x15</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Barbell curls 2x10</span><span class="extag t-add">+1 SET</span></div>
+      <div class="ex"><span class="exn">Hammer curls 2x12</span><span class="extag t-add">ADDED</span></div>
+
+      <div class="dayhdr"><span class="tag" style="background:#23300A;color:var(--acc);">PUSH</span> Tue · chest, shoulders, triceps</div>
+      <div class="ex"><span class="exn">Incline press 3x8</span><span class="extag t-keep">KEPT</span></div>
+      <div class="ex"><span class="exn">Flat bench 1x8</span><span class="extag t-cut">CUT TO 1</span></div>
+      <div class="ex"><span class="exn">Lateral raises 3x15</span><span class="extag t-add">+1 SET</span></div>
+      <div class="ex"><span class="exn">Overhead press 2x8</span><span class="extag t-keep">KEPT</span></div>
+
+      <div class="dayhdr"><span class="tag" style="background:#23300A;color:var(--acc);">LEGS</span> Thu · quads, hams, calves</div>
+      <div class="ex"><span class="exn">Squat 3x6</span><span class="extag t-keep">KEPT</span></div>
+      <div class="ex"><span class="exn">Romanian deadlift 2x10</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Standing calf raise 3x15</span><span class="extag t-add">ADDED</span></div>
+
+      <div class="dayhdr"><span class="tag" style="background:#3A1512;color:var(--red);">PULL B</span> Fri · back + arms again</div>
+      <div class="ex"><span class="exn">Weighted pull-ups 3x6</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Seated cable row 2x10</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Incline curls 2x12</span><span class="extag t-add">ADDED</span></div>
+      <div class="ex"><span class="exn">Rear delt flyes 2x15</span><span class="extag t-add">ADDED</span></div>
+    </div>
+
+    <div class="card" style="border:1px solid #2E3A10;">
+      <div class="sm" style="color:var(--acc);">your potential in 12 weeks</div>
+      <div class="sm" style="margin-top:2px;margin-bottom:4px;">if you follow this plan</div>
+      <div class="prow"><span>Development</span><span><span class="pnow">38</span> &nbsp;&rarr; &nbsp;<span class="parr">60</span></span></div>
+      <div class="prow"><span>Back</span><span><span class="pnow">30</span> &nbsp;&rarr; &nbsp;<span class="parr">55</span></span></div>
+      <div class="prow"><span>Body fat</span><span><span class="pnow">20%</span> &nbsp;&rarr; &nbsp;<span class="parr">15%</span></span></div>
+      <div class="prow"><span>Lean muscle</span><span class="parr">+7 lb</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sm">your nutrition</div>
+      <div style="margin-top:6px;font-size:14px;line-height:1.5;">At 5'11" and 130 lb you're light for your frame, so a real surplus to actually grow.</div>
+      <div class="macro">
+        <div><div class="sm">calories</div><div style="font-weight:700;margin-top:2px;">2,600</div></div>
+        <div><div class="sm">protein</div><div style="font-weight:700;margin-top:2px;">150g</div></div>
+        <div><div class="sm">carbs</div><div style="font-weight:700;margin-top:2px;">330g</div></div>
+        <div><div class="sm">fat</div><div style="font-weight:700;margin-top:2px;">70g</div></div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="location.reload()">Scan again</button>
+  </div>
+</section>
+
+</div>
+<script>
+var cam=document.getElementById('cam'),step=1,shots=[];
+var guides=['Front · tap to capture','Side (optional) · tap, or Continue'];
+async function startCam(){
+  var so=document.getElementById('startOpts'); if(so)so.style.display='none';
+  try{
+    var stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1080}},audio:false});
+    cam.srcObject=stream; await cam.play();
+    document.getElementById('shutterWrap').style.display='block';
+    document.getElementById('guide').textContent='Stand back so your whole body fits the frame';
+  }catch(e){
+    document.getElementById('banner').style.display='block';
+    document.getElementById('guide').textContent='Scan your physique';
+  }
+}
+function snap(){
+  var cv=document.getElementById('cv');cv.width=cam.videoWidth||720;cv.height=cam.videoHeight||1280;
+  cv.getContext('2d').drawImage(cam,0,0,cv.width,cv.height);
+  return cv.toDataURL('image/jpeg',0.85);
+}
+function addThumb(src){var i=document.createElement('img');i.src=src;document.getElementById('thumbs').appendChild(i);shots.push(src);}
+function showContinue(){document.getElementById('contBtn').style.display='inline-block';}
+function capture(){
+  addThumb(snap()); showContinue();
+  if(step===1){step=2;document.getElementById('stepLbl').textContent=guides[1];}
+  else{document.getElementById('stepLbl').textContent='Captured · tap Continue';}
+}
+function fromFile(ev){
+  var f=ev.target.files[0]; if(!f)return; var r=new FileReader();
+  r.onload=function(){ addThumb(r.result); showContinue();
+    var so=document.getElementById('startOpts'); if(so)so.style.display='none';
+    document.getElementById('guide').textContent='Photo added · tap Continue';
+    var b=document.getElementById('banner'); if(b&&b.style.display==='block')b.innerHTML='Photo added.';
+  };
+  r.readAsDataURL(f);
+}
+function ipick(e){e.parentNode.querySelectorAll('.ichip').forEach(c=>c.classList.remove('on'));e.classList.add('on');}
+function rmode(m){
+  var t=m==='type';
+  document.getElementById('routineText').style.display=t?'block':'none';
+  document.getElementById('routinePhoto').style.display=t?'none':'block';
+  document.getElementById('segType').classList.toggle('on',t);
+  document.getElementById('segPhoto').classList.toggle('on',!t);
+}
+function rphoto(ev){var f=ev.target.files[0];if(f)document.getElementById('rphotoLbl').textContent='Routine photo added.';}
+function done(){
+  var ph=document.getElementById('anaPhoto');
+  if(shots.length){ph.src=shots[shots.length-1];}
+  go('analyzing'); runAnalyze();
+}
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function runAnalyze(){
+  var steps=['Mapping muscle groups','Estimating body fat','Reading your routine','Finding weak points','Building your split','Setting your macros'];
+  var p=0,pct=document.getElementById('anaPct'),lbl=document.getElementById('anaStep');
+  var t=setInterval(function(){
+    p+=4;if(p>100)p=100;pct.textContent=p+'%';
+    lbl.textContent=steps[Math.min(steps.length-1,Math.floor(p/17))];
+    if(p>=100){clearInterval(t);setTimeout(function(){go('result');},500);}
+  },150);
+}
+if(location.hash==='#result'){go('result');}
+</script>
+</body>
+</html>
