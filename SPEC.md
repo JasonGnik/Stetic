@@ -25,12 +25,12 @@ Stetic is a hard-paywalled iOS app. A new user goes through a long, investment-b
 | AI — meal scan | Gemini 2.5 Flash, food-specific prompt |
 | Score scale | **1–10, one decimal** overall AND per-muscle (internally 0–100, displayed ÷10) |
 | Consistency | Hash the photo set → cache the result; temp ~0 + strict JSON schema + clamp in code. Same photo never flip-flops; a NEW photo re-scores. No multi-sampling. |
-| Photo input | Up to 3 photos, all optional (front recommended; side/back optional). Full-body vs upper-body optional. More angles → higher displayed "confidence". |
+| Photo input | Up to 3 photos, all optional (front recommended; side/back optional). Full-body vs upper-body optional. More angles = better accuracy (confidence is NOT surfaced to the user). |
 | Photo retention | **Ephemeral** — never persisted at rest. Sent to AI, scored, discarded. Only derived numbers stored. |
 | Auth | Apple Sign In (primary) + optional email; account created **at the end of onboarding, right before the paywall** |
 | Monetization | **Hard paywall + 3-day free trial.** Whole app gated. (This also solves abuse: card required.) |
 | Paywall infra | **RevenueCat** |
-| Pricing | **Weekly + Annual only (no monthly).** Weekly $8.99/wk; Annual $59.99/yr ("$1.15/wk · Save 87%"). 3-day trial. Exit-intent ~40% off annual w/ countdown. |
+| Pricing | **Monthly + Annual** (Cal AI model). Monthly $9.99/mo; Annual $39.99/yr (default-selected, "Save 67%"). **3-day free trial on ANNUAL only** (pushes annual + lifts LTV). Exit-intent extra discount on annual w/ countdown. |
 | Plan | Workout + macros (no rigid recipes in v1) |
 | Progress | Score-history graph (numbers only, no stored images) |
 | Audience | **Both sexes at launch** — separate male & female rubrics |
@@ -151,12 +151,12 @@ Supabase
 
 ## 7. Monetization detail
 
-- **Plans (no monthly):**
-  - Weekly — **$8.99/week**, entry point (highest conversion).
-  - Annual — **$59.99/year**, framed "$1.15/week · Save 87%", the LTV driver.
-  - 3-day free trial on the highlighted plan.
-- **Exit-intent:** dismiss attempt → one-time **~40% off annual (~$35.99)** with a countdown.
-- **Why no monthly:** at this price band monthly is a conversion dead zone; weekly converts 1.7–7.4× better and now drives the majority of app subscription revenue; annual wins on retention. (Adapty/RevenueCat 2025 data.)
+- **Plans (Cal AI model — Monthly + Annual):**
+  - Monthly — **$9.99/month**, no trial.
+  - Annual — **$39.99/year** (default-selected, "Save 67% · ~$0.77/week"), the LTV driver.
+  - **3-day free trial on the ANNUAL plan only.** Trial-on-annual (not monthly) makes annual feel safer and lifts one-year LTV (+~35% for AI apps; Health & Fitness specifically benefits). Card required → also gates abuse.
+- **Exit-intent:** dismiss attempt → one-time extra discount on annual (e.g. ~$24.99) with a countdown.
+- **Paywall transparency (Apple compliance — non-negotiable):** show the **actual amount that will be billed** at least as prominently as any per-week framing, and surface **auto-renewal terms** clearly near the CTA. (Apple pulled Cal AI in April 2026 for obscuring the real price + renewal behind a weekly figure — do not repeat this.)
 - **No external (Stripe) checkout** at MVP — gray-area post-*Epic* link-out, review risk. Apple IAP via RevenueCat only.
 - All gating through RevenueCat entitlements; server double-checks before AI spend.
 
@@ -164,7 +164,8 @@ Supabase
 
 ## 8. Safety & compliance
 
-- **Age gate** in onboarding; target **App Store 12+** minimum (Thelo ships 9+, but body-analysis + bf% claims warrant ≥12+; confirm with Apple/legal — consider 17+ if shirtless framing stays aggressive).
+- **Age rating: 9+** (matching Thelo). Keep an age question in onboarding for personalization/macros, but no special age wall at launch.
+- **Paywall must clearly show the real billed amount + auto-renewal terms** (see §7 — Apple pulled Cal AI over this). Treat as a compliance requirement, not a polish item.
 - **On-device nudity rejection** — Apple Sensitive Content Analysis / Vision before any upload; explicit images never leave the device.
 - **Athletic-wear + lighting guidance**, plus on-device **body-pose detection** to confirm a usable photo pre-paywall (never charge then fail).
 - **Health disclaimer** — scores, bf%, and plans are fitness guidance, not medical/body-composition diagnosis. Surface at onboarding + in settings.
@@ -208,12 +209,11 @@ Supabase
 
 ## 11. Open questions / to confirm
 
-1. **App Store age rating** — 12+ vs 17+ final call (friction vs safety). Confirm against Apple guideline 1.2/5.1 for body imagery.
-2. **Trial placement** — trial on weekly, annual, or both? (A/B once live.)
-3. **Confidence display** — how to translate "1 vs 3 photos" into a shown confidence without undermining the score.
-4. **Meal-scan cost ceiling** — even paywalled, heavy meal loggers add Flash calls; set a soft daily cap if needed.
-5. **Female benchmark roster** — pick the reference physiques + tier anchors (content fuel too).
-6. **Re-scan cadence** — how often before the score meaningfully moves (avoid "scanned twice, same score" disappointment).
+Resolved this session: age rating = **9+**; trial = **annual only**; scan confidence = **not shown**; meal scan = **no cost cap (paid users get full access)**.
+
+Deferred (revisit when we reach them, not blockers for the build):
+1. **Female benchmark roster** — pick the reference physiques + tier anchors (doubles as content fuel).
+2. **Re-scan cadence** — how often before the score meaningfully moves (avoid "scanned twice, same score" disappointment); tune once scoring is live.
 
 ---
 
