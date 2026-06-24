@@ -75,6 +75,7 @@ struct OnboardingView: View {
     // MARK: per-step content
     @ViewBuilder private var stepContent: some View {
         switch step {
+        case .name:       nameField
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
         case .focus:      multiSelect(OnbOptions.focus)
@@ -154,6 +155,22 @@ struct OnboardingView: View {
         .padding(.top, 20)
     }
 
+    private var nameField: some View {
+        TextField("", text: $data.name,
+                  prompt: Text("Your name").foregroundStyle(Theme.mut))
+            .font(.system(size: 22, weight: .semibold))
+            .foregroundStyle(Theme.txt)
+            .textInputAutocapitalization(.words)
+            .submitLabel(.done)
+            .onSubmit { if canAdvance { advance() } }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14).fill(Theme.card)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1))
+            )
+            .padding(.top, 10)
+    }
+
     private var ageStep: some View {
         VStack(spacing: 22) {
             Text("\(data.age)").font(.system(size: 44, weight: .heavy)).foregroundStyle(Theme.txt)
@@ -176,6 +193,7 @@ struct OnboardingView: View {
     // MARK: nav
     private var canAdvance: Bool {
         switch step {
+        case .name: return !data.name.trimmingCharacters(in: .whitespaces).isEmpty
         case .sex: return data.sex != nil
         case .goal: return data.goal != nil
         case .focus: return true   // optional — scan finds weak points

@@ -2,6 +2,7 @@ import SwiftUI
 
 // Local onboarding answers (held until the end, then persisted to the profile).
 @Observable final class OnboardingData {
+    var name: String = ""       // first name, for personalization
     var sex: String?            // male | female
     var goal: String?           // lose_fat | gain_muscle | both
     var focus: Set<String> = [] // arms, shoulders, chest, abs, back, legs, lower_bf
@@ -20,10 +21,11 @@ import SwiftUI
 }
 
 enum OnbStep: Int, CaseIterable {
-    case sex, goal, focus, experience, days, equipment, height, weight, age
+    case name, sex, goal, focus, experience, days, equipment, height, weight, age
 
     var title: String {
         switch self {
+        case .name:       return "What should we call you?"
         case .sex:        return "Which are you?"
         case .goal:       return "What's your goal?"
         case .focus:      return "What do you want to bring up?"
@@ -37,6 +39,7 @@ enum OnbStep: Int, CaseIterable {
     }
     var subtitle: String {
         switch self {
+        case .name:       return "We'll make your plan feel like yours."
         case .sex:        return "Routes your scoring to the right rubric."
         case .goal:       return "Shapes your plan and macros."
         case .focus:      return "Optional — pick any to prioritize. Your scan finds the rest."

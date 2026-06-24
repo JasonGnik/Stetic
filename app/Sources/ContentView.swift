@@ -2,16 +2,27 @@ import SwiftUI
 
 struct ContentView: View {
     private let env = ProcessInfo.processInfo.environment
-    // Dev: skip straight past onboarding when testing scan/plan.
-    @State private var inMain = ProcessInfo.processInfo.environment["STETIC_SKIP_ONBOARDING"] == "1"
+    @State private var stage: Stage
+
+    enum Stage { case intro, onboarding, main }
+
+    init() {
+        let e = ProcessInfo.processInfo.environment
+        _stage = State(initialValue: e["STETIC_SKIP_ONBOARDING"] == "1" ? .main : .intro)
+    }
 
     var body: some View {
         if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
-        } else if inMain {
-            ScanFlowView()
         } else {
-            OnboardingView { withAnimation { inMain = true } }
+            switch stage {
+            case .intro:
+                IntroView { withAnimation { stage = .onboarding } }
+            case .onboarding:
+                OnboardingView { withAnimation { stage = .main } }
+            case .main:
+                ScanFlowView()
+            }
         }
     }
 }
