@@ -5,6 +5,7 @@ import PhotosUI
 // gate the real Gemini scan behind a (stubbed) paywall, then reveal.
 struct RevealFunnelView: View {
     var name: String = ""
+    var onFinish: (() -> Void)? = nil
 
     enum Phase { case capture, fomo, bluff, tease, paywall, scanning, result, error }
     @State private var phase: Phase = .capture
@@ -272,7 +273,9 @@ struct RevealFunnelView: View {
         Group {
             if let card {
                 ScoreCardView(card: card, onGetPlan: { showPlan = true })
-                    .fullScreenCover(isPresented: $showPlan) { PlanView() }
+                    .fullScreenCover(isPresented: $showPlan) {
+                        PlanView(onStart: { showPlan = false; onFinish?() })
+                    }
             }
         }
     }

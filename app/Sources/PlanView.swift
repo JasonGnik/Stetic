@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PlanView: View {
+    var showsClose: Bool = true
+    var onStart: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var phase: Phase = .loading
     @State private var bundle: ScanAPI.PlanBundle?
@@ -55,9 +57,11 @@ struct PlanView: View {
                             .background(Capsule().fill(Theme.acc))
                     }
                     Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
-                            .padding(8).background(Circle().fill(Theme.card))
+                    if showsClose {
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
+                                .padding(8).background(Circle().fill(Theme.card))
+                        }
                     }
                 }
                 Text(p.summary).font(.system(size: 13.5)).foregroundStyle(Color(hex: 0xD2D2D8)).lineSpacing(4)
@@ -71,6 +75,15 @@ struct PlanView: View {
                 section("PRIORITIES") { priorities(p.priorities) }
                 section("WEEKLY SPLIT") { split(p.weekly_split, weak: weakGroups(p.muscle_breakdown)) }
                 section("MUSCLE BREAKDOWN") { breakdown(p.muscle_breakdown, weak: weakGroups(p.muscle_breakdown)) }
+                if let onStart {
+                    Button { onStart() } label: {
+                        Text("Start training →").font(.system(size: 16, weight: .bold))
+                            .frame(maxWidth: .infinity).padding(15)
+                            .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
+                            .foregroundStyle(Color(hex: 0x0E0E10))
+                    }
+                    .padding(.top, 6)
+                }
             }
             .padding(.horizontal, 22).padding(.top, 14).padding(.bottom, 36)
         }

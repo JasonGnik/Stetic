@@ -164,6 +164,92 @@ actor ScanAPI {
     }
     private struct PlanResponse: Decodable { let content: PlanContent; let scan: ScoreCard }
 
+    // MARK: logging (workouts, meals, streak)
+    private func restURL(_ table: String, query: [URLQueryItem] = []) -> URL {
+        var c = URLComponents(url: Config.baseURL.appending(path: "rest/v1/\(table)"), resolvingAgainstBaseURL: false)!
+        if !query.isEmpty { c.queryItems = query }
+        return c.url!
+    }
+    private func authed(_ url: URL, method: String, body: Data? = nil, prefer: String? = nil) async throws -> (Data, Int) {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        if let prefer { req.setValue(prefer, forHTTPHeaderField: "Prefer") }
+        req.httpBody = body
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        return (data, code(resp))
+    }
+
+    func logWorkout(dayLabel: String, exercises: [LoggedExercise]) async throws {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        struct Row: Encodable { let user_id: String; let day_label: String; let exercises: [LoggedExercise]; let log_date: String }
+        let body = try JSONEncoder().encode(Row(user_id: uid, day_label: dayLabel, exercises: exercises, log_date: LogDate.today))
+        let (data, s) = try await authed(restURL("workout_logs"), method: "POST", body: body, prefer: "return=minimal")
+        guard s == 201 || s == 204 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
+    // Distinct training dates (for the streak) + whether today is already logged.
+    func workoutDates() async throws -> [String] {
+        let (data, s) = try await authed(
+            restURL("workout_logs", query: [.init(name: "select", value: "log_date"),
+                                            .init(name: "order", value: "log_date.desc")]),
+            method: "GET")
+        guard s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+        struct R: Decodable { let log_date: String }
+        return (try? JSONDecoder().decode([R].self, from: data).map { $0.log_date }) ?? []
+    }
+
+    func scanMeal(_ image: ImageInput) async throws -> MealEstimate {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        var req = URLRequest(url: Config.baseURL.appending(path: "functions/v1/meal-scan"))
+        req.httpMethod = "POST"; req.timeoutInterval = 60
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        struct Body: Encodable { let image: Img; struct Img: Encodable { let mimeType: String; let dataB64: String } }
+        req.httpBody = try JSONEncoder().encode(Body(image: .init(mimeType: image.mimeType, dataB64: image.dataB64)))
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard code(resp) == 200 else { throw APIError.http(code(resp), String(data: data, encoding: .utf8) ?? "") }
+        struct Wrap: Decodable { let meal: MealEstimate }
+        guard let w = try? JSONDecoder().decode(Wrap.self, from: data) else { throw APIError.decode }
+        return w.meal
+    }
+
+    func logMeal(_ m: MealEstimate) async throws {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        struct Row: Encodable {
+            let user_id: String; let log_date: String; let name: String
+            let calories: Double; let protein_g: Double; let carbs_g: Double; let fat_g: Double
+        }
+        let body = try JSONEncoder().encode(Row(user_id: uid, log_date: LogDate.today, name: m.name,
+            calories: m.calories, protein_g: m.protein_g, carbs_g: m.carbs_g, fat_g: m.fat_g))
+        let (data, s) = try await authed(restURL("meal_logs"), method: "POST", body: body, prefer: "return=minimal")
+        guard s == 201 || s == 204 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
+    func meals(on date: String) async throws -> [MealLog] {
+        let (data, s) = try await authed(
+            restURL("meal_logs", query: [.init(name: "select", value: "*"),
+                                         .init(name: "log_date", value: "eq.\(date)"),
+                                         .init(name: "order", value: "created_at.desc")]),
+            method: "GET")
+        guard s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+        return (try? JSONDecoder().decode([MealLog].self, from: data)) ?? []
+    }
+
+    func deleteMeal(id: String) async throws {
+        let (data, s) = try await authed(restURL("meal_logs", query: [.init(name: "id", value: "eq.\(id)")]),
+                                         method: "DELETE", prefer: "return=minimal")
+        guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
     private func code(_ resp: URLResponse) -> Int { (resp as? HTTPURLResponse)?.statusCode ?? -1 }
 
     private struct ScanRequest: Encodable {
