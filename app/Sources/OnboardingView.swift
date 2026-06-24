@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    var onComplete: () -> Void
+    var onComplete: (String) -> Void   // passes the user's name
     @State private var data = OnboardingData()
     @State private var stepIndex = Int(ProcessInfo.processInfo.environment["STETIC_ONB_STEP"] ?? "") ?? 0
     @State private var saving = false
@@ -308,7 +308,7 @@ struct OnboardingView: View {
         Task {
             do {
                 try await ScanAPI.shared.saveProfile(data.payload)
-                await MainActor.run { saving = false; onComplete() }
+                await MainActor.run { saving = false; onComplete(data.name) }
             } catch {
                 await MainActor.run { saving = false; self.error = "Couldn't save: \(error.localizedDescription)" }
             }
@@ -316,4 +316,4 @@ struct OnboardingView: View {
     }
 }
 
-#Preview { OnboardingView(onComplete: {}).preferredColorScheme(.dark) }
+#Preview { OnboardingView(onComplete: { _ in }).preferredColorScheme(.dark) }

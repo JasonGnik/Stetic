@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     private let env = ProcessInfo.processInfo.environment
     @State private var stage: Stage
+    @State private var userName = ""
 
     enum Stage { case intro, onboarding, main }
 
@@ -21,9 +22,12 @@ struct ContentView: View {
             case .intro:
                 IntroView { withAnimation { stage = .onboarding } }
             case .onboarding:
-                OnboardingView { withAnimation { stage = .main } }
+                OnboardingView { name in
+                    userName = name
+                    withAnimation { stage = .main }
+                }
             case .main:
-                ScanFlowView()
+                RevealFunnelView(name: userName)
             }
         }
     }
