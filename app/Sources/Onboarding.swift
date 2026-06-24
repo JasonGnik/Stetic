@@ -46,7 +46,7 @@ enum Callbacks {
 }
 
 enum OnbStep: Int, CaseIterable {
-    case name, sex, goal, obstacles, callback, focus, experience, days, equipment,
+    case name, sex, goal, obstacles, callback, experience, days, equipment,
          equipmentDetail, height, weight, age, socialProof, attribution
 
     var isInterstitial: Bool { self == .callback || self == .socialProof }
@@ -57,7 +57,6 @@ enum OnbStep: Int, CaseIterable {
         case .sex:         return "Which are you?"
         case .goal:        return "What's your goal?"
         case .obstacles:   return "What's holding you back?"
-        case .focus:       return "What do you want to bring up?"
         case .experience:  return "How long have you trained?"
         case .days:        return "Days per week?"
         case .equipment:   return "What can you train with?"
@@ -75,7 +74,6 @@ enum OnbStep: Int, CaseIterable {
         case .sex:        return "Routes your scoring to the right rubric."
         case .goal:       return "Shapes your plan and macros."
         case .obstacles:  return "Pick any that apply — we'll target them."
-        case .focus:      return "Optional — pick any to prioritize. Your scan finds the rest."
         case .experience: return "Sets your starting intensity."
         case .days:       return "We build around your real schedule."
         case .equipment:  return "We only program what you can do."

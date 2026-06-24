@@ -84,11 +84,11 @@ struct RevealFunnelView: View {
             Spacer()
             VStack(spacing: 10) {
                 Text("THE NEXT 12 WEEKS").font(.system(size: 11, weight: .bold)).tracking(2).foregroundStyle(Theme.mut)
-                Text("Most guys plateau.\nYou don't have to.")
-                    .font(.system(size: 26, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+                Text(brandLimed("Don't stay static.\nUse Stetic."))
+                    .font(.system(size: 28, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
             }
             WithVsWithoutChart().frame(height: 220).padding(.horizontal, 30).padding(.top, 24)
-            Text(brandLimed("Training without a plan built on your weak points leaves most of your potential on the table. Stetic changes the line."))
+            Text(brandLimed("Most guys plateau — they train without a plan built on their weak points and leave their potential on the table. Stetic changes the line."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(4)
                 .foregroundStyle(Theme.mut).padding(.horizontal, 34).padding(.top, 22)
             Spacer()
@@ -134,11 +134,11 @@ struct RevealFunnelView: View {
 
     // MARK: paywall (STUB — swap for RevenueCat later)
     private let perks = [
-        "Your aesthetic score & rank",
-        "Core-6 weak-point breakdown",
-        "A plan built on your weak points",
-        "Macros dialed to your goal",
-        "Re-scan to track your climb",
+        "Your physique score & rank",
+        "A full breakdown of your weak points",
+        "A workout plan to sculpt a complete physique",
+        "A nutrition plan dialed to your goal",
+        "Re-scan to track your ascension",
     ]
 
     private var paywall: some View {
@@ -149,7 +149,7 @@ struct RevealFunnelView: View {
                     VStack(spacing: 8) {
                         (Text("Unlock ").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                          + Text("Stetic").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.acc))
-                        Text("Everything you need to climb the ranks.").font(.system(size: 14)).foregroundStyle(Theme.mut)
+                        Text("Everything you need to ascend.").font(.system(size: 14)).foregroundStyle(Theme.mut)
                     }
                     VStack(alignment: .leading, spacing: 11) {
                         ForEach(perks, id: \.self) { perk in
@@ -218,12 +218,8 @@ struct RevealFunnelView: View {
     private var resultView: some View {
         Group {
             if let card {
-                VStack(spacing: 0) {
-                    ScoreCardView(card: card) { showPlan = true }
-                    Button("Scan another") { reset() }
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut).padding(.bottom, 8)
-                }
-                .fullScreenCover(isPresented: $showPlan) { PlanView() }
+                ScoreCardView(card: card, onGetPlan: { showPlan = true }, onScanAnother: { reset() })
+                    .fullScreenCover(isPresented: $showPlan) { PlanView() }
             }
         }
     }

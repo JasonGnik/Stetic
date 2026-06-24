@@ -56,13 +56,13 @@ USER PROFILE: goal ${goal}; focus ${focus}; experience ${exp}; ${days} days/week
 
 OUTPUT REQUIREMENTS:
 - goal_label: a short human label for the goal driving this plan (e.g. "Build muscle — lean bulk", "Lose fat — get lean", "Recomp").
-- summary: 2-3 punchy sentences naming their weak points and the strategy.
-- macros: follow the JP ebook method EXACTLY, in this order:
-  1) PROTEIN FIRST: 1.5 g per lb of BODYWEIGHT (use weight if known, else estimate from height/build). Protein is 4 kcal/g.
+- summary: 2-3 punchy sentences naming their weak points and the strategy. Never name a coach, brand, or program.
+- macros: compute in this order:
+  1) PROTEIN FIRST: ~1.0 g per lb of BODYWEIGHT (use weight if known, else estimate from height/build). Protein is 4 kcal/g.
   2) TDEE: Mifflin-St Jeor BMR [men: 10·kg + 6.25·cm − 5·age + 5; women: same but −161 instead of +5] × activity factor (1.5 sedentary, 1.8 office+training [USE THIS DEFAULT], 2.2 vigorous).
-  3) Adjust TDEE for goal: lose_fat = deficit (~−400 to −500 kcal); gain_muscle / both = small surplus (~+200 to +300 kcal). Slow and steady — JP says start ~±200/week.
+  3) Adjust TDEE for goal: lose_fat = deficit (~−400 to −500 kcal); gain_muscle / both = small surplus (~+200 to +300 kcal). Slow and steady (~±200/week).
   4) Remaining calories after protein are split 65% to CARBS / 35% to FAT (carbs 4 kcal/g, fat 9 kcal/g). Constraints: fat ≥ 0.3 g/lb of LEAN mass; carbs ≥ ~120 g.
-  Put the actual method in the rationale (mention Mifflin × 1.8, protein 1.5g/lb, 65/35 split).
+  Give a short PLAIN-LANGUAGE rationale (why this calorie target and protein level fit their goal). Do NOT name any coach, program, methodology, or formula, and do NOT explain how the numbers were derived.
 - weekly_split: exactly ${days} sessions, JP rep scheme — MATCH the ebook:
   • Most exercises = **2 working sets**: a heavy TOP set (5-9 or 6-9 reps) then a BACK-OFF set ~10% lighter on compounds / ~5% on isolation in the 10-12 range. Write reps as "5-9, 10-12" (top, back-off).
   • Isolation / finisher movements = 2 sets of "15-20".

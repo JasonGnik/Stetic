@@ -10,6 +10,14 @@ struct OnboardingView: View {
     private var step: OnbStep { OnbStep.allCases[stepIndex] }
     private var total: Int { OnbStep.allCases.count }
 
+    // Single-select steps auto-advance on tap — no Continue button needed.
+    private var needsContinue: Bool {
+        switch step {
+        case .sex, .goal, .experience, .days, .equipment, .attribution: return false
+        default: return true
+        }
+    }
+
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
@@ -32,7 +40,7 @@ struct OnboardingView: View {
                         .padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 24)
                     }
                     .scrollIndicators(.hidden)
-                    footer
+                    if needsContinue { footer }
                 }
             }
         }
@@ -161,7 +169,6 @@ struct OnboardingView: View {
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
         case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
-        case .focus:      multiSelect(OnbOptions.focus, data.focus) { toggle(&data.focus, $0) }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
         case .equipment:  singleSelect(OnbOptions.equipment, data.equipment) { data.equipment = $0 }
@@ -285,7 +292,6 @@ struct OnboardingView: View {
         case .sex: return data.sex != nil
         case .goal: return data.goal != nil
         case .obstacles: return true   // optional
-        case .focus: return true   // optional — scan finds weak points
         case .experience: return data.experience != nil
         case .days: return data.daysPerWeek != nil
         case .equipment: return data.equipment != nil

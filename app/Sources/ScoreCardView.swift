@@ -3,6 +3,7 @@ import SwiftUI
 struct ScoreCardView: View {
     let card: ScoreCard
     var onGetPlan: () -> Void = {}
+    var onScanAnother: (() -> Void)? = nil
     @State private var showEstInfo = false
 
     var body: some View {
@@ -16,6 +17,11 @@ struct ScoreCardView: View {
                 musclesSection
                 climbSection
                 cta
+                if let onScanAnother {
+                    Button("Scan another", action: onScanAnother)
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut)
+                        .padding(.top, 4)
+                }
             }
             .padding(.horizontal, 22)
             .padding(.top, 10)
@@ -102,7 +108,7 @@ struct ScoreCardView: View {
         return HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("YOUR POTENTIAL").font(.system(size: 10.5, weight: .semibold)).tracking(0.8).foregroundStyle(Theme.mut)
-                Text("Train smart and this is your ceiling").font(.system(size: 11)).foregroundStyle(Theme.mut)
+                Text("Where the right plan can take you").font(.system(size: 11)).foregroundStyle(Theme.mut)
             }
             Spacer()
             HStack(spacing: 6) {
