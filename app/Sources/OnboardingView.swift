@@ -134,7 +134,6 @@ struct OnboardingView: View {
                 }
             }
             .frame(height: 5)
-            Text("\(stepIndex + 1)/\(total)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
         }
         .padding(.horizontal, 22).padding(.top, 8).padding(.bottom, 6)
     }
@@ -166,6 +165,7 @@ struct OnboardingView: View {
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
         case .equipment:  singleSelect(OnbOptions.equipment, data.equipment) { data.equipment = $0 }
+        case .equipmentDetail: multiSelect(OnbOptions.equipmentItems, data.equipmentItems) { toggle(&data.equipmentItems, $0) }
         case .height:     measure(value: $data.heightCm, range: 140...215, units: ["ft", "cm"], format: heightLabel)
         case .weight:     measure(value: $data.weightKg, range: 40...180, units: ["lb", "kg"], format: weightLabel)
         case .age:        ageStep
@@ -290,19 +290,38 @@ struct OnboardingView: View {
         case .days: return data.daysPerWeek != nil
         case .equipment: return data.equipment != nil
         case .height, .weight, .age: return true
+        case .equipmentDetail: return true   // optional
         case .attribution: return data.attribution != nil
         case .callback, .socialProof: return true
         }
     }
 
+    // Skip equipment-detail unless they train at home / dumbbells-only.
+    private func shouldShow(_ s: OnbStep) -> Bool {
+        switch s {
+        case .equipmentDetail: return data.equipment == "home" || data.equipment == "dumbbells_only"
+        default: return true
+        }
+    }
+    private func nextIndex(after i: Int) -> Int {
+        var n = i + 1
+        while n < total - 1 && !shouldShow(OnbStep.allCases[n]) { n += 1 }
+        return n
+    }
+    private func prevIndex(before i: Int) -> Int {
+        var n = i - 1
+        while n > 0 && !shouldShow(OnbStep.allCases[n]) { n -= 1 }
+        return n
+    }
+
     private func back() {
         unit = 0
-        if stepIndex > 0 { withAnimation { stepIndex -= 1 } }
+        if stepIndex > 0 { withAnimation { stepIndex = prevIndex(before: stepIndex) } }
     }
     private func advance() {
         unit = 0
         error = nil
-        if stepIndex < total - 1 { withAnimation { stepIndex += 1 }; return }
+        if stepIndex < total - 1 { withAnimation { stepIndex = nextIndex(after: stepIndex) }; return }
         // last step → persist
         saving = true
         Task {

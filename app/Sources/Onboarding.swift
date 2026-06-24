@@ -10,6 +10,7 @@ import SwiftUI
     var experience: String?     // beginner | intermediate | advanced
     var daysPerWeek: Int?       // 3..6
     var equipment: String?      // full_gym | home | dumbbells_only
+    var equipmentItems: Set<String> = [] // shown only for home / dumbbells
     var heightCm: Double = 178
     var weightKg: Double = 80
     var age: Int = 25
@@ -46,7 +47,7 @@ enum Callbacks {
 
 enum OnbStep: Int, CaseIterable {
     case name, sex, goal, obstacles, callback, focus, experience, days, equipment,
-         height, weight, age, socialProof, attribution
+         equipmentDetail, height, weight, age, socialProof, attribution
 
     var isInterstitial: Bool { self == .callback || self == .socialProof }
 
@@ -60,6 +61,7 @@ enum OnbStep: Int, CaseIterable {
         case .experience:  return "How long have you trained?"
         case .days:        return "Days per week?"
         case .equipment:   return "What can you train with?"
+        case .equipmentDetail: return "What do you have?"
         case .height:      return "How tall are you?"
         case .weight:      return "What do you weigh?"
         case .age:         return "How old are you?"
@@ -77,6 +79,7 @@ enum OnbStep: Int, CaseIterable {
         case .experience: return "Sets your starting intensity."
         case .days:       return "We build around your real schedule."
         case .equipment:  return "We only program what you can do."
+        case .equipmentDetail: return "Pick everything you've got access to."
         case .height:      return "Used for your calorie targets."
         case .weight:      return "Used for protein and calories."
         case .age:         return "Used for your calorie targets."
@@ -127,6 +130,16 @@ enum OnbOptions {
         Option(id: "full_gym", label: "Full gym", sub: "Machines, barbells, cables"),
         Option(id: "home", label: "Home gym", sub: "Some equipment"),
         Option(id: "dumbbells_only", label: "Dumbbells only", sub: "Minimal kit"),
+    ]
+    static let equipmentItems = [
+        Option(id: "dumbbells", label: "Dumbbells", sub: nil),
+        Option(id: "barbell", label: "Barbell + plates", sub: nil),
+        Option(id: "bench", label: "Bench", sub: nil),
+        Option(id: "rack", label: "Squat rack", sub: nil),
+        Option(id: "pullup", label: "Pull-up bar", sub: nil),
+        Option(id: "cables", label: "Cable / machine", sub: nil),
+        Option(id: "kettlebell", label: "Kettlebells", sub: nil),
+        Option(id: "bands", label: "Resistance bands", sub: nil),
     ]
     static let attribution = [
         Option(id: "tiktok", label: "TikTok", sub: nil),

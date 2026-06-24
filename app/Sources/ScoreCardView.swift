@@ -12,6 +12,7 @@ struct ScoreCardView: View {
                 hero
                 verdict
                 stats
+                potentialCallout
                 musclesSection
                 climbSection
                 cta
@@ -92,8 +93,28 @@ struct ScoreCardView: View {
             } else {
                 statTile("Symmetry", String(format: "%.1f", card.symmetry), Theme.txt)
             }
-            statTile("Ceiling", String(format: "%.1f", card.potential), Theme.acc)
         }
+    }
+
+    // Potential = the tier this physique can reach. Color-coded by that tier.
+    private var potentialCallout: some View {
+        let tier = Tier.forScore(card.potential)
+        return HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("YOUR POTENTIAL").font(.system(size: 10.5, weight: .semibold)).tracking(0.8).foregroundStyle(Theme.mut)
+                Text("Train smart and this is your ceiling").font(.system(size: 11)).foregroundStyle(Theme.mut)
+            }
+            Spacer()
+            HStack(spacing: 6) {
+                Text(String(format: "%.1f", card.potential)).font(.system(size: 22, weight: .heavy)).foregroundStyle(tier.color)
+                Text(tier.label).font(.system(size: 13, weight: .bold)).foregroundStyle(tier.color)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12).fill(Theme.card)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(tier.color.opacity(0.3), lineWidth: 1))
+        )
     }
 
     private func statTile(_ k: String, _ v: String, _ vColor: Color) -> some View {

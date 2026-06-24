@@ -133,29 +133,53 @@ struct RevealFunnelView: View {
     }
 
     // MARK: paywall (STUB — swap for RevenueCat later)
+    private let perks = [
+        "Your aesthetic score & rank",
+        "Core-6 weak-point breakdown",
+        "A plan built on your weak points",
+        "Macros dialed to your goal",
+        "Re-scan to track your climb",
+    ]
+
     private var paywall: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 30)
-            VStack(spacing: 8) {
-                Text("Unlock ").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
-                + Text("Stetic").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.acc)
-                Text("Your score, rank, and weak-point plan.").font(.system(size: 14)).foregroundStyle(Theme.mut)
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer().frame(height: 20)
+                    VStack(spacing: 8) {
+                        (Text("Unlock ").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                         + Text("Stetic").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.acc))
+                        Text("Everything you need to climb the ranks.").font(.system(size: 14)).foregroundStyle(Theme.mut)
+                    }
+                    VStack(alignment: .leading, spacing: 11) {
+                        ForEach(perks, id: \.self) { perk in
+                            HStack(spacing: 10) {
+                                Image(systemName: "checkmark.circle.fill").font(.system(size: 17)).foregroundStyle(Theme.acc)
+                                Text(perk).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.txt)
+                                Spacer()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 30).padding(.top, 22)
+
+                    VStack(spacing: 12) {
+                        planRow("Annual", "$119.99/yr", "($2.30/wk)", "3-day free trial, then yearly", best: true)
+                        planRow("Weekly", "$7.99/wk", nil, "Billed weekly. Cancel anytime.", best: false)
+                    }
+                    .padding(.horizontal, 22).padding(.top, 24)
+                }
             }
-            VStack(spacing: 12) {
-                planRow("Annual", "$119.99 / year", "3-day free trial, then $119.99/yr (~$2.30/wk)", best: true)
-                planRow("Weekly", "$7.99 / week", "Billed weekly. Cancel anytime.", best: false)
-            }
-            .padding(.horizontal, 22).padding(.top, 28)
-            Spacer()
+            .scrollIndicators(.hidden)
+
             Text("No payment now. 3-day free trial, then $119.99/year. Auto-renews unless cancelled 24h before the trial ends. Cancel anytime in Settings.")
                 .font(.system(size: 10.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
-                .padding(.horizontal, 30).padding(.bottom, 10)
+                .padding(.horizontal, 30).padding(.top, 10).padding(.bottom, 8)
             primaryButton("Start my 3-day free trial") { startRealScan() }
             Text("Restore purchases").font(.system(size: 12)).foregroundStyle(Theme.mut).padding(.bottom, 12)
         }
     }
 
-    private func planRow(_ title: String, _ price: String, _ detail: String, best: Bool) -> some View {
+    private func planRow(_ title: String, _ price: String, _ subprice: String?, _ detail: String, best: Bool) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
@@ -169,7 +193,10 @@ struct RevealFunnelView: View {
                 Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.mut)
             }
             Spacer()
-            Text(price).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(price).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
+                if let subprice { Text(subprice).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.acc) }
+            }
         }
         .padding(16)
         .background(
