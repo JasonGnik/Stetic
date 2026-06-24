@@ -1,12 +1,17 @@
 import SwiftUI
 
 struct ContentView: View {
+    private let env = ProcessInfo.processInfo.environment
+    // Dev: skip straight past onboarding when testing scan/plan.
+    @State private var inMain = ProcessInfo.processInfo.environment["STETIC_SKIP_ONBOARDING"] == "1"
+
     var body: some View {
-        // DEV: STETIC_SHOWPLAN=1 opens the Plan directly (uses the latest scan).
-        if ProcessInfo.processInfo.environment["STETIC_SHOWPLAN"] == "1" {
+        if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
-        } else {
+        } else if inMain {
             ScanFlowView()
+        } else {
+            OnboardingView { withAnimation { inMain = true } }
         }
     }
 }

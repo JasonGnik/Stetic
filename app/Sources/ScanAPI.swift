@@ -20,8 +20,14 @@ actor ScanAPI {
     static let shared = ScanAPI()
 
     private var accessToken: String?
+    private var userId: String?
 
     struct ImageInput { let mimeType: String; let dataB64: String }
+    struct ProfileInput: Sendable {
+        var sex: String?; var goal: String?; var focus: [String]
+        var experience: String?; var daysPerWeek: Int?; var equipment: String?
+        var heightCm: Double; var weightKg: Double; var age: Int
+    }
 
     // MARK: auth (dev) — sign in, or sign up then sign in.
     func ensureSession() async throws {
@@ -47,7 +53,35 @@ actor ScanAPI {
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let token = obj["access_token"] as? String
         else { throw APIError.http(code(resp), String(data: data, encoding: .utf8) ?? "") }
+        userId = (obj["user"] as? [String: Any])?["id"] as? String
         return token
+    }
+
+    // MARK: profile
+    func saveProfile(_ p: ProfileInput) async throws {
+        try await ensureSession()
+        guard let token = accessToken, let uid = userId else { throw APIError.noSession }
+        var comps = URLComponents(
+            url: Config.baseURL.appending(path: "rest/v1/profiles"), resolvingAgainstBaseURL: false)!
+        comps.queryItems = [.init(name: "id", value: "eq.\(uid)")]
+        var req = URLRequest(url: comps.url!)
+        req.httpMethod = "PATCH"
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        var body: [String: Any] = [
+            "focus": p.focus, "height_cm": p.heightCm, "weight_kg": p.weightKg, "age": p.age,
+        ]
+        if let v = p.sex { body["sex"] = v }
+        if let v = p.goal { body["goal"] = v }
+        if let v = p.experience { body["experience"] = v }
+        if let v = p.daysPerWeek { body["days_per_week"] = v }
+        if let v = p.equipment { body["equipment"] = v }
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        let s = code(resp)
+        guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
     }
 
     private func signUp() async throws {
