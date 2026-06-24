@@ -27,6 +27,7 @@ actor ScanAPI {
         var sex: String?; var goal: String?; var focus: [String]
         var experience: String?; var daysPerWeek: Int?; var equipment: String?
         var heightCm: Double; var weightKg: Double; var age: Int
+        var attribution: String?
     }
 
     // MARK: auth (dev) — sign in, or sign up then sign in.
@@ -78,6 +79,7 @@ actor ScanAPI {
         if let v = p.experience { body["experience"] = v }
         if let v = p.daysPerWeek { body["days_per_week"] = v }
         if let v = p.equipment { body["equipment"] = v }
+        if let v = p.attribution { body["attribution"] = v }
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, resp) = try await URLSession.shared.data(for: req)
         let s = code(resp)

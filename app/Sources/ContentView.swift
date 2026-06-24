@@ -8,7 +8,9 @@ struct ContentView: View {
 
     init() {
         let e = ProcessInfo.processInfo.environment
-        _stage = State(initialValue: e["STETIC_SKIP_ONBOARDING"] == "1" ? .main : .intro)
+        let start: Stage = e["STETIC_SKIP_ONBOARDING"] == "1" ? .main
+            : (e["STETIC_ONB_STEP"] != nil ? .onboarding : .intro)
+        _stage = State(initialValue: start)
     }
 
     var body: some View {

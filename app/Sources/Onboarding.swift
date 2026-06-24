@@ -13,30 +13,58 @@ import SwiftUI
     var heightCm: Double = 178
     var weightKg: Double = 80
     var age: Int = 25
+    var attribution: String?    // how they heard about us
 
     var payload: ScanAPI.ProfileInput {
         .init(sex: sex, goal: goal, focus: Array(focus), experience: experience,
               daysPerWeek: daysPerWeek, equipment: equipment,
-              heightCm: heightCm, weightKg: weightKg, age: age)
+              heightCm: heightCm, weightKg: weightKg, age: age, attribution: attribution)
+    }
+}
+
+// Sourced obstacle callbacks (no invented stats). Shown after the obstacles step.
+struct ObstacleCallback { let headline: String; let body: String }
+enum Callbacks {
+    static let priority = ["plateau", "look_same", "slow", "dont_know", "intimidated"]
+    static let map: [String: ObstacleCallback] = [
+        "plateau": .init(headline: "Plateaus aren't fixed with more sets.",
+            body: "In trained lifters, taking each set to true failure is what forces new growth — not piling on volume. Your plan is built on exactly that."),
+        "look_same": .init(headline: "Hard work without intensity stalls.",
+            body: "Research on trained lifters shows effort to failure — not just more time in the gym — is what separates real growth from spinning your wheels."),
+        "slow": .init(headline: "Leanness is your fastest lever.",
+            body: "For most men, abs appear around 10–13% body fat. Getting lean is the most visible, most controllable change — and your plan prioritizes it."),
+        "dont_know": .init(headline: "Most physiques are capped by 1–2 weak points.",
+            body: "A single lagging group can break your whole line. Stetic pinpoints yours and builds the plan around fixing it."),
+        "intimidated": .init(headline: "No more guessing on the gym floor.",
+            body: "Every session is mapped to your level and your weak points — you'll walk in knowing exactly what to do."),
+    ]
+    static func pick(_ obstacles: Set<String>) -> ObstacleCallback {
+        for id in priority where obstacles.contains(id) { return map[id]! }
+        return map["dont_know"]!
     }
 }
 
 enum OnbStep: Int, CaseIterable {
-    case name, sex, goal, obstacles, focus, experience, days, equipment, height, weight, age
+    case name, sex, goal, obstacles, callback, focus, experience, days, equipment,
+         height, weight, age, socialProof, attribution
+
+    var isInterstitial: Bool { self == .callback || self == .socialProof }
 
     var title: String {
         switch self {
-        case .name:       return "What should we call you?"
-        case .sex:        return "Which are you?"
-        case .goal:       return "What's your goal?"
-        case .obstacles:  return "What's holding you back?"
-        case .focus:      return "What do you want to bring up?"
-        case .experience: return "How long have you trained?"
-        case .days:       return "Days per week?"
-        case .equipment:  return "What can you train with?"
-        case .height:     return "How tall are you?"
-        case .weight:     return "What do you weigh?"
-        case .age:        return "How old are you?"
+        case .name:        return "What should we call you?"
+        case .sex:         return "Which are you?"
+        case .goal:        return "What's your goal?"
+        case .obstacles:   return "What's holding you back?"
+        case .focus:       return "What do you want to bring up?"
+        case .experience:  return "How long have you trained?"
+        case .days:        return "Days per week?"
+        case .equipment:   return "What can you train with?"
+        case .height:      return "How tall are you?"
+        case .weight:      return "What do you weigh?"
+        case .age:         return "How old are you?"
+        case .attribution: return "How did you hear about us?"
+        case .callback, .socialProof: return ""
         }
     }
     var subtitle: String {
@@ -49,9 +77,11 @@ enum OnbStep: Int, CaseIterable {
         case .experience: return "Sets your starting intensity."
         case .days:       return "We build around your real schedule."
         case .equipment:  return "We only program what you can do."
-        case .height:     return "Used for your calorie targets."
-        case .weight:     return "Used for protein and calories."
-        case .age:        return "Used for your calorie targets."
+        case .height:      return "Used for your calorie targets."
+        case .weight:      return "Used for protein and calories."
+        case .age:         return "Used for your calorie targets."
+        case .attribution: return "Helps us reach more people like you."
+        case .callback, .socialProof: return ""
         }
     }
 }
@@ -97,5 +127,13 @@ enum OnbOptions {
         Option(id: "full_gym", label: "Full gym", sub: "Machines, barbells, cables"),
         Option(id: "home", label: "Home gym", sub: "Some equipment"),
         Option(id: "dumbbells_only", label: "Dumbbells only", sub: "Minimal kit"),
+    ]
+    static let attribution = [
+        Option(id: "tiktok", label: "TikTok", sub: nil),
+        Option(id: "instagram", label: "Instagram", sub: nil),
+        Option(id: "youtube", label: "YouTube", sub: nil),
+        Option(id: "app_store", label: "App Store", sub: nil),
+        Option(id: "friend", label: "A friend", sub: nil),
+        Option(id: "other", label: "Other", sub: nil),
     ]
 }
