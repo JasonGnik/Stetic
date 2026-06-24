@@ -13,7 +13,7 @@ struct OnboardingView: View {
     // Single-select steps auto-advance on tap — no Continue button needed.
     private var needsContinue: Bool {
         switch step {
-        case .sex, .goal, .experience, .days, .equipment, .attribution: return false
+        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution: return false
         default: return true
         }
     }
@@ -168,6 +168,8 @@ struct OnboardingView: View {
         case .name:       nameField
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
+        case .pace:       singleSelect(OnbOptions.pace, data.pace) { data.pace = $0 }
+        case .activity:   singleSelect(OnbOptions.activity, data.activity) { data.activity = $0 }
         case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
@@ -290,6 +292,8 @@ struct OnboardingView: View {
         switch step {
         case .name: return !data.name.trimmingCharacters(in: .whitespaces).isEmpty
         case .sex: return data.sex != nil
+        case .pace: return data.pace != nil
+        case .activity: return data.activity != nil
         case .goal: return data.goal != nil
         case .obstacles: return true   // optional
         case .experience: return data.experience != nil

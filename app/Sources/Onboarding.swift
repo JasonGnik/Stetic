@@ -14,12 +14,15 @@ import SwiftUI
     var heightCm: Double = 178
     var weightKg: Double = 80
     var age: Int = 25
+    var activity: String?       // sedentary | light | active | very_active
+    var pace: String?           // slow | recommended | aggressive
     var attribution: String?    // how they heard about us
 
     var payload: ScanAPI.ProfileInput {
         .init(sex: sex, goal: goal, focus: Array(focus), experience: experience,
               daysPerWeek: daysPerWeek, equipment: equipment,
-              heightCm: heightCm, weightKg: weightKg, age: age, attribution: attribution)
+              heightCm: heightCm, weightKg: weightKg, age: age,
+              activity: activity, pace: pace, attribution: attribution)
     }
 }
 
@@ -34,8 +37,8 @@ enum Callbacks {
             body: "Usually because progress stalls. In trained lifters, taking every set to true failure is what restarts growth — not piling on volume. That's how your plan is built."),
         "look_same": .init(headline: "More effort isn't more sets.",
             body: "For trained lifters, training to failure — not just adding volume — is what separates real growth from spinning your wheels. Your plan is built around that."),
-        "slow": .init(headline: "Leanness is your fastest lever.",
-            body: "For most men, abs show at 10–13% body fat. Getting lean is the most visible, most controllable change — and your plan prioritizes it."),
+        "slow": .init(headline: "Slow results = the wrong plan.",
+            body: "Around half of people quit within 6 months because progress stalls. The fix isn't more time in the gym — it's a plan built around your body and your goal. That's exactly what you'll get."),
         "dont_know": .init(headline: "Most physiques are capped by 1–2 weak points.",
             body: "A single lagging group can break your whole line. Stetic pinpoints yours and builds the plan around fixing it."),
         "intimidated": .init(headline: "Nearly half of people feel it too.",
@@ -48,8 +51,8 @@ enum Callbacks {
 }
 
 enum OnbStep: Int, CaseIterable {
-    case name, sex, goal, obstacles, callback, experience, days, equipment,
-         equipmentDetail, height, weight, age, socialProof, attribution
+    case name, sex, goal, pace, obstacles, callback, experience, days, equipment,
+         equipmentDetail, height, weight, age, activity, socialProof, attribution
 
     var isInterstitial: Bool { self == .callback || self == .socialProof }
 
@@ -58,6 +61,7 @@ enum OnbStep: Int, CaseIterable {
         case .name:        return "What should we call you?"
         case .sex:         return "Which are you?"
         case .goal:        return "What's your goal?"
+        case .pace:        return "How fast do you want results?"
         case .obstacles:   return "What's holding you back?"
         case .experience:  return "How long have you trained?"
         case .days:        return "Days per week?"
@@ -66,6 +70,7 @@ enum OnbStep: Int, CaseIterable {
         case .height:      return "How tall are you?"
         case .weight:      return "What do you weigh?"
         case .age:         return "How old are you?"
+        case .activity:    return "How active are you?"
         case .attribution: return "How did you hear about us?"
         case .callback, .socialProof: return ""
         }
@@ -74,7 +79,8 @@ enum OnbStep: Int, CaseIterable {
         switch self {
         case .name:       return "We'll make your plan feel like yours."
         case .sex:        return "Routes your scoring to the right rubric."
-        case .goal:       return "Shapes your plan and macros."
+        case .goal:       return "Shapes your plan and nutrition."
+        case .pace:       return "Sets how aggressive your nutrition is."
         case .obstacles:  return "Pick any that apply — we'll target them."
         case .experience: return "Sets your starting intensity."
         case .days:       return "We build around your real schedule."
@@ -83,6 +89,7 @@ enum OnbStep: Int, CaseIterable {
         case .height:      return "Used for your calorie targets."
         case .weight:      return "Used for protein and calories."
         case .age:         return "Used for your calorie targets."
+        case .activity:    return "Outside the gym — drives your calories."
         case .attribution: return "Helps us reach more people like you."
         case .callback, .socialProof: return ""
         }
@@ -135,6 +142,17 @@ enum OnbOptions {
         Option(id: "cables", label: "Cable / machine", sub: nil),
         Option(id: "kettlebell", label: "Kettlebells", sub: nil),
         Option(id: "bands", label: "Resistance bands", sub: nil),
+    ]
+    static let pace = [
+        Option(id: "slow", label: "Steady & sustainable", sub: "Slower, easier to stick to"),
+        Option(id: "recommended", label: "Recommended", sub: "Balanced — most people"),
+        Option(id: "aggressive", label: "Aggressive", sub: "Faster, more demanding"),
+    ]
+    static let activity = [
+        Option(id: "sedentary", label: "Sedentary", sub: "Desk job, little walking"),
+        Option(id: "light", label: "Lightly active", sub: "Some walking daily"),
+        Option(id: "active", label: "Active", sub: "On your feet a lot"),
+        Option(id: "very_active", label: "Very active", sub: "Physical job or daily cardio"),
     ]
     static let attribution = [
         Option(id: "tiktok", label: "TikTok", sub: nil),

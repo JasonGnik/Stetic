@@ -47,6 +47,14 @@ extension ScoreCard {
         return (next, max(0, (floor - aesthetic_score)))
     }
 
+    /// Rough estimate of how long to reach potential with focused training.
+    var potentialTimeframe: String {
+        let gap = max(0, potential - aesthetic_score)
+        let weeks = max(4, Int((gap * 16).rounded()))   // ~1 point ≈ 4 months
+        if weeks <= 14 { return "≈ \(weeks) weeks" }
+        return "≈ \(Int((Double(weeks) / 4.3).rounded())) months"
+    }
+
     /// Display color for a muscle bar/value by absolute score.
     static func muscleColor(_ score: Double) -> Color {
         if score >= 8.5 { return Theme.acc }

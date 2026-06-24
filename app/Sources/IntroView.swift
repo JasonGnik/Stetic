@@ -85,17 +85,33 @@ struct IntroView: View {
         }
     }
 
-    // 2 — science / sculpt: a statue-like figure in a niche on a pedestal
+    // 2 — science / sculpt: a marble figure in an arched niche flanked by columns
     private var sculptVisual: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .bottom) {
-                Capsule().fill(Theme.card).frame(width: 130, height: 180)
-                    .overlay(Capsule().stroke(Theme.acc.opacity(0.3), lineWidth: 1))
-                Image(systemName: "figure.stand").font(.system(size: 110, weight: .light)).foregroundStyle(Theme.acc)
-                    .offset(y: 6)
+        HStack(alignment: .bottom, spacing: 8) {
+            statueColumn
+            VStack(spacing: 0) {
+                ZStack(alignment: .bottom) {
+                    UnevenRoundedRectangle(cornerRadii: .init(topLeading: 52, topTrailing: 52), style: .continuous)
+                        .fill(Theme.card)
+                        .overlay(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 52, topTrailing: 52), style: .continuous)
+                            .stroke(Theme.acc.opacity(0.35), lineWidth: 1))
+                        .frame(width: 104, height: 150)
+                    Image(systemName: "figure.stand").font(.system(size: 92, weight: .ultraLight))
+                        .foregroundStyle(Color(hex: 0xD8DCE2)).offset(y: 4)   // marble
+                }
+                RoundedRectangle(cornerRadius: 3).fill(Theme.line).frame(width: 124, height: 9)
+                RoundedRectangle(cornerRadius: 3).fill(Theme.card).frame(width: 142, height: 9)
             }
-            RoundedRectangle(cornerRadius: 4).fill(Theme.line).frame(width: 150, height: 12)
-            RoundedRectangle(cornerRadius: 4).fill(Theme.card).frame(width: 170, height: 10)
+            statueColumn
+        }
+        .frame(height: 230)
+    }
+    private var statueColumn: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 2).fill(Theme.line).frame(width: 24, height: 6)
+            RoundedRectangle(cornerRadius: 2).fill(Theme.card).frame(width: 15, height: 150)
+            RoundedRectangle(cornerRadius: 2).fill(Theme.line).frame(width: 24, height: 7)
+            Spacer().frame(height: 11)
         }
     }
 

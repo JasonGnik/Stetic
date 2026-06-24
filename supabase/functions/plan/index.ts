@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     goal: profile?.goal, focus: profile?.focus, experience: profile?.experience,
     days_per_week: profile?.days_per_week, equipment: profile?.equipment,
     height_cm: profile?.height_cm, weight_kg: profile?.weight_kg, age: profile?.age,
+    activity_level: profile?.activity_level, pace: profile?.pace,
     sex: scan.sex,
     ...(payload.profile ?? {}),
   };

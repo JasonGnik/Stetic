@@ -108,7 +108,7 @@ struct ScoreCardView: View {
         return HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("YOUR POTENTIAL").font(.system(size: 10.5, weight: .semibold)).tracking(0.8).foregroundStyle(Theme.mut)
-                Text("Where the right plan can take you").font(.system(size: 11)).foregroundStyle(Theme.mut)
+                Text("\(card.potentialTimeframe) of focused training").font(.system(size: 11)).foregroundStyle(Theme.mut)
             }
             Spacer()
             HStack(spacing: 6) {

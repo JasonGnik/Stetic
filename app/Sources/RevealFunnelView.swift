@@ -8,9 +8,11 @@ struct RevealFunnelView: View {
 
     enum Phase { case capture, fomo, bluff, tease, paywall, scanning, result, error }
     @State private var phase: Phase = .capture
-    @State private var pickerItem: PhotosPickerItem?
-    @State private var imageData: Data?
-    @State private var uiImage: UIImage?
+    @State private var items: [PhotosPickerItem?] = [nil, nil, nil]
+    @State private var images: [UIImage?] = [nil, nil, nil]
+    @State private var datas: [Data?] = [nil, nil, nil]
+    @State private var includeLegs = false
+    private let slotLabels = ["Front", "Side", "Back"]
     @State private var card: ScoreCard?
     @State private var errorMsg = ""
     @State private var showPlan = false
@@ -33,49 +35,63 @@ struct RevealFunnelView: View {
         .task { devInit() }
     }
 
-    // MARK: capture
+    // MARK: capture — front (required) + optional side/back, legs toggle
     private var capture: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 18) {
             Spacer()
             VStack(spacing: 6) {
                 Text("STETIC").font(.system(size: 30, weight: .heavy)).tracking(3).foregroundStyle(Theme.acc)
                 Text("Scan your physique").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.mut)
             }
+            HStack(spacing: 10) {
+                ForEach(0..<3, id: \.self) { i in photoSlot(i) }
+            }
+            .padding(.horizontal, 22)
+
+            Toggle(isOn: $includeLegs) {
+                Text("Include legs (full-body score)").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+            }
+            .tint(Theme.acc).padding(.horizontal, 26)
+
+            Text(includeLegs ? "Stand back so your legs are in frame." : "Front photo required. Side & back sharpen your score.")
+                .font(.system(size: 12)).foregroundStyle(Theme.mut).multilineTextAlignment(.center).padding(.horizontal, 30)
+
+            if case .error = phase { EmptyView() }
+
+            Button { withAnimation { phase = .fomo } } label: {
+                Text("Continue").font(.system(size: 16, weight: .bold))
+                    .frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(datas[0] == nil ? Theme.line : Theme.acc))
+                    .foregroundStyle(datas[0] == nil ? Theme.mut : Color(hex: 0x0E0E10))
+            }
+            .disabled(datas[0] == nil)
+            .padding(.horizontal, 26)
+            Spacer()
+        }
+        .onChange(of: items[0]) { _, v in Task { await load(0, v) } }
+        .onChange(of: items[1]) { _, v in Task { await load(1, v) } }
+        .onChange(of: items[2]) { _, v in Task { await load(2, v) } }
+    }
+
+    private func photoSlot(_ i: Int) -> some View {
+        PhotosPicker(selection: $items[i], matching: .images) {
             ZStack {
-                if let uiImage { Image(uiImage: uiImage).resizable().scaledToFill() }
-                else {
+                if let img = images[i] {
+                    Image(uiImage: img).resizable().scaledToFill()
+                } else {
                     Theme.card
-                    VStack(spacing: 10) {
-                        Image(systemName: "figure.arms.open").font(.system(size: 44)).foregroundStyle(Theme.mut)
-                        Text("Front-facing · athletic wear · good lighting")
-                            .font(.system(size: 12)).foregroundStyle(Theme.mut)
-                            .multilineTextAlignment(.center).padding(.horizontal, 24)
+                    VStack(spacing: 6) {
+                        Image(systemName: "plus").font(.system(size: 22, weight: .semibold)).foregroundStyle(Theme.mut)
+                        Text(slotLabels[i]).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                        Text(i == 0 ? "required" : "optional").font(.system(size: 9)).foregroundStyle(Theme.mut)
                     }
                 }
             }
-            .frame(width: 250, height: 330)
-            .clipShape(RoundedRectangle(cornerRadius: 22))
-            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
-
-            VStack(spacing: 10) {
-                PhotosPicker(selection: $pickerItem, matching: .images) {
-                    Text(uiImage == nil ? "Choose photo" : "Choose different photo")
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt)
-                        .frame(maxWidth: .infinity).padding(13)
-                        .background(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1))
-                }
-                Button { withAnimation { phase = .fomo } } label: {
-                    Text("Continue").font(.system(size: 16, weight: .bold))
-                        .frame(maxWidth: .infinity).padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(uiImage == nil ? Theme.line : Theme.acc))
-                        .foregroundStyle(uiImage == nil ? Theme.mut : Color(hex: 0x0E0E10))
-                }
-                .disabled(uiImage == nil)
-            }
-            .padding(.horizontal, 28)
-            Spacer()
+            .frame(height: 150).frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14)
+                .stroke(i == 0 && images[0] == nil ? Theme.acc.opacity(0.5) : Theme.line, lineWidth: 1))
         }
-        .onChange(of: pickerItem) { _, item in Task { await load(item) } }
     }
 
     // MARK: FOMO — with vs without (illustrative, no real scores yet)
@@ -236,7 +252,7 @@ struct RevealFunnelView: View {
     private var resultView: some View {
         Group {
             if let card {
-                ScoreCardView(card: card) { showPlan = true }
+                ScoreCardView(card: card, onGetPlan: { showPlan = true })
                     .fullScreenCover(isPresented: $showPlan) { PlanView() }
             }
         }
@@ -261,19 +277,21 @@ struct RevealFunnelView: View {
         .padding(.horizontal, 22).padding(.bottom, 14)
     }
 
-    private func load(_ item: PhotosPickerItem?) async {
+    private func load(_ i: Int, _ item: PhotosPickerItem?) async {
         guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
-        imageData = data; uiImage = UIImage(data: data)
+        await MainActor.run { datas[i] = data; images[i] = UIImage(data: data) }
     }
 
     private func startRealScan() {
         phase = .scanning
         Task {
             do {
-                guard let data = imageData else { throw APIError.decode }
-                let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.85) ?? data
-                let input = ScanAPI.ImageInput(mimeType: "image/jpeg", dataB64: jpeg.base64EncodedString())
-                let result = try await ScanAPI.shared.scan(images: [input])
+                let inputs: [ScanAPI.ImageInput] = datas.compactMap { $0 }.prefix(3).map { d in
+                    let jpeg = UIImage(data: d)?.jpegData(compressionQuality: 0.85) ?? d
+                    return ScanAPI.ImageInput(mimeType: "image/jpeg", dataB64: jpeg.base64EncodedString())
+                }
+                guard !inputs.isEmpty else { throw APIError.decode }
+                let result = try await ScanAPI.shared.scan(images: inputs)
                 await MainActor.run { card = result; withAnimation { phase = .result } }
                 await ScanAPI.shared.prefetchPlan()   // ready before they tap "Get my full plan"
             } catch {
@@ -283,7 +301,8 @@ struct RevealFunnelView: View {
     }
 
     private func reset() {
-        card = nil; uiImage = nil; imageData = nil; pickerItem = nil; showPlan = false; phase = .capture
+        card = nil; items = [nil, nil, nil]; images = [nil, nil, nil]; datas = [nil, nil, nil]
+        includeLegs = false; showPlan = false; phase = .capture
         Task { await ScanAPI.shared.clearPlanCache() }
     }
 
@@ -294,7 +313,7 @@ struct RevealFunnelView: View {
         guard env["STETIC_AUTOSCAN"] == "1" || env["STETIC_LOADSAMPLE"] == "1",
               let url = Bundle.main.url(forResource: "sample", withExtension: "jpg"),
               let data = try? Data(contentsOf: url) else { return }
-        imageData = data; uiImage = UIImage(data: data)
+        datas[0] = data; images[0] = UIImage(data: data)
         if env["STETIC_AUTOSCAN"] == "1" { startRealScan() }
         switch env["STETIC_FUNNEL_PHASE"] {   // dev: jump to a phase for screenshots
         case "fomo": phase = .fomo
