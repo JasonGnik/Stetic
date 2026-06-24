@@ -29,7 +29,8 @@ struct PlanView: View {
         ScanningLoader(
             title: "Building your plan",
             messages: ["Reading your physique", "Targeting weak points",
-                       "Programming your split", "Calculating macros", "Projecting your results"]
+                       "Programming your split", "Calculating macros", "Projecting your results"],
+            icons: ["figure.arms.open", "scope", "dumbbell.fill", "fork.knife", "chart.line.uptrend.xyaxis"]
         )
     }
     private func errorView(_ m: String) -> some View {

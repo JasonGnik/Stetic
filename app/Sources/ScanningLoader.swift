@@ -5,6 +5,7 @@ import SwiftUI
 struct ScanningLoader: View {
     var title: String = "Analyzing"
     var messages: [String]
+    var icons: [String] = []        // optional SF Symbol per stage (food, dumbbell, …)
     @State private var msgIndex = 0
     @State private var start = Date()
 
@@ -48,6 +49,14 @@ struct ScanningLoader: View {
             }
 
             VStack(spacing: 12) {
+                if !icons.isEmpty {
+                    Image(systemName: icons[min(msgIndex, icons.count - 1)])
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(Theme.acc)
+                        .frame(height: 30)
+                        .id("ic\(msgIndex)")
+                        .transition(.scale.combined(with: .opacity))
+                }
                 Text(title.uppercased())
                     .font(.system(size: 11, weight: .bold)).tracking(2)
                     .foregroundStyle(Theme.mut)

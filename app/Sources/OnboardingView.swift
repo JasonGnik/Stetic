@@ -81,8 +81,8 @@ struct OnboardingView: View {
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
         case .equipment:  singleSelect(OnbOptions.equipment, data.equipment) { data.equipment = $0 }
-        case .height:     measure(value: $data.heightCm, range: 140...215, units: ["cm", "ft"], format: heightLabel)
-        case .weight:     measure(value: $data.weightKg, range: 40...180, units: ["kg", "lb"], format: weightLabel)
+        case .height:     measure(value: $data.heightCm, range: 140...215, units: ["ft", "cm"], format: heightLabel)
+        case .weight:     measure(value: $data.weightKg, range: 40...180, units: ["lb", "kg"], format: weightLabel)
         case .age:        ageStep
         }
     }
@@ -90,7 +90,11 @@ struct OnboardingView: View {
     private func singleSelect(_ opts: [Option], _ selected: String?, _ set: @escaping (String) -> Void) -> some View {
         VStack(spacing: 10) {
             ForEach(opts) { o in
-                optionCard(o.label, o.sub, selected: selected == o.id) { set(o.id) }
+                optionCard(o.label, o.sub, selected: selected == o.id) {
+                    withAnimation(.easeOut(duration: 0.12)) { set(o.id) }
+                    // auto-advance — fewer taps (single-select only)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { advance() }
+                }
             }
         }
     }
@@ -161,12 +165,12 @@ struct OnboardingView: View {
     }
 
     private func heightLabel(_ cm: Double, _ u: Int) -> String {
-        if u == 0 { return "\(Int(cm)) cm" }
-        let totalIn = cm / 2.54
-        return "\(Int(totalIn) / 12)'\(Int(totalIn.rounded()) % 12)\""
+        if u == 1 { return "\(Int(cm)) cm" }            // u==0 → ft (default)
+        let totalIn = (cm / 2.54).rounded()
+        return "\(Int(totalIn) / 12)'\(Int(totalIn) % 12)\""
     }
     private func weightLabel(_ kg: Double, _ u: Int) -> String {
-        u == 0 ? "\(Int(kg)) kg" : "\(Int((kg * 2.20462).rounded())) lb"
+        u == 1 ? "\(Int(kg)) kg" : "\(Int((kg * 2.20462).rounded())) lb"   // u==0 → lb (default)
     }
 
     // MARK: nav
@@ -174,7 +178,7 @@ struct OnboardingView: View {
         switch step {
         case .sex: return data.sex != nil
         case .goal: return data.goal != nil
-        case .focus: return !data.focus.isEmpty
+        case .focus: return true   // optional — scan finds weak points
         case .experience: return data.experience != nil
         case .days: return data.daysPerWeek != nil
         case .equipment: return data.equipment != nil

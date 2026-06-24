@@ -19,8 +19,12 @@ struct ScanFlowView: View {
             case .scanning:
                 ScanningLoader(
                     title: "Analyzing your physique",
-                    messages: ["Mapping your physique", "Reading proportions & symmetry",
-                               "Estimating body composition", "Calibrating your ratios", "Scoring aesthetics"]
+                    messages: ["Mapping your frame",
+                               "Reading proportions — the ratios that define aesthetics",
+                               "Estimating body fat — your biggest visual lever",
+                               "Finding your weak points",
+                               "Scoring against the ideal"],
+                    icons: ["figure.arms.open", "ruler", "drop.fill", "scope", "star.fill"]
                 )
             case .result:
                 if let card {

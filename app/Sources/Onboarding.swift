@@ -39,7 +39,7 @@ enum OnbStep: Int, CaseIterable {
         switch self {
         case .sex:        return "Routes your scoring to the right rubric."
         case .goal:       return "Shapes your plan and macros."
-        case .focus:      return "Pick any that apply — we'll prioritize them."
+        case .focus:      return "Optional — pick any to prioritize. Your scan finds the rest."
         case .experience: return "Sets your starting intensity."
         case .days:       return "We build around your real schedule."
         case .equipment:  return "We only program what you can do."
@@ -75,10 +75,10 @@ enum OnbOptions {
         Option(id: "advanced", label: "Advanced", sub: "3+ years"),
     ]
     static let days = [
-        Option(id: "3", label: "3 days", sub: "Upper / Lower"),
-        Option(id: "4", label: "4 days", sub: "Push / Pull / Legs +"),
-        Option(id: "5", label: "5 days", sub: "If recovery allows"),
-        Option(id: "6", label: "6 days", sub: "Advanced only"),
+        Option(id: "3", label: "3 days", sub: nil),
+        Option(id: "4", label: "4 days", sub: nil),
+        Option(id: "5", label: "5 days", sub: nil),
+        Option(id: "6", label: "6 days", sub: nil),
     ]
     static let equipment = [
         Option(id: "full_gym", label: "Full gym", sub: "Machines, barbells, cables"),
