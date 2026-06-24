@@ -34,7 +34,7 @@ struct ScoreCardView: View {
         HStack {
             HStack(spacing: 6) {
                 Circle().fill(Theme.acc).frame(width: 9, height: 9)
-                Text("Stetic").font(.system(size: 13, weight: .bold))
+                Text("Stetic").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.acc)
             }
             Spacer()
             Text("YOUR ANALYSIS")
@@ -92,7 +92,7 @@ struct ScoreCardView: View {
             } else {
                 statTile("Symmetry", String(format: "%.1f", card.symmetry), Theme.txt)
             }
-            statTile("Potential", String(format: "%.1f", card.potential), Theme.acc)
+            statTile("Ceiling", String(format: "%.1f", card.potential), Theme.acc)
         }
     }
 

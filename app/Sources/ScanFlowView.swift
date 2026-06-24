@@ -49,27 +49,28 @@ struct ScanFlowView: View {
             VStack(spacing: 6) {
                 Text("STETIC")
                     .font(.system(size: 30, weight: .heavy)).tracking(3)
-                    .foregroundStyle(Theme.txt)
+                    .foregroundStyle(Theme.acc)
                 Text("Scan your physique")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.mut)
             }
 
             ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Theme.card)
-                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.line, lineWidth: 1))
                 if let uiImage {
                     Image(uiImage: uiImage).resizable().scaledToFill()
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                 } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "figure.arms.open").font(.system(size: 40)).foregroundStyle(Theme.mut)
-                        Text("Front-facing, athletic wear").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    Theme.card
+                    VStack(spacing: 10) {
+                        Image(systemName: "figure.arms.open").font(.system(size: 44)).foregroundStyle(Theme.mut)
+                        Text("Front-facing · athletic wear · good lighting")
+                            .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                            .multilineTextAlignment(.center).padding(.horizontal, 24)
                     }
                 }
             }
-            .frame(width: 220, height: 300)
+            .frame(width: 250, height: 330)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
 
             if case .error(let msg) = phase {
                 Text(msg).font(.system(size: 12)).foregroundStyle(Theme.red)
@@ -104,15 +105,16 @@ struct ScanFlowView: View {
             Task { await load(newItem) }
         }
         .task {
-            // DEV: auto-scan a bundled sample ONCE per launch to verify the live path.
+            // DEV: load a bundled sample once. AUTOSCAN also scans; LOADSAMPLE just previews capture.
+            let env = ProcessInfo.processInfo.environment
             if !didAutoScan, phase == .idle,
-               ProcessInfo.processInfo.environment["STETIC_AUTOSCAN"] == "1",
+               env["STETIC_AUTOSCAN"] == "1" || env["STETIC_LOADSAMPLE"] == "1",
                let url = Bundle.main.url(forResource: "sample", withExtension: "jpg"),
                let data = try? Data(contentsOf: url) {
                 didAutoScan = true
                 imageData = data
                 uiImage = UIImage(data: data)
-                scan()
+                if env["STETIC_AUTOSCAN"] == "1" { scan() }
             }
         }
     }

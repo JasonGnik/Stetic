@@ -78,7 +78,8 @@ struct OnboardingView: View {
         case .name:       nameField
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
-        case .focus:      multiSelect(OnbOptions.focus)
+        case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
+        case .focus:      multiSelect(OnbOptions.focus, data.focus) { toggle(&data.focus, $0) }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
         case .equipment:  singleSelect(OnbOptions.equipment, data.equipment) { data.equipment = $0 }
@@ -100,14 +101,16 @@ struct OnboardingView: View {
         }
     }
 
-    private func multiSelect(_ opts: [Option]) -> some View {
+    private func multiSelect(_ opts: [Option], _ selected: Set<String>, _ onTap: @escaping (String) -> Void) -> some View {
         VStack(spacing: 10) {
             ForEach(opts) { o in
-                optionCard(o.label, o.sub, selected: data.focus.contains(o.id)) {
-                    if data.focus.contains(o.id) { data.focus.remove(o.id) } else { data.focus.insert(o.id) }
-                }
+                optionCard(o.label, o.sub, selected: selected.contains(o.id)) { onTap(o.id) }
             }
         }
+    }
+
+    private func toggle(_ set: inout Set<String>, _ id: String) {
+        if set.contains(id) { set.remove(id) } else { set.insert(id) }
     }
 
     private func optionCard(_ title: String, _ subtitle: String?, selected: Bool, _ action: @escaping () -> Void) -> some View {
@@ -196,6 +199,7 @@ struct OnboardingView: View {
         case .name: return !data.name.trimmingCharacters(in: .whitespaces).isEmpty
         case .sex: return data.sex != nil
         case .goal: return data.goal != nil
+        case .obstacles: return true   // optional
         case .focus: return true   // optional — scan finds weak points
         case .experience: return data.experience != nil
         case .days: return data.daysPerWeek != nil

@@ -36,6 +36,17 @@ enum Tier: String, CaseIterable {
     }
 }
 
+// Lime the brand word "Stetic" wherever it appears in a sentence.
+func brandLimed(_ s: String) -> AttributedString {
+    var attr = AttributedString(s)
+    var start = attr.startIndex
+    while let r = attr[start...].range(of: "Stetic") {
+        attr[r].foregroundColor = Theme.acc
+        start = r.upperBound
+    }
+    return attr
+}
+
 extension Color {
     init(hex: UInt, alpha: Double = 1) {
         self.init(

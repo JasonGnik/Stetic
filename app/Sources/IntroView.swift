@@ -30,7 +30,7 @@ struct IntroView: View {
                         .foregroundStyle(Theme.txt)
                         .id("t\(i)")
                         .transition(.opacity)
-                    Text(slides[i].sub)
+                    Text(brandLimed(slides[i].sub))
                         .font(.system(size: 15))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)

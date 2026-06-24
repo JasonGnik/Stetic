@@ -5,6 +5,7 @@ import SwiftUI
     var name: String = ""       // first name, for personalization
     var sex: String?            // male | female
     var goal: String?           // lose_fat | gain_muscle | both
+    var obstacles: Set<String> = [] // plateau, dont_know, look_same, intimidated, slow
     var focus: Set<String> = [] // arms, shoulders, chest, abs, back, legs, lower_bf
     var experience: String?     // beginner | intermediate | advanced
     var daysPerWeek: Int?       // 3..6
@@ -21,13 +22,14 @@ import SwiftUI
 }
 
 enum OnbStep: Int, CaseIterable {
-    case name, sex, goal, focus, experience, days, equipment, height, weight, age
+    case name, sex, goal, obstacles, focus, experience, days, equipment, height, weight, age
 
     var title: String {
         switch self {
         case .name:       return "What should we call you?"
         case .sex:        return "Which are you?"
         case .goal:       return "What's your goal?"
+        case .obstacles:  return "What's holding you back?"
         case .focus:      return "What do you want to bring up?"
         case .experience: return "How long have you trained?"
         case .days:       return "Days per week?"
@@ -42,6 +44,7 @@ enum OnbStep: Int, CaseIterable {
         case .name:       return "We'll make your plan feel like yours."
         case .sex:        return "Routes your scoring to the right rubric."
         case .goal:       return "Shapes your plan and macros."
+        case .obstacles:  return "Pick any that apply — we'll target them."
         case .focus:      return "Optional — pick any to prioritize. Your scan finds the rest."
         case .experience: return "Sets your starting intensity."
         case .days:       return "We build around your real schedule."
@@ -62,6 +65,13 @@ enum OnbOptions {
         Option(id: "lose_fat", label: "Lose fat", sub: "Get lean and defined"),
         Option(id: "gain_muscle", label: "Build muscle", sub: "Add size where it counts"),
         Option(id: "both", label: "Both / recomp", sub: "Lean out and build"),
+    ]
+    static let obstacles = [
+        Option(id: "plateau", label: "I've plateaued", sub: nil),
+        Option(id: "dont_know", label: "I don't know what to train", sub: nil),
+        Option(id: "look_same", label: "I train hard but look the same", sub: nil),
+        Option(id: "intimidated", label: "Intimidated in the gym", sub: nil),
+        Option(id: "slow", label: "Results are too slow", sub: nil),
     ]
     static let focus = [
         Option(id: "shoulders", label: "Shoulders", sub: nil),

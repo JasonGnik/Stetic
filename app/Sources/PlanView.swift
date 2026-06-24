@@ -86,7 +86,7 @@ struct PlanView: View {
                 Divider().frame(height: 34).overlay(Theme.line)
                 startStat(String(format: "%.0f%%", scan.body_fat), "Body fat", Theme.txt)
                 Divider().frame(height: 34).overlay(Theme.line)
-                startStat(String(format: "%.1f", scan.potential), "Potential", Theme.acc)
+                startStat(String(format: "%.1f", scan.potential), "Ceiling", Theme.acc)
             }
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity)
