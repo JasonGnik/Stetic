@@ -12,6 +12,7 @@ export interface PlanProfile {
   equipment?: string;     // full_gym | home | dumbbells_only
   height_cm?: number;
   weight_kg?: number;
+  goal_weight_kg?: number;    // optional target bodyweight
   age?: number;
   sex?: string;
   activity_level?: string;    // sedentary | light | active | very_active
@@ -54,7 +55,7 @@ USER PHYSIQUE (from scan):
 - Groups weakest→strongest: ${ranked}.
 - Verdict: ${scan.verdict}
 
-USER PROFILE: goal ${goal}; pace ${profile.pace ?? "recommended"}; activity (outside gym) ${profile.activity_level ?? "light"}; focus ${focus}; experience ${exp}; ${days} days/week; equipment ${equip}; ${stats}.${splitNote}
+USER PROFILE: goal ${goal}; pace ${profile.pace ?? "recommended"}; activity (outside gym) ${profile.activity_level ?? "light"}; focus ${focus}; experience ${exp}; ${days} days/week; equipment ${equip}; ${stats}.${profile.goal_weight_kg ? ` Target bodyweight: ${profile.goal_weight_kg}kg (factor this into deficit/surplus sizing and the projection's bodyweight trajectory — but keep the pace realistic, never crash-diet).` : ""}${splitNote}
 
 OUTPUT REQUIREMENTS:
 - goal_label: a short human label for the goal driving this plan (e.g. "Build muscle — lean bulk", "Lose fat — get lean", "Recomp").

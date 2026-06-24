@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct OnboardingView: View {
     var onComplete: (String) -> Void   // passes the user's name
@@ -6,6 +7,7 @@ struct OnboardingView: View {
     @State private var stepIndex = Int(ProcessInfo.processInfo.environment["STETIC_ONB_STEP"] ?? "") ?? 0
     @State private var saving = false
     @State private var error: String?
+    @State private var seededGoalWeight = false
 
     private var step: OnbStep { OnbStep.allCases[stepIndex] }
     private var total: Int { OnbStep.allCases.count }
@@ -13,7 +15,7 @@ struct OnboardingView: View {
     // Single-select steps auto-advance on tap — no Continue button needed.
     private var needsContinue: Bool {
         switch step {
-        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution: return false
+        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution, .reminders: return false
         default: return true
         }
     }
@@ -177,8 +179,10 @@ struct OnboardingView: View {
         case .equipmentDetail: multiSelect(OnbOptions.equipmentItems, data.equipmentItems) { toggle(&data.equipmentItems, $0) }
         case .height:     measure(value: $data.heightCm, range: 140...215, units: ["ft", "cm"], format: heightLabel)
         case .weight:     measure(value: $data.weightKg, range: 40...180, units: ["lb", "kg"], format: weightLabel)
+        case .goalWeight: measure(value: $data.goalWeightKg, range: 40...180, units: ["lb", "kg"], format: weightLabel)
         case .age:        ageStep
         case .attribution: singleSelect(OnbOptions.attribution, data.attribution) { data.attribution = $0 }
+        case .reminders:  remindersStep
         case .callback, .socialProof: EmptyView()   // rendered by interstitialView
         }
     }
@@ -268,6 +272,22 @@ struct OnboardingView: View {
             .padding(.top, 10)
     }
 
+    // Reminder opt-in — selecting "yes" fires the system notification prompt, then advances.
+    private var remindersStep: some View {
+        VStack(spacing: 10) {
+            ForEach(OnbOptions.reminders) { o in
+                optionCard(o.label, o.sub, selected: data.reminders == (o.id == "yes")) {
+                    data.reminders = (o.id == "yes")
+                    if data.reminders {
+                        UNUserNotificationCenter.current()
+                            .requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { advance() }
+                }
+            }
+        }
+    }
+
     private var ageStep: some View {
         VStack(spacing: 22) {
             Text("\(data.age)").font(.system(size: 44, weight: .heavy)).foregroundStyle(Theme.txt)
@@ -299,9 +319,10 @@ struct OnboardingView: View {
         case .experience: return data.experience != nil
         case .days: return data.daysPerWeek != nil
         case .equipment: return data.equipment != nil
-        case .height, .weight, .age: return true
+        case .height, .weight, .goalWeight, .age: return true
         case .equipmentDetail: return true   // optional
         case .attribution: return data.attribution != nil
+        case .reminders: return true   // tap-to-finish
         case .callback, .socialProof: return true
         }
     }
@@ -310,6 +331,7 @@ struct OnboardingView: View {
     private func shouldShow(_ s: OnbStep) -> Bool {
         switch s {
         case .equipmentDetail: return data.equipment == "home"
+        case .goalWeight: return data.usesGoalWeight
         default: return true
         }
     }
@@ -331,7 +353,14 @@ struct OnboardingView: View {
     private func advance() {
         unit = 0
         error = nil
-        if stepIndex < total - 1 { withAnimation { stepIndex = nextIndex(after: stepIndex) }; return }
+        if stepIndex < total - 1 {
+            let next = nextIndex(after: stepIndex)
+            // Seed the goal-weight slider from current weight the first time we land on it.
+            if OnbStep.allCases[next] == .goalWeight && !seededGoalWeight {
+                data.goalWeightKg = data.weightKg; seededGoalWeight = true
+            }
+            withAnimation { stepIndex = next }; return
+        }
         // last step → persist
         saving = true
         Task {

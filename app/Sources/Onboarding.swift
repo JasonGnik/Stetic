@@ -4,7 +4,7 @@ import SwiftUI
 @Observable final class OnboardingData {
     var name: String = ""       // first name, for personalization
     var sex: String?            // male | female
-    var goal: String?           // lose_fat | gain_muscle | both
+    var goal: String? = ProcessInfo.processInfo.environment["STETIC_GOAL"]  // lose_fat | gain_muscle | both
     var obstacles: Set<String> = [] // plateau, dont_know, look_same, intimidated, slow
     var focus: Set<String> = [] // arms, shoulders, chest, abs, back, legs, lower_bf
     var experience: String?     // beginner | intermediate | advanced
@@ -13,15 +13,21 @@ import SwiftUI
     var equipmentItems: Set<String> = [] // shown only for home / dumbbells
     var heightCm: Double = 178
     var weightKg: Double = 80
+    var goalWeightKg: Double = 75   // target bodyweight (shown only for fat-loss goals)
     var age: Int = 25
     var activity: String?       // sedentary | light | active | very_active
     var pace: String?           // slow | recommended | aggressive
+    var reminders: Bool = true  // workout reminder opt-in
     var attribution: String?    // how they heard about us
+
+    // Goal weight only matters when there's a weight target to hit.
+    var usesGoalWeight: Bool { goal == "lose_fat" || goal == "both" }
 
     var payload: ScanAPI.ProfileInput {
         .init(sex: sex, goal: goal, focus: Array(focus), experience: experience,
               daysPerWeek: daysPerWeek, equipment: equipment,
               heightCm: heightCm, weightKg: weightKg, age: age,
+              goalWeightKg: usesGoalWeight ? goalWeightKg : nil,
               activity: activity, pace: pace, attribution: attribution)
     }
 }
@@ -52,7 +58,8 @@ enum Callbacks {
 
 enum OnbStep: Int, CaseIterable {
     case name, sex, goal, pace, obstacles, callback, experience, days, equipment,
-         equipmentDetail, height, weight, age, activity, socialProof, attribution
+         equipmentDetail, height, weight, goalWeight, age, activity, socialProof,
+         attribution, reminders
 
     var isInterstitial: Bool { self == .callback || self == .socialProof }
 
@@ -69,9 +76,11 @@ enum OnbStep: Int, CaseIterable {
         case .equipmentDetail: return "What do you have?"
         case .height:      return "How tall are you?"
         case .weight:      return "What do you weigh?"
+        case .goalWeight:  return "What's your goal weight?"
         case .age:         return "How old are you?"
         case .activity:    return "How active are you?"
         case .attribution: return "How did you hear about us?"
+        case .reminders:   return "Stay on track?"
         case .callback, .socialProof: return ""
         }
     }
@@ -88,9 +97,11 @@ enum OnbStep: Int, CaseIterable {
         case .equipmentDetail: return "Pick everything you've got access to."
         case .height:      return "Used for your calorie targets."
         case .weight:      return "Used for protein and calories."
+        case .goalWeight:  return "We'll set your nutrition to land you here."
         case .age:         return "Used for your calorie targets."
         case .activity:    return "Outside the gym — drives your calories."
         case .attribution: return "Helps us reach more people like you."
+        case .reminders:   return "A nudge on training days keeps you consistent."
         case .callback, .socialProof: return ""
         }
     }
@@ -153,6 +164,10 @@ enum OnbOptions {
         Option(id: "light", label: "Lightly active", sub: "Some walking daily"),
         Option(id: "active", label: "Active", sub: "On your feet a lot"),
         Option(id: "very_active", label: "Very active", sub: "Physical job or daily cardio"),
+    ]
+    static let reminders = [
+        Option(id: "yes", label: "Yes, remind me", sub: "A nudge on training days"),
+        Option(id: "no", label: "Not now", sub: "You can turn these on later"),
     ]
     static let attribution = [
         Option(id: "tiktok", label: "TikTok", sub: nil),

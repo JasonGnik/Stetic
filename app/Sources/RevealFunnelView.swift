@@ -197,7 +197,7 @@ struct RevealFunnelView: View {
                     .padding(.horizontal, 30).padding(.top, 22)
 
                     VStack(spacing: 12) {
-                        planRow("Annual", "$119.99/yr", "($2.30/wk)", "3-day free trial, then yearly", best: true)
+                        planRow("Annual", "$59.99/yr", "($1.15/wk)", "3-day free trial, then yearly", best: true)
                         planRow("Weekly", "$7.99/wk", nil, "Billed weekly. Cancel anytime.", best: false)
                     }
                     .padding(.horizontal, 22).padding(.top, 24)
@@ -205,7 +205,7 @@ struct RevealFunnelView: View {
             }
             .scrollIndicators(.hidden)
 
-            Text("No payment now. 3-day free trial, then $119.99/year. Auto-renews unless cancelled 24h before the trial ends. Cancel anytime in Settings.")
+            Text("No payment now. 3-day free trial, then $59.99/year. Auto-renews unless cancelled 24h before the trial ends. Cancel anytime in Settings.")
                 .font(.system(size: 10.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
                 .padding(.horizontal, 30).padding(.top, 10).padding(.bottom, 8)
             primaryButton("Start my 3-day free trial") { startRealScan() }
