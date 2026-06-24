@@ -16,6 +16,12 @@ struct ScanFlowView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             switch phase {
+            case .scanning:
+                ScanningLoader(
+                    title: "Analyzing your physique",
+                    messages: ["Mapping your physique", "Reading proportions & symmetry",
+                               "Estimating body composition", "Calibrating your ratios", "Scoring aesthetics"]
+                )
             case .result:
                 if let card {
                     VStack(spacing: 0) {

@@ -26,11 +26,11 @@ struct PlanView: View {
 
     // MARK: states
     private var loading: some View {
-        VStack(spacing: 14) {
-            ProgressView().tint(Theme.acc).scaleEffect(1.4)
-            Text("Building your plan…").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt)
-            Text("Training · nutrition · weak-point targeting").font(.system(size: 12)).foregroundStyle(Theme.mut)
-        }
+        ScanningLoader(
+            title: "Building your plan",
+            messages: ["Reading your physique", "Targeting weak points",
+                       "Programming your split", "Calculating macros", "Projecting your results"]
+        )
     }
     private func errorView(_ m: String) -> some View {
         VStack(spacing: 12) {
