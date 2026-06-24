@@ -37,6 +37,7 @@ Stetic is a hard-paywalled iOS app. A new user goes through a long, investment-b
 | Future-you image | Deferred (use projected score chart for FOMO instead) |
 | Growth loop | Share-card export in v1; leaderboard + referrals deferred |
 | Reveal mechanic | Capture in onboarding → bluff "analysis" → paywall → **real AI call on subscribe** → reveal |
+| Design direction | **Stealth Lime** — all-black (`#08080A`), acid-lime accent (`#C8FF3D`), heavy bold sans (Inter). Looksmaxxing/aesthetic-gym energy; matches the score-card content. See `mockups/stetic-design-directions.html` (option 1) and the score cards. Full palette in `CONTEXT.md`. |
 
 ---
 
