@@ -128,8 +128,15 @@ actor ScanAPI {
 
     // MARK: plan
     struct PlanBundle { let content: PlanContent; let scan: ScoreCard }
+    private var cachedPlan: PlanBundle?
+
+    // Pre-generate the plan right after a scan (while the user reads the score card),
+    // so opening the plan is instant — no second loader.
+    func prefetchPlan() async { _ = try? await plan() }
+    func clearPlanCache() { cachedPlan = nil }
 
     func plan() async throws -> PlanBundle {
+        if let cachedPlan { return cachedPlan }
         try await ensureSession()
         guard let token = accessToken else { throw APIError.noSession }
         let url = Config.baseURL.appending(path: "functions/v1/plan")
@@ -144,7 +151,9 @@ actor ScanAPI {
         let status = code(resp)
         guard status == 200 else { throw APIError.http(status, String(data: data, encoding: .utf8) ?? "") }
         guard let wrapped = try? JSONDecoder().decode(PlanResponse.self, from: data) else { throw APIError.decode }
-        return PlanBundle(content: wrapped.content, scan: wrapped.scan)
+        let bundle = PlanBundle(content: wrapped.content, scan: wrapped.scan)
+        cachedPlan = bundle
+        return bundle
     }
     private struct PlanResponse: Decodable { let content: PlanContent; let scan: ScoreCard }
 

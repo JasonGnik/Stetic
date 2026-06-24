@@ -305,7 +305,7 @@ struct OnboardingView: View {
     // Skip equipment-detail unless they train at home / dumbbells-only.
     private func shouldShow(_ s: OnbStep) -> Bool {
         switch s {
-        case .equipmentDetail: return data.equipment == "home" || data.equipment == "dumbbells_only"
+        case .equipmentDetail: return data.equipment == "home"
         default: return true
         }
     }

@@ -62,14 +62,15 @@ struct PlanView: View {
                 }
                 Text(p.summary).font(.system(size: 13.5)).foregroundStyle(Color(hex: 0xD2D2D8)).lineSpacing(4)
 
+                includedHeader
                 projectionHero(p.projection, scan: scan)
                 if let crit = p.split_critique, !crit.isEmpty {
                     section("YOUR CURRENT SPLIT") { critique(crit) }
                 }
                 macros(p.macros)
                 section("PRIORITIES") { priorities(p.priorities) }
-                section("WEEKLY SPLIT") { split(p.weekly_split) }
-                section("MUSCLE BREAKDOWN") { breakdown(p.muscle_breakdown) }
+                section("WEEKLY SPLIT") { split(p.weekly_split, weak: weakGroups(p.muscle_breakdown)) }
+                section("MUSCLE BREAKDOWN") { breakdown(p.muscle_breakdown, weak: weakGroups(p.muscle_breakdown)) }
             }
             .padding(.horizontal, 22).padding(.top, 14).padding(.bottom, 36)
         }
@@ -200,16 +201,26 @@ struct PlanView: View {
         }
     }
 
-    private func split(_ days: [PlanContent.Day]) -> some View {
+    private func split(_ days: [PlanContent.Day], weak: Set<String>) -> some View {
         VStack(spacing: 10) {
             ForEach(days) { d in
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     Text(d.day).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.acc)
                     ForEach(d.exercises) { e in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(e.name).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.txt)
-                                Text(e.target).font(.system(size: 10.5)).foregroundStyle(Theme.mut)
+                        let hitsWeak = weak.contains { e.target.lowercased().contains($0) }
+                        HStack(spacing: 10) {
+                            Circle().fill(hitsWeak ? Theme.red : Theme.acc).frame(width: 6, height: 6)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(e.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+                                HStack(spacing: 5) {
+                                    Text(e.target).font(.system(size: 10, weight: .semibold))
+                                        .padding(.horizontal, 6).padding(.vertical, 2)
+                                        .background(Capsule().fill(hitsWeak ? Theme.red.opacity(0.18) : Theme.line))
+                                        .foregroundStyle(hitsWeak ? Theme.red : Theme.mut)
+                                    if hitsWeak {
+                                        Text("weak point").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.red)
+                                    }
+                                }
                             }
                             Spacer()
                             Text("\(e.sets) × \(e.reps)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
@@ -223,30 +234,65 @@ struct PlanView: View {
         }
     }
 
-    private func breakdown(_ groups: [PlanContent.Breakdown]) -> some View {
+    private func breakdown(_ groups: [PlanContent.Breakdown], weak: Set<String>) -> some View {
         VStack(spacing: 10) {
             ForEach(groups.sorted { $0.rating > $1.rating }) { g in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(g.group.capitalized).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                        Spacer()
-                        Text(String(format: "%.1f", g.rating))
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(ScoreCard.muscleColor(g.rating))
-                    }
-                    Text(g.detail).font(.system(size: 12)).foregroundStyle(Theme.mut).lineSpacing(2)
-                    ForEach(g.sub) { s in
-                        HStack(alignment: .top, spacing: 6) {
-                            Text(s.name).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Color(hex: 0xD2D2D8))
-                            Text("· \(s.cue)").font(.system(size: 11.5)).foregroundStyle(Theme.mut)
+                let isWeak = weak.contains(g.group.lowercased())
+                HStack(alignment: .top, spacing: 12) {
+                    BodyMap(group: g.group, tint: isWeak ? Theme.red : Theme.acc)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text(g.group.capitalized).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
+                            if isWeak {
+                                Text("WEAK POINT").font(.system(size: 8.5, weight: .bold))
+                                    .padding(.horizontal, 5).padding(.vertical, 2)
+                                    .background(Capsule().fill(Theme.red.opacity(0.18))).foregroundStyle(Theme.red)
+                            }
                             Spacer()
+                            Text(String(format: "%.1f", g.rating)).font(.system(size: 15, weight: .heavy))
+                                .foregroundStyle(ScoreCard.muscleColor(g.rating))
+                        }
+                        Text(g.detail).font(.system(size: 12)).foregroundStyle(Theme.mut).lineSpacing(2).lineLimit(2)
+                        HStack(spacing: 6) {
+                            ForEach(g.sub) { s in
+                                Text(s.name).font(.system(size: 10.5, weight: .semibold))
+                                    .padding(.horizontal, 7).padding(.vertical, 3)
+                                    .background(Capsule().fill(Theme.line)).foregroundStyle(Color(hex: 0xD2D2D8))
+                                    .lineLimit(1).minimumScaleFactor(0.8)
+                            }
+                            Spacer(minLength: 0)
                         }
                     }
                 }
-                .padding(14)
+                .padding(13)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
+                .background(
+                    RoundedRectangle(cornerRadius: 14).fill(Theme.card)
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(isWeak ? Theme.red.opacity(0.3) : Theme.line, lineWidth: 1))
+                )
             }
         }
+    }
+
+    // What the plan includes — quick visual scannable header.
+    private var includedHeader: some View {
+        HStack(spacing: 8) {
+            includedChip("dumbbell.fill", "Training")
+            includedChip("fork.knife", "Nutrition")
+            includedChip("scope", "Weak points")
+            includedChip("chart.line.uptrend.xyaxis", "Progress")
+        }
+    }
+    private func includedChip(_ icon: String, _ label: String) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: icon).font(.system(size: 15)).foregroundStyle(Theme.acc)
+            Text(label).font(.system(size: 9.5, weight: .semibold)).foregroundStyle(Theme.mut)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 11)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card))
+    }
+
+    private func weakGroups(_ groups: [PlanContent.Breakdown]) -> Set<String> {
+        Set(groups.sorted { $0.rating < $1.rating }.prefix(2).map { $0.group.lowercased() })
     }
 }

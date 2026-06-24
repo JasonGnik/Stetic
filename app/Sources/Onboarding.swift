@@ -27,17 +27,19 @@ import SwiftUI
 struct ObstacleCallback { let headline: String; let body: String }
 enum Callbacks {
     static let priority = ["plateau", "look_same", "slow", "dont_know", "intimidated"]
+    // Stats sourced (see code-review notes): ~50% quit within 6 months; abs at 10-13% bf;
+    // ~47% gym anxiety / >50% feel judged; training-to-failure helps trained lifters.
     static let map: [String: ObstacleCallback] = [
-        "plateau": .init(headline: "Plateaus aren't fixed with more sets.",
-            body: "In trained lifters, taking each set to true failure is what forces new growth — not piling on volume. Your plan is built on exactly that."),
-        "look_same": .init(headline: "Hard work without intensity stalls.",
-            body: "Research on trained lifters shows effort to failure — not just more time in the gym — is what separates real growth from spinning your wheels."),
+        "plateau": .init(headline: "Around half quit within 6 months.",
+            body: "Usually because progress stalls. In trained lifters, taking every set to true failure is what restarts growth — not piling on volume. That's how your plan is built."),
+        "look_same": .init(headline: "More effort isn't more sets.",
+            body: "For trained lifters, training to failure — not just adding volume — is what separates real growth from spinning your wheels. Your plan is built around that."),
         "slow": .init(headline: "Leanness is your fastest lever.",
-            body: "For most men, abs appear around 10–13% body fat. Getting lean is the most visible, most controllable change — and your plan prioritizes it."),
+            body: "For most men, abs show at 10–13% body fat. Getting lean is the most visible, most controllable change — and your plan prioritizes it."),
         "dont_know": .init(headline: "Most physiques are capped by 1–2 weak points.",
             body: "A single lagging group can break your whole line. Stetic pinpoints yours and builds the plan around fixing it."),
-        "intimidated": .init(headline: "No more guessing on the gym floor.",
-            body: "Every session is mapped to your level and your weak points — you'll walk in knowing exactly what to do."),
+        "intimidated": .init(headline: "Nearly half of people feel it too.",
+            body: "About 47% feel anxious at the gym and over half feel judged for their form. Every session here tells you exactly what to do — no guessing."),
     ]
     static func pick(_ obstacles: Set<String>) -> ObstacleCallback {
         for id in priority where obstacles.contains(id) { return map[id]! }
@@ -118,16 +120,11 @@ enum OnbOptions {
         Option(id: "intermediate", label: "Intermediate", sub: "1–3 years"),
         Option(id: "advanced", label: "Advanced", sub: "3+ years"),
     ]
-    static let days = [
-        Option(id: "3", label: "3 days", sub: nil),
-        Option(id: "4", label: "4 days", sub: nil),
-        Option(id: "5", label: "5 days", sub: nil),
-        Option(id: "6", label: "6 days", sub: nil),
-    ]
+    static let days = (1...7).map { Option(id: "\($0)", label: $0 == 1 ? "1 day" : "\($0) days", sub: nil) }
     static let equipment = [
         Option(id: "full_gym", label: "Full gym", sub: "Machines, barbells, cables"),
-        Option(id: "home", label: "Home gym", sub: "Some equipment"),
-        Option(id: "dumbbells_only", label: "Dumbbells only", sub: "Minimal kit"),
+        Option(id: "home", label: "Home gym", sub: "Your own setup"),
+        Option(id: "bodyweight", label: "Bodyweight only", sub: "No equipment"),
     ]
     static let equipmentItems = [
         Option(id: "dumbbells", label: "Dumbbells", sub: nil),

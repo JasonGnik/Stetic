@@ -59,11 +59,8 @@ struct IntroView: View {
     private var problemVisual: some View {
         ZStack {
             Circle().fill(Theme.acc.opacity(0.06)).frame(width: 200, height: 200)
-            Circle().stroke(Theme.line, lineWidth: 1).frame(width: 200, height: 200)
-            Image(systemName: "figure.arms.open").font(.system(size: 92, weight: .semibold)).foregroundStyle(Theme.txt.opacity(0.85))
-            // weak-point markers
-            Image(systemName: "circle.dashed").font(.system(size: 26)).foregroundStyle(Theme.red).offset(x: 34, y: -6)
-            Image(systemName: "circle.dashed").font(.system(size: 22)).foregroundStyle(Theme.amber).offset(x: -38, y: 30)
+            Image(systemName: "figure.arms.open").font(.system(size: 78, weight: .semibold)).foregroundStyle(Theme.txt.opacity(0.8))
+            Image(systemName: "viewfinder").font(.system(size: 152, weight: .ultraLight)).foregroundStyle(Theme.acc)
         }
     }
 
@@ -119,8 +116,8 @@ struct IntroView: View {
 struct IntroSlide {
     let title: String; let sub: String
     static let all = [
-        IntroSlide(title: "Years in the gym.\nLittle to show for it.",
-                   sub: "Most people never look how they train — they're guessing. No idea what's holding them back, no plan to fix it. Stetic changes that."),
+        IntroSlide(title: "Train for years.\nStill not there.",
+                   sub: "Most guys can't see what's holding them back. Stetic scans your body, finds your weak points, and builds the plan to fix them."),
         IntroSlide(title: "Know exactly\nwhere you stand.",
                    sub: "Get scored 1–10 and ranked against the ideal — from Bronze all the way to Greek God."),
         IntroSlide(title: "Engineered\nto sculpt you.",

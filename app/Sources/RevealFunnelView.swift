@@ -114,22 +114,40 @@ struct RevealFunnelView: View {
     // MARK: tease — blurred result behind a lock
     private var tease: some View {
         ZStack {
-            ScoreCardView(card: .sample).blur(radius: 24).disabled(true).allowsHitTesting(false)
-            LinearGradient(colors: [Theme.bg.opacity(0.7), Theme.bg.opacity(0.96)],
+            ScoreCardView(card: .sample).blur(radius: 26).disabled(true).allowsHitTesting(false)
+            LinearGradient(colors: [Theme.bg.opacity(0.65), Theme.bg.opacity(0.97)],
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             VStack(spacing: 16) {
                 Spacer()
-                Image(systemName: "lock.fill").font(.system(size: 34)).foregroundStyle(Theme.acc)
+                Image(systemName: "lock.fill").font(.system(size: 30)).foregroundStyle(Theme.acc)
                 Text(name.isEmpty ? "Your analysis is ready" : "\(name), your analysis is ready")
-                    .font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+                    .font(.system(size: 25, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
                     .padding(.horizontal, 30)
-                Text("We mapped your physique and found 3 lagging groups and 1 proportion breaking your frame. Unlock your score, rank, and plan.")
-                    .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(4)
-                    .foregroundStyle(Theme.mut).padding(.horizontal, 34)
+                Text("Here's what we found:").font(.system(size: 13)).foregroundStyle(Theme.mut)
+                VStack(spacing: 10) {
+                    findingRow("exclamationmark.triangle.fill", "3 lagging muscle groups", Theme.red)
+                    findingRow("rectangle.portrait.badge.minus", "1 proportion breaking your frame", Theme.amber)
+                    findingRow("rosette", "Your score, rank & full plan", Theme.acc)
+                }
+                .padding(.horizontal, 26)
                 Spacer()
                 primaryButton("Unlock my results") { withAnimation { phase = .paywall } }
             }
         }
+    }
+
+    private func findingRow(_ icon: String, _ text: String, _ color: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color).frame(width: 22)
+            Text(text).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+            Spacer()
+            Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.mut)
+        }
+        .padding(13)
+        .background(
+            RoundedRectangle(cornerRadius: 12).fill(color.opacity(0.10))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.35), lineWidth: 1))
+        )
     }
 
     // MARK: paywall (STUB — swap for RevenueCat later)
@@ -218,7 +236,7 @@ struct RevealFunnelView: View {
     private var resultView: some View {
         Group {
             if let card {
-                ScoreCardView(card: card, onGetPlan: { showPlan = true }, onScanAnother: { reset() })
+                ScoreCardView(card: card) { showPlan = true }
                     .fullScreenCover(isPresented: $showPlan) { PlanView() }
             }
         }
@@ -257,6 +275,7 @@ struct RevealFunnelView: View {
                 let input = ScanAPI.ImageInput(mimeType: "image/jpeg", dataB64: jpeg.base64EncodedString())
                 let result = try await ScanAPI.shared.scan(images: [input])
                 await MainActor.run { card = result; withAnimation { phase = .result } }
+                await ScanAPI.shared.prefetchPlan()   // ready before they tap "Get my full plan"
             } catch {
                 await MainActor.run { errorMsg = error.localizedDescription; phase = .error }
             }
@@ -265,6 +284,7 @@ struct RevealFunnelView: View {
 
     private func reset() {
         card = nil; uiImage = nil; imageData = nil; pickerItem = nil; showPlan = false; phase = .capture
+        Task { await ScanAPI.shared.clearPlanCache() }
     }
 
     private func devInit() {
