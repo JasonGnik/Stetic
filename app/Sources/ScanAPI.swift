@@ -25,7 +25,8 @@ actor ScanAPI {
     struct ImageInput { let mimeType: String; let dataB64: String }
     struct ProfileInput: Sendable {
         var sex: String?; var goal: String?; var focus: [String]
-        var experience: String?; var daysPerWeek: Int?; var equipment: String?
+        var experience: String?; var currentSplit: String?
+        var daysPerWeek: Int?; var equipment: String?
         var heightCm: Double; var weightKg: Double; var age: Int
         var goalWeightKg: Double?
         var activity: String?; var pace: String?
@@ -79,6 +80,7 @@ actor ScanAPI {
         if let v = p.sex { body["sex"] = v }
         if let v = p.goal { body["goal"] = v }
         if let v = p.experience { body["experience"] = v }
+        if let v = p.currentSplit, !v.isEmpty { body["current_split"] = v }
         if let v = p.daysPerWeek { body["days_per_week"] = v }
         if let v = p.equipment { body["equipment"] = v }
         if let v = p.goalWeightKg { body["goal_weight_kg"] = v }

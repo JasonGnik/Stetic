@@ -8,6 +8,7 @@ import SwiftUI
     var obstacles: Set<String> = [] // plateau, dont_know, look_same, intimidated, slow
     var focus: Set<String> = [] // arms, shoulders, chest, abs, back, legs, lower_bf
     var experience: String?     // beginner | intermediate | advanced
+    var currentSplit: String = "" // their current routine (experienced lifters) — fuels split analysis
     var daysPerWeek: Int?       // 3..6
     var equipment: String?      // full_gym | home | dumbbells_only
     var equipmentItems: Set<String> = [] // shown only for home / dumbbells
@@ -22,6 +23,7 @@ import SwiftUI
 
     var payload: ScanAPI.ProfileInput {
         .init(sex: sex, goal: goal, focus: Array(focus), experience: experience,
+              currentSplit: currentSplit.trimmingCharacters(in: .whitespacesAndNewlines),
               daysPerWeek: daysPerWeek, equipment: equipment,
               heightCm: heightCm, weightKg: weightKg, age: age,
               goalWeightKg: goalWeightKg,
@@ -54,9 +56,9 @@ enum Callbacks {
 }
 
 enum OnbStep: Int, CaseIterable {
-    case name, sex, goal, pace, obstacles, callback, experience, days, equipment,
-         equipmentDetail, height, weight, goalWeight, age, activity, socialProof,
-         attribution, reminders
+    case name, sex, goal, pace, obstacles, callback, experience, currentSplit, days,
+         equipment, equipmentDetail, height, weight, goalWeight, age, activity,
+         socialProof, attribution, reminders
 
     var isInterstitial: Bool { self == .callback || self == .socialProof }
 
@@ -68,6 +70,7 @@ enum OnbStep: Int, CaseIterable {
         case .pace:        return "How fast do you want results?"
         case .obstacles:   return "What's holding you back?"
         case .experience:  return "How long have you trained?"
+        case .currentSplit: return "What are you running now?"
         case .days:        return "Days per week?"
         case .equipment:   return "What can you train with?"
         case .equipmentDetail: return "What do you have?"
@@ -89,6 +92,7 @@ enum OnbStep: Int, CaseIterable {
         case .pace:       return "Sets how aggressive your nutrition is."
         case .obstacles:  return "Pick any that apply — we'll target them."
         case .experience: return "Sets your starting intensity."
+        case .currentSplit: return "We'll analyse why it's leaving your weak points behind."
         case .days:       return "We build around your real schedule."
         case .equipment:  return "We only program what you can do."
         case .equipmentDetail: return "Pick everything you've got access to."

@@ -174,6 +174,7 @@ struct OnboardingView: View {
         case .activity:   singleSelect(OnbOptions.activity, data.activity) { data.activity = $0 }
         case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
+        case .currentSplit: splitField
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
         case .equipment:  singleSelect(OnbOptions.equipment, data.equipment) { data.equipment = $0 }
         case .equipmentDetail: multiSelect(OnbOptions.equipmentItems, data.equipmentItems) { toggle(&data.equipmentItems, $0) }
@@ -264,6 +265,29 @@ struct OnboardingView: View {
         .padding(.top, 20)
     }
 
+    // Free-text current routine (optional). Example chips make it effortless.
+    private var splitField: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ZStack(alignment: .topLeading) {
+                if data.currentSplit.isEmpty {
+                    Text("e.g. PPL 6×/week, or Arnold split, or “bro split — chest Mon, back Tue…”")
+                        .font(.system(size: 15)).foregroundStyle(Theme.mut)
+                        .padding(.horizontal, 16).padding(.vertical, 18)
+                }
+                TextEditor(text: $data.currentSplit)
+                    .font(.system(size: 15)).foregroundStyle(Theme.txt)
+                    .scrollContentBackground(.hidden)
+                    .frame(height: 120)
+                    .padding(.horizontal, 11).padding(.vertical, 10)
+            }
+            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card)
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1)))
+            Text("Optional — but the more you tell us, the sharper the analysis of what's holding you back.")
+                .font(.system(size: 12)).foregroundStyle(Theme.mut)
+        }
+        .padding(.top, 6)
+    }
+
     private var nameField: some View {
         TextField("", text: $data.name,
                   prompt: Text("Your name").foregroundStyle(Theme.mut))
@@ -325,6 +349,7 @@ struct OnboardingView: View {
         case .goal: return data.goal != nil
         case .obstacles: return true   // optional
         case .experience: return data.experience != nil
+        case .currentSplit: return true   // optional
         case .days: return data.daysPerWeek != nil
         case .equipment: return data.equipment != nil
         case .height, .weight, .goalWeight, .age: return true
@@ -339,6 +364,7 @@ struct OnboardingView: View {
     private func shouldShow(_ s: OnbStep) -> Bool {
         switch s {
         case .equipmentDetail: return data.equipment == "home"
+        case .currentSplit: return data.experience != nil && data.experience != "beginner"
         default: return true
         }
     }

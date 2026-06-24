@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
     .from("profiles").select("*").eq("id", user.id).maybeSingle();
   const merged: PlanProfile = {
     goal: profile?.goal, focus: profile?.focus, experience: profile?.experience,
+    current_split: profile?.current_split,
     days_per_week: profile?.days_per_week, equipment: profile?.equipment,
     height_cm: profile?.height_cm, weight_kg: profile?.weight_kg, age: profile?.age,
     goal_weight_kg: profile?.goal_weight_kg,

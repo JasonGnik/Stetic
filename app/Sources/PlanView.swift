@@ -252,16 +252,11 @@ struct PlanView: View {
                             Text(String(format: "%.1f", g.rating)).font(.system(size: 15, weight: .heavy))
                                 .foregroundStyle(ScoreCard.muscleColor(g.rating))
                         }
-                        Text(g.detail).font(.system(size: 12)).foregroundStyle(Theme.mut).lineSpacing(2).lineLimit(2)
-                        HStack(spacing: 6) {
-                            ForEach(g.sub) { s in
-                                Text(s.name).font(.system(size: 10.5, weight: .semibold))
-                                    .padding(.horizontal, 7).padding(.vertical, 3)
-                                    .background(Capsule().fill(Theme.line)).foregroundStyle(Color(hex: 0xD2D2D8))
-                                    .lineLimit(1).minimumScaleFactor(0.8)
-                            }
-                            Spacer(minLength: 0)
+                        Text(g.detail).font(.system(size: 12.5)).foregroundStyle(Color(hex: 0xC9C9CF)).lineSpacing(3)
+                        VStack(alignment: .leading, spacing: 7) {
+                            ForEach(g.sub) { s in subRow(s) }
                         }
+                        .padding(.top, 2)
                     }
                 }
                 .padding(13)
@@ -290,6 +285,30 @@ struct PlanView: View {
         }
         .frame(maxWidth: .infinity).padding(.vertical, 11)
         .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card))
+    }
+
+    // A single sub-muscle row: status-colored name + label, then the training cue.
+    private func subRow(_ s: PlanContent.Breakdown.Sub) -> some View {
+        let c = subColor(s.status)
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 7) {
+                Circle().fill(c).frame(width: 5, height: 5)
+                Text(s.name).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                Text(s.status).font(.system(size: 9.5, weight: .bold))
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Capsule().fill(c.opacity(0.16))).foregroundStyle(c)
+                Spacer(minLength: 0)
+            }
+            Text(s.cue).font(.system(size: 11)).foregroundStyle(Theme.mut).lineSpacing(2)
+                .padding(.leading, 12)
+        }
+    }
+
+    // Lagging/needs-work statuses read red; everything else reads lime.
+    private func subColor(_ status: String) -> Color {
+        let s = status.lowercased()
+        let weak = ["lag", "weak", "lack", "need", "under", "thin", "behind", "poor", "small"]
+        return weak.contains { s.contains($0) } ? Theme.red : Theme.acc
     }
 
     private func weakGroups(_ groups: [PlanContent.Breakdown]) -> Set<String> {
