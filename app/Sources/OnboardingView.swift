@@ -190,7 +190,7 @@ struct OnboardingView: View {
     private func singleSelect(_ opts: [Option], _ selected: String?, _ set: @escaping (String) -> Void) -> some View {
         VStack(spacing: 10) {
             ForEach(opts) { o in
-                optionCard(o.label, o.sub, selected: selected == o.id) {
+                optionCard(o.label, o.sub, icon: o.icon, tint: o.tint, selected: selected == o.id) {
                     withAnimation(.easeOut(duration: 0.12)) { set(o.id) }
                     // auto-advance — fewer taps (single-select only)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { advance() }
@@ -202,7 +202,7 @@ struct OnboardingView: View {
     private func multiSelect(_ opts: [Option], _ selected: Set<String>, _ onTap: @escaping (String) -> Void) -> some View {
         VStack(spacing: 10) {
             ForEach(opts) { o in
-                optionCard(o.label, o.sub, selected: selected.contains(o.id)) { onTap(o.id) }
+                optionCard(o.label, o.sub, icon: o.icon, tint: o.tint, selected: selected.contains(o.id)) { onTap(o.id) }
             }
         }
     }
@@ -211,9 +211,17 @@ struct OnboardingView: View {
         if set.contains(id) { set.remove(id) } else { set.insert(id) }
     }
 
-    private func optionCard(_ title: String, _ subtitle: String?, selected: Bool, _ action: @escaping () -> Void) -> some View {
+    private func optionCard(_ title: String, _ subtitle: String?, icon: String? = nil, tint: Color? = nil,
+                            selected: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack {
+            HStack(spacing: 13) {
+                if let icon {
+                    let c = tint ?? Theme.acc
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(c.opacity(0.16))
+                        .frame(width: 46, height: 46)
+                        .overlay(Image(systemName: icon).font(.system(size: 21, weight: .semibold)).foregroundStyle(c))
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.txt)
                     if let subtitle { Text(subtitle).font(.system(size: 12)).foregroundStyle(Theme.mut) }
@@ -331,7 +339,6 @@ struct OnboardingView: View {
     private func shouldShow(_ s: OnbStep) -> Bool {
         switch s {
         case .equipmentDetail: return data.equipment == "home"
-        case .goalWeight: return data.usesGoalWeight
         default: return true
         }
     }

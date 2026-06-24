@@ -17,6 +17,7 @@ struct RevealFunnelView: View {
     @State private var errorMsg = ""
     @State private var showPlan = false
     @State private var didDevInit = false
+    @State private var selectedPlan = "annual"   // annual | weekly
 
     var body: some View {
         ZStack {
@@ -35,7 +36,9 @@ struct RevealFunnelView: View {
         .task { devInit() }
     }
 
-    // MARK: capture — front (required) + optional side/back, legs toggle
+    private var hasAnyPhoto: Bool { datas.contains { $0 != nil } }
+
+    // MARK: capture — front is the main shot (larger), side/back optional. Any one unlocks the scan.
     private var capture: some View {
         VStack(spacing: 18) {
             Spacer()
@@ -43,8 +46,12 @@ struct RevealFunnelView: View {
                 Text("STETIC").font(.system(size: 30, weight: .heavy)).tracking(3).foregroundStyle(Theme.acc)
                 Text("Scan your physique").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.mut)
             }
-            HStack(spacing: 10) {
-                ForEach(0..<3, id: \.self) { i in photoSlot(i) }
+            VStack(spacing: 10) {
+                photoSlot(0, height: 210, main: true)
+                HStack(spacing: 10) {
+                    photoSlot(1, height: 132)
+                    photoSlot(2, height: 132)
+                }
             }
             .padding(.horizontal, 22)
 
@@ -53,18 +60,17 @@ struct RevealFunnelView: View {
             }
             .tint(Theme.acc).padding(.horizontal, 26)
 
-            Text(includeLegs ? "Stand back so your legs are in frame." : "Front photo required. Side & back sharpen your score.")
+            Text(includeLegs ? "Stand back so your legs are in frame."
+                             : "Add at least one. Front is most accurate — side & back sharpen it.")
                 .font(.system(size: 12)).foregroundStyle(Theme.mut).multilineTextAlignment(.center).padding(.horizontal, 30)
-
-            if case .error = phase { EmptyView() }
 
             Button { withAnimation { phase = .fomo } } label: {
                 Text("Continue").font(.system(size: 16, weight: .bold))
                     .frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(datas[0] == nil ? Theme.line : Theme.acc))
-                    .foregroundStyle(datas[0] == nil ? Theme.mut : Color(hex: 0x0E0E10))
+                    .background(RoundedRectangle(cornerRadius: 12).fill(hasAnyPhoto ? Theme.acc : Theme.line))
+                    .foregroundStyle(hasAnyPhoto ? Color(hex: 0x0E0E10) : Theme.mut)
             }
-            .disabled(datas[0] == nil)
+            .disabled(!hasAnyPhoto)
             .padding(.horizontal, 26)
             Spacer()
         }
@@ -73,7 +79,7 @@ struct RevealFunnelView: View {
         .onChange(of: items[2]) { _, v in Task { await load(2, v) } }
     }
 
-    private func photoSlot(_ i: Int) -> some View {
+    private func photoSlot(_ i: Int, height: CGFloat, main: Bool = false) -> some View {
         PhotosPicker(selection: $items[i], matching: .images) {
             ZStack {
                 if let img = images[i] {
@@ -81,16 +87,17 @@ struct RevealFunnelView: View {
                 } else {
                     Theme.card
                     VStack(spacing: 6) {
-                        Image(systemName: "plus").font(.system(size: 22, weight: .semibold)).foregroundStyle(Theme.mut)
-                        Text(slotLabels[i]).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
-                        Text(i == 0 ? "required" : "optional").font(.system(size: 9)).foregroundStyle(Theme.mut)
+                        Image(systemName: main ? "person.crop.rectangle" : "plus")
+                            .font(.system(size: main ? 30 : 20, weight: .semibold)).foregroundStyle(main ? Theme.acc : Theme.mut)
+                        Text(slotLabels[i]).font(.system(size: main ? 15 : 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                        Text(main ? "main shot" : "optional").font(.system(size: main ? 11 : 9)).foregroundStyle(Theme.mut)
                     }
                 }
             }
-            .frame(height: 150).frame(maxWidth: .infinity)
+            .frame(height: height).frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14)
-                .stroke(i == 0 && images[0] == nil ? Theme.acc.opacity(0.5) : Theme.line, lineWidth: 1))
+                .stroke(main && images[i] == nil ? Theme.acc.opacity(0.45) : Theme.line, lineWidth: 1))
         }
     }
 
@@ -142,7 +149,7 @@ struct RevealFunnelView: View {
                 Text("Here's what we found:").font(.system(size: 13)).foregroundStyle(Theme.mut)
                 VStack(spacing: 10) {
                     findingRow("exclamationmark.triangle.fill", "3 lagging muscle groups", Theme.red)
-                    findingRow("rectangle.portrait.badge.minus", "1 proportion breaking your frame", Theme.amber)
+                    findingRow("aspectratio.fill", "1 proportion breaking your frame", Theme.amber)
                     findingRow("rosette", "Your score, rank & full plan", Theme.acc)
                 }
                 .padding(.horizontal, 26)
@@ -197,46 +204,58 @@ struct RevealFunnelView: View {
                     .padding(.horizontal, 30).padding(.top, 22)
 
                     VStack(spacing: 12) {
-                        planRow("Annual", "$59.99/yr", "($1.15/wk)", "3-day free trial, then yearly", best: true)
-                        planRow("Weekly", "$7.99/wk", nil, "Billed weekly. Cancel anytime.", best: false)
+                        planRow("annual", "Annual", "$1.15", "/wk", "$59.99/yr · 3-day free trial", best: true)
+                        planRow("weekly", "Weekly", "$9.99", "/wk", "Billed weekly", best: false)
                     }
                     .padding(.horizontal, 22).padding(.top, 24)
                 }
             }
             .scrollIndicators(.hidden)
 
-            Text("No payment now. 3-day free trial, then $59.99/year. Auto-renews unless cancelled 24h before the trial ends. Cancel anytime in Settings.")
+            primaryButton(selectedPlan == "annual" ? "Start my 3-day free trial" : "Continue with weekly") { startRealScan() }
+            Text(paywallTerms)
                 .font(.system(size: 10.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
-                .padding(.horizontal, 30).padding(.top, 10).padding(.bottom, 8)
-            primaryButton("Start my 3-day free trial") { startRealScan() }
+                .padding(.horizontal, 30).padding(.top, 2).padding(.bottom, 6)
             Text("Restore purchases").font(.system(size: 12)).foregroundStyle(Theme.mut).padding(.bottom, 12)
         }
     }
 
-    private func planRow(_ title: String, _ price: String, _ subprice: String?, _ detail: String, best: Bool) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
-                    if best {
-                        Text("BEST VALUE").font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+    private var paywallTerms: String {
+        selectedPlan == "annual"
+            ? "No payment now. 3-day free trial, then $59.99/year. Auto-renews unless cancelled 24h before the trial ends. Cancel anytime."
+            : "$9.99 per week, billed weekly. Cancel anytime in Settings."
+    }
+
+    private func planRow(_ id: String, _ title: String, _ price: String, _ unit: String, _ detail: String, best: Bool) -> some View {
+        let selected = selectedPlan == id
+        return Button { withAnimation(.easeOut(duration: 0.15)) { selectedPlan = id } } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 20)).foregroundStyle(selected ? Theme.acc : Theme.line)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+                        if best {
+                            Text("BEST VALUE").font(.system(size: 9, weight: .bold))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+                        }
                     }
+                    Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.mut)
                 }
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.mut)
+                Spacer()
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text(price).font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text(unit).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                }
             }
-            Spacer()
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text(price).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
-                if let subprice { Text(subprice).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.acc) }
-            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14).fill(selected ? Theme.acc.opacity(0.08) : Theme.card)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(selected ? Theme.acc : Theme.line, lineWidth: selected ? 1.5 : 1))
+            )
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 14).fill(best ? Theme.acc.opacity(0.08) : Theme.card)
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(best ? Theme.acc : Theme.line, lineWidth: best ? 1.5 : 1))
-        )
+        .buttonStyle(.plain)
     }
 
     // MARK: scanning (REAL Gemini) + result

@@ -20,14 +20,11 @@ import SwiftUI
     var reminders: Bool = true  // workout reminder opt-in
     var attribution: String?    // how they heard about us
 
-    // Goal weight only matters when there's a weight target to hit.
-    var usesGoalWeight: Bool { goal == "lose_fat" || goal == "both" }
-
     var payload: ScanAPI.ProfileInput {
         .init(sex: sex, goal: goal, focus: Array(focus), experience: experience,
               daysPerWeek: daysPerWeek, equipment: equipment,
               heightCm: heightCm, weightKg: weightKg, age: age,
-              goalWeightKg: usesGoalWeight ? goalWeightKg : nil,
+              goalWeightKg: goalWeightKg,
               activity: activity, pace: pace, attribution: attribution)
     }
 }
@@ -107,15 +104,21 @@ enum OnbStep: Int, CaseIterable {
     }
 }
 
-struct Option: Identifiable { let id: String; let label: String; let sub: String? }
+struct Option: Identifiable {
+    let id: String; let label: String; let sub: String?
+    var icon: String? = nil; var tint: Color? = nil
+}
 
 enum OnbOptions {
     static let sex = [Option(id: "male", label: "Male", sub: nil),
                       Option(id: "female", label: "Female", sub: nil)]
     static let goal = [
-        Option(id: "lose_fat", label: "Lose fat", sub: "Get lean and defined"),
-        Option(id: "gain_muscle", label: "Build muscle", sub: "Add size where it counts"),
-        Option(id: "both", label: "Both / recomp", sub: "Lean out and build"),
+        Option(id: "lose_fat", label: "Lose fat", sub: "Get lean and defined",
+               icon: "flame.fill", tint: Color(hex: 0xFF6B4A)),
+        Option(id: "gain_muscle", label: "Build muscle", sub: "Add size where it counts",
+               icon: "figure.strengthtraining.traditional", tint: Theme.acc),
+        Option(id: "both", label: "Both — recomp", sub: "Lean out and build at once",
+               icon: "arrow.triangle.2.circlepath", tint: Color(hex: 0x49B6FF)),
     ]
     static let obstacles = [
         Option(id: "plateau", label: "I've plateaued", sub: nil),
@@ -155,9 +158,12 @@ enum OnbOptions {
         Option(id: "bands", label: "Resistance bands", sub: nil),
     ]
     static let pace = [
-        Option(id: "slow", label: "Steady & sustainable", sub: "Slower, easier to stick to"),
-        Option(id: "recommended", label: "Recommended", sub: "Balanced — most people"),
-        Option(id: "aggressive", label: "Aggressive", sub: "Faster, more demanding"),
+        Option(id: "slow", label: "Gradual", sub: "Slower — easy on your routine, but takes longer",
+               icon: "tortoise.fill", tint: Color(hex: 0x8A8F98)),
+        Option(id: "recommended", label: "Recommended", sub: "Fast and sustainable — what most people pick",
+               icon: "bolt.fill", tint: Theme.acc),
+        Option(id: "aggressive", label: "Aggressive", sub: "Fastest — demanding and harder to keep up",
+               icon: "hare.fill", tint: Color(hex: 0xFF6B4A)),
     ]
     static let activity = [
         Option(id: "sedentary", label: "Sedentary", sub: "Desk job, little walking"),
