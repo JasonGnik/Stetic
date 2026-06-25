@@ -76,6 +76,14 @@ struct HomeView: View {
     }
     private var streak: Int { Streak.count(from: workoutDates) }
     private var loggedToday: Bool { workoutDates.contains(LogDate.today) }
+    // Real users get one session per day; dev builds can re-log to test.
+    private var canRelogToday: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
     private var upNext: PlanContent.Day? {
         guard !split.isEmpty else { return nil }
         let i = (workoutDates.count) % split.count
@@ -113,7 +121,7 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showSchedule) {
-            ScheduleSheet(weekdays: trainingDays, hour: trainHour) { days, hour in
+            ScheduleSheet(weekdays: trainingDays, hour: trainHour, requiredDays: split.count) { days, hour in
                 trainWeekdaysRaw = days.sorted().map(String.init).joined(separator: ",")
                 trainHour = hour
                 NotificationManager.setTrainingReminders(weekdays: days, hour: hour)
@@ -303,14 +311,26 @@ struct HomeView: View {
                     Image(systemName: "dumbbell.fill").font(.system(size: 11)).foregroundStyle(Theme.acc)
                     Text("\(day.exercises.count) exercises").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
                 }
-                Button { session = day } label: {
-                    Text(loggedToday ? "Log another session" : "Start session")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(maxWidth: .infinity).padding(13)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc))
-                        .foregroundStyle(Color(hex: 0x0E0E10))
+                if loggedToday && !canRelogToday {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Theme.acc)
+                        Text("Trained today — rest up and come back tomorrow")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
+                    }
+                    .frame(maxWidth: .infinity).padding(13)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
+                    .padding(.top, 2)
+                } else {
+                    Button { session = day } label: {
+                        Text(loggedToday ? "Log another session (dev)" : "Start session")
+                            .font(.system(size: 15, weight: .bold))
+                            .frame(maxWidth: .infinity).padding(13)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc))
+                            .foregroundStyle(Color(hex: 0x0E0E10))
+                    }
+                    .padding(.top, 2)
                 }
-                .padding(.top, 2)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -351,21 +371,38 @@ struct HomeView: View {
 struct ScheduleSheet: View {
     @State var weekdays: Set<Int>
     @State var hour: Int
+    var requiredDays: Int = 0          // plan's training-day count; 0 = unconstrained
     var onSave: (Set<Int>, Int) -> Void
     @Environment(\.dismiss) private var dismiss
 
     private let labels = [(1, "S"), (2, "M"), (3, "T"), (4, "W"), (5, "T"), (6, "F"), (7, "S")]
+    private var countOK: Bool { requiredDays == 0 || weekdays.count == requiredDays }
 
     var body: some View {
         VStack(spacing: 18) {
             Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
             Text("Training schedule").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
-            Text("Which days do you train?").font(.system(size: 12)).foregroundStyle(Theme.mut)
+            if requiredDays > 0 {
+                Text(weekdays.count == requiredDays
+                     ? "Pick the \(requiredDays) days that fit your week."
+                     : "Your plan is \(requiredDays) days — pick \(requiredDays) (\(weekdays.count) selected).")
+                    .font(.system(size: 12)).foregroundStyle(countOK ? Theme.mut : Theme.amber)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("Which days do you train?").font(.system(size: 12)).foregroundStyle(Theme.mut)
+            }
             HStack(spacing: 8) {
                 ForEach(labels, id: \.0) { wd, letter in
                     let on = weekdays.contains(wd)
                     Button {
-                        if on { weekdays.remove(wd) } else { weekdays.insert(wd) }
+                        if on { weekdays.remove(wd) }
+                        else {
+                            // Honor the plan's day count: drop the oldest pick when full.
+                            if requiredDays > 0 && weekdays.count >= requiredDays {
+                                if let drop = weekdays.sorted().first { weekdays.remove(drop) }
+                            }
+                            weekdays.insert(wd)
+                        }
                     } label: {
                         Text(letter).font(.system(size: 15, weight: .bold))
                             .frame(width: 38, height: 38)
@@ -386,9 +423,10 @@ struct ScheduleSheet: View {
                 onSave(weekdays, hour); dismiss()
             } label: {
                 Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+                    .background(RoundedRectangle(cornerRadius: 12).fill(countOK && !weekdays.isEmpty ? Theme.acc : Theme.line))
+                    .foregroundStyle(countOK && !weekdays.isEmpty ? Color(hex: 0x0E0E10) : Theme.mut)
             }
-            .disabled(weekdays.isEmpty)
+            .disabled(weekdays.isEmpty || !countOK)
             Spacer()
         }
         .padding(.horizontal, 22)

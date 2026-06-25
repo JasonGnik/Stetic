@@ -49,6 +49,8 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_MEALSCAN"] == "3" {
+            MealCoverProbe()   // DEV: present MealScanView in a fullScreenCover like the Food tab
         } else if env["STETIC_MEALSCAN"] == "2" {
             // DEV: exercise the live scanning animation (no preset → runs the loader).
             MealScanView(image: UIImage(named: "sample") ?? UIImage(), dataB64: "", onLogged: {})
@@ -108,6 +110,24 @@ struct ContentView: View {
 
 #Preview {
     ContentView().preferredColorScheme(.dark)
+}
+
+// DEV: reproduces the Food-tab presentation (MealScanView in a fullScreenCover).
+struct MealCoverProbe: View {
+    @State private var show = false
+    private var sample: (UIImage, String) {
+        let url = Bundle.main.url(forResource: "sample", withExtension: "jpg")
+        let data = (url.flatMap { try? Data(contentsOf: $0) }) ?? Data()
+        let img = UIImage(data: data) ?? UIImage()
+        return (img, data.base64EncodedString())
+    }
+    var body: some View {
+        ZStack { Theme.bg.ignoresSafeArea() }
+            .onAppear { show = true }
+            .fullScreenCover(isPresented: $show) {
+                MealScanView(image: sample.0, dataB64: sample.1, onLogged: {})
+            }
+    }
 }
 
 // DEV: renders full-length score-card PNGs (no scroll clipping) to the app's

@@ -122,10 +122,7 @@ struct MealScanView: View {
             header("Nutrition")
             ScrollView {
                 VStack(spacing: 14) {
-                    Image(uiImage: image).resizable().scaledToFill()
-                        .frame(maxWidth: .infinity).frame(height: 200)
-                        .clipped().clipShape(RoundedRectangle(cornerRadius: 16))
-
+                    // The photo is only used during the scan — it's never shown here or stored.
                     // name + servings stepper
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 3) {
