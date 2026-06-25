@@ -116,5 +116,19 @@ Weekly **$9.99/wk** + Annual **$59.99/yr** ($1.15/wk, "SAVE 88%", 3-day trial). 
 ## Coach-gap review (from the "what a coach does" research) — not yet built
 Covered: programming, nutrition+scan, progress, weak points, accountability (streak+timed reminders), onboarding/assessment, celebrations. **Gaps worth considering:** (1) **workout adjustment/swap** — "only have dumbbells today / traveling / 30 min" on-the-fly substitution (real coach behavior we lack); (2) **weekly check-in** that nudges macro/volume adjustments; (3) **community/challenges** later (retention lever). Niche/identity = marketing, already our positioning.
 
+## Food block + sign-in expansion + scan/schedule polish (part 6)
+- **Meal types:** Food tab grouped into Breakfast/Lunch/Dinner/Snacks (each with Scan / Search / Manual / Upload). `meal_logs.meal_type` (migration 20260625170000); `logMeal`/`updateMeal` send it with a pre-migration fallback.
+- **Edit logged meal:** tap any meal row → edit fields + meal-type + delete (`updateMeal`).
+- **Food search:** `food-search` edge function (USDA FoodData Central + OpenFoodFacts, both free; `FDC_API_KEY` optional, falls back to DEMO_KEY). `FoodSearchView` wired into "Add more" (scan) and section "Search foods". Barcode supported by the function (client barcode UI = follow-up).
+- **Sign-in:** added Google (Supabase OAuth via ASWebAuthenticationSession, scheme `stetic://auth-callback`) + email/password (sign-up/in) alongside Apple. URL scheme added to Info.plist.
+- **Meal scan:** loader verified in the real fullScreenCover; upload path now defers presentation so the loader shows; photo removed from results screen.
+- **Today:** one session/day for real users (DEBUG can re-log); schedule locked to the plan's day count; default training weekdays are spaced (Mon/Wed/Fri etc.).
+
+### Deploy / config needed (user's step)
+- `supabase db push` — migrations 20260625160000 (plan status) + 20260625170000 (meal_type).
+- `supabase functions deploy food-search`.
+- Supabase Auth: enable **Email** provider; enable **Google** provider (OAuth client) and add redirect URL `stetic://auth-callback` to allowed URLs.
+- Optional: set `FDC_API_KEY` secret for USDA (else DEMO_KEY, rate-limited).
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

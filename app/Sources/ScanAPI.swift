@@ -62,6 +62,39 @@ actor ScanAPI {
         try storeSession(data, code(resp))
     }
 
+    // Email/password sign-in.
+    func signInEmail(_ email: String, _ password: String) async throws {
+        let url = Config.baseURL.appending(path: "auth/v1/token").appending(queryItems: [.init(name: "grant_type", value: "password")])
+        var req = URLRequest(url: url); req.httpMethod = "POST"
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["email": email, "password": password])
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try storeSession(data, code(resp))
+    }
+
+    // Email/password sign-up. Returns true if a session was created, false if the
+    // project requires email confirmation first.
+    @discardableResult
+    func signUpEmail(_ email: String, _ password: String) async throws -> Bool {
+        let url = Config.baseURL.appending(path: "auth/v1/signup")
+        var req = URLRequest(url: url); req.httpMethod = "POST"
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["email": email, "password": password])
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        let status = code(resp)
+        guard status == 200 || status == 201 else { throw APIError.http(status, String(data: data, encoding: .utf8) ?? "") }
+        return (try? storeSession(data, status)) != nil   // no token → confirmation required
+    }
+
+    // OAuth (Google): bootstrap a full session from the refresh token in the callback.
+    func applyOAuthRefresh(_ refreshToken: String) async -> Bool {
+        accessToken = nil
+        UserDefaults.standard.set(refreshToken, forKey: refreshKey)
+        return await restoreSession()
+    }
+
     // Restore a saved session on launch (refresh-token grant). Returns true if signed in.
     func restoreSession() async -> Bool {
         if accessToken != nil { return true }
@@ -368,6 +401,22 @@ actor ScanAPI {
         return (try? JSONDecoder().decode(Wrap.self, from: data))?.text ?? ""
     }
 
+    // Search the food catalog (USDA + OpenFoodFacts) via the food-search function.
+    func searchFoods(_ q: String) async throws -> [FoodHit] {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        var req = URLRequest(url: Config.baseURL.appending(path: "functions/v1/food-search"))
+        req.httpMethod = "POST"; req.timeoutInterval = 30
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["q": q])
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard code(resp) == 200 else { return [] }
+        struct Wrap: Decodable { let foods: [FoodHit] }
+        return (try? JSONDecoder().decode(Wrap.self, from: data))?.foods ?? []
+    }
+
     func scanMeal(_ image: ImageInput) async throws -> MealEstimate {
         try await ensureSession()
         guard let token = accessToken else { throw APIError.noSession }
@@ -385,17 +434,44 @@ actor ScanAPI {
         return w.meal
     }
 
-    func logMeal(_ m: MealEstimate) async throws {
+    func logMeal(_ m: MealEstimate, mealType: String = "other") async throws {
         try await ensureSession()
         guard let uid = userId else { throw APIError.noSession }
         struct Row: Encodable {
             let user_id: String; let log_date: String; let name: String
             let calories: Double; let protein_g: Double; let carbs_g: Double; let fat_g: Double
+            var meal_type: String?
         }
-        let body = try JSONEncoder().encode(Row(user_id: uid, log_date: LogDate.today, name: m.name,
-            calories: m.shownCalories, protein_g: m.shownProtein, carbs_g: m.shownCarbs, fat_g: m.shownFat))
-        let (data, s) = try await authed(restURL("meal_logs"), method: "POST", body: body, prefer: "return=minimal")
-        guard s == 201 || s == 204 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+        func post(includeType: Bool) async throws -> Int {
+            let row = Row(user_id: uid, log_date: LogDate.today, name: m.name,
+                          calories: m.shownCalories, protein_g: m.shownProtein, carbs_g: m.shownCarbs,
+                          fat_g: m.shownFat, meal_type: includeType ? mealType : nil)
+            let body = try JSONEncoder().encode(row)
+            let (data, s) = try await authed(restURL("meal_logs"), method: "POST", body: body, prefer: "return=minimal")
+            if s != 201 && s != 204 && !(includeType) { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+            return s
+        }
+        let s = try await post(includeType: true)
+        if s == 400 { _ = try await post(includeType: false) }   // meal_type column not deployed yet
+    }
+
+    // Update an already-logged meal in place (edit flow).
+    func updateMeal(id: String, name: String, calories: Double, protein_g: Double,
+                    carbs_g: Double, fat_g: Double, mealType: String?) async throws {
+        struct Patch: Encodable {
+            let name: String; let calories: Double; let protein_g: Double
+            let carbs_g: Double; let fat_g: Double; var meal_type: String?
+        }
+        func patch(includeType: Bool) async throws -> Int {
+            let body = try JSONEncoder().encode(Patch(name: name, calories: calories, protein_g: protein_g,
+                carbs_g: carbs_g, fat_g: fat_g, meal_type: includeType ? mealType : nil))
+            let (data, s) = try await authed(restURL("meal_logs", query: [.init(name: "id", value: "eq.\(id)")]),
+                                             method: "PATCH", body: body, prefer: "return=minimal")
+            if s != 204 && s != 200 && !includeType { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+            return s
+        }
+        let s = try await patch(includeType: true)
+        if s == 400 { _ = try await patch(includeType: false) }
     }
 
     func meals(on date: String) async throws -> [MealLog] {

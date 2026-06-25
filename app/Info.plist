@@ -15,6 +15,15 @@
   <array>
     <string>UIInterfaceOrientationPortrait</string>
   </array>
+  <!-- OAuth callback (Google sign-in via Supabase) -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>     <string>com.stetic.app.oauth</string>
+      <key>CFBundleURLSchemes</key>
+      <array><string>stetic</string></array>
+    </dict>
+  </array>
   <key>NSPhotoLibraryUsageDescription</key>
   <string>Stetic uses your photos to scan and score your physique.</string>
   <key>NSCameraUsageDescription</key>

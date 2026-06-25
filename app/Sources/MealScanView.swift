@@ -6,6 +6,7 @@ import SwiftUI
 struct MealScanView: View {
     let image: UIImage
     let dataB64: String
+    var mealType: String = MealType.current().rawValue
     var onLogged: () -> Void
     var preset: MealEstimate? = nil   // DEBUG: skip the network and show a sample result
     @Environment(\.dismiss) private var dismiss
@@ -14,6 +15,7 @@ struct MealScanView: View {
     @State private var est = MealEstimate(name: "Meal", calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, confidence: "")
     @State private var saving = false
     @State private var editTarget: EditTarget?
+    @State private var showSearch = false
     @State private var startedAt = Date()
     private let scanDuration: TimeInterval = 2.8   // shared with run() so the bar lands as results appear
     enum Phase { case scanning, results }
@@ -26,6 +28,10 @@ struct MealScanView: View {
         }
         .task { await run() }
         .sheet(item: $editTarget) { target in itemEditor(target) }
+        .sheet(isPresented: $showSearch) {
+            FoodSearchView(onPick: { hit in est.items.append(hit.asItem) },
+                           onManual: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { editTarget = EditTarget(index: nil) } })
+        }
     }
 
     // The analysis steps the scanner appears to walk through.
@@ -156,7 +162,7 @@ struct MealScanView: View {
                     HStack {
                         Text("Ingredients").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
                         Spacer()
-                        Button { editTarget = EditTarget(index: nil) } label: {
+                        Button { showSearch = true } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "plus").font(.system(size: 12, weight: .bold))
                                 Text("Add more").font(.system(size: 13, weight: .semibold))
@@ -323,7 +329,7 @@ struct MealScanView: View {
 
     private func add() async {
         saving = true
-        try? await ScanAPI.shared.logMeal(est)
+        try? await ScanAPI.shared.logMeal(est, mealType: mealType)
         await MainActor.run { saving = false; onLogged(); dismiss() }
     }
 }

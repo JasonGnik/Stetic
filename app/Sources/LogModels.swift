@@ -68,6 +68,38 @@ struct MealLog: Codable, Identifiable {
     var protein_g: Double
     var carbs_g: Double
     var fat_g: Double
+    var meal_type: String?
+}
+
+// Breakfast / lunch / dinner / snacks — how the day's food is grouped.
+enum MealType: String, CaseIterable, Identifiable {
+    case breakfast, lunch, dinner, snacks
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .breakfast: return "Breakfast"; case .lunch: return "Lunch"
+        case .dinner: return "Dinner"; case .snacks: return "Snacks"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .breakfast: return "sunrise.fill"; case .lunch: return "sun.max.fill"
+        case .dinner: return "moon.stars.fill"; case .snacks: return "carrot.fill"
+        }
+    }
+    // Map any stored value (incl. legacy "other") to a bucket for display.
+    static func bucket(_ raw: String?) -> MealType {
+        MealType(rawValue: raw ?? "") ?? .snacks
+    }
+    // Sensible default based on time of day.
+    static func current() -> MealType {
+        switch Calendar.current.component(.hour, from: Date()) {
+        case 0..<11: return .breakfast
+        case 11..<15: return .lunch
+        case 15..<18: return .snacks
+        default: return .dinner
+        }
+    }
 }
 
 // What /meal-scan returns before the user confirms and saves it.
@@ -119,6 +151,28 @@ struct MealEstimate: Codable, Identifiable {
     var shownFat: Double      { (baseFat * servings).rounded() }
 
     enum CodingKeys: String, CodingKey { case name, items, calories, protein_g, carbs_g, fat_g, confidence, note }
+}
+
+// A food catalog hit from /food-search (macros per the stated portion, ~100g).
+struct FoodHit: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var name: String
+    var brand: String = ""
+    var portion: String = ""
+    var calories: Double = 0
+    var protein_g: Double = 0
+    var carbs_g: Double = 0
+    var fat_g: Double = 0
+    enum CodingKeys: String, CodingKey { case name, brand, portion, calories, protein_g, carbs_g, fat_g }
+    var asItem: MealEstimate.Item {
+        .init(name: name, portion: portion.isEmpty ? nil : portion,
+              calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g)
+    }
+    var asMeal: MealEstimate {
+        var m = MealEstimate(name: name, calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, confidence: "catalog")
+        m.items = [asItem]
+        return m
+    }
 }
 
 // A single scan reduced to its plottable numbers (for the progress chart).
