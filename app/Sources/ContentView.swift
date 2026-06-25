@@ -18,6 +18,8 @@ struct ContentView: View {
     var body: some View {
         if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
+        } else if env["STETIC_SHARECARD"] == "1" {
+            ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
         } else if env["STETIC_SESSION"] == "1" {
             SessionLogView(day: .init(day: "Pull Day", focus: "Back, rear delts & biceps", exercises: [
                 .init(name: "Weighted Pull-up", sets: 2, reps: "5-9, 10-12", target: "lats", note: nil),

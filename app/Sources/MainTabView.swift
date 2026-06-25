@@ -27,7 +27,7 @@ struct MainTabView: View {
                 .tabItem { Label("Plan", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(1)
             NutritionView(target: bundle?.content.macros)
                 .tabItem { Label("Food", systemImage: "fork.knife") }.tag(2)
-            ProgressScreen(scan: bundle?.scan, onNewScan: { showScan = true })
+            ProgressScreen(scan: bundle?.scan, name: name, onNewScan: { showScan = true })
                 .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(3)
         }
         .tint(Theme.acc)

@@ -4,10 +4,12 @@ import Charts
 // Progress + profile: score over time, latest delta, recent sessions, re-scan.
 struct ProgressScreen: View {
     let scan: ScoreCard?
+    var name: String = ""
     let onNewScan: () -> Void
 
     @State private var points: [ScanPoint] = []
     @State private var sessions: [WorkoutLog] = []
+    @State private var shareURL: URL?
 
     private var latest: ScanPoint? { points.last }
     private var previous: ScanPoint? { points.count >= 2 ? points[points.count - 2] : nil }
@@ -19,7 +21,18 @@ struct ProgressScreen: View {
                 Text("Progress").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                 scoreHeader
                 if points.count >= 2 { chartCard } else { needMoreCard }
-                rescanButton
+                HStack(spacing: 10) {
+                    rescanButton
+                    if let shareURL {
+                        ShareLink(item: shareURL, preview: SharePreview("My Stetic rank", image: Image(systemName: "rosette"))) {
+                            Image(systemName: "square.and.arrow.up").font(.system(size: 16, weight: .bold))
+                                .frame(width: 52, height: 50)
+                                .background(RoundedRectangle(cornerRadius: 13).fill(Theme.card)
+                                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(Theme.line, lineWidth: 1)))
+                                .foregroundStyle(Theme.acc)
+                        }
+                    }
+                }
                 if !sessions.isEmpty { sessionsSection }
             }
             .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 32)
@@ -29,6 +42,9 @@ struct ProgressScreen: View {
         .task {
             points = (try? await ScanAPI.shared.scanPoints()) ?? []
             sessions = (try? await ScanAPI.shared.recentWorkouts()) ?? []
+        }
+        .task(id: scan?.id) {
+            if let scan { shareURL = await MainActor.run { ShareCard.makeImageURL(scan, name: name) } }
         }
     }
 
