@@ -137,13 +137,20 @@ actor ScanAPI {
     struct PlanBundle { let content: PlanContent; let scan: ScoreCard }
     private var cachedPlan: PlanBundle?
 
-    // Pre-generate the plan right after a scan (while the user reads the score card),
-    // so opening the plan is instant — no second loader.
-    func prefetchPlan() async { _ = try? await plan() }
+    // Generate a fresh plan right after a scan (while the user reads the score card),
+    // so opening the plan is instant. This is the only path that calls Gemini.
+    func prefetchPlan() async { _ = try? await generatePlan() }
     func clearPlanCache() { cachedPlan = nil }
 
+    // Returns the plan without regenerating when possible: memory cache → the last
+    // saved plan in the DB (fast) → generate as a last resort.
     func plan() async throws -> PlanBundle {
         if let cachedPlan { return cachedPlan }
+        if let saved = try? await fetchLatestPlan() { cachedPlan = saved; return saved }
+        return try await generatePlan()
+    }
+
+    private func generatePlan() async throws -> PlanBundle {
         try await ensureSession()
         guard let token = accessToken else { throw APIError.noSession }
         let url = Config.baseURL.appending(path: "functions/v1/plan")
@@ -162,7 +169,49 @@ actor ScanAPI {
         cachedPlan = bundle
         return bundle
     }
+
+    // Rebuild the latest plan from the DB (the /plan function persists each one).
+    func fetchLatestPlan() async throws -> PlanBundle? {
+        let (data, s) = try await authed(restURL("plans", query: [
+            .init(name: "select", value: "workout,macros,scan_id"),
+            .init(name: "order", value: "created_at.desc"),
+            .init(name: "limit", value: "1"),
+        ]), method: "GET")
+        guard s == 200,
+              let rows = try? JSONDecoder().decode([SavedPlanRow].self, from: data),
+              let row = rows.first, let scanId = row.scan_id else { return nil }
+        let (sd, ss) = try await authed(restURL("scans", query: [
+            .init(name: "select", value: "*"),
+            .init(name: "id", value: "eq.\(scanId)"),
+            .init(name: "limit", value: "1"),
+        ]), method: "GET")
+        guard ss == 200,
+              let scans = try? JSONDecoder().decode([ScoreCard].self, from: sd),
+              let scan = scans.first else { return nil }
+        let w = row.workout
+        let content = PlanContent(
+            goal_label: w.goal_label, summary: w.summary, macros: row.macros,
+            weekly_split: w.weekly_split, priorities: w.priorities,
+            muscle_breakdown: w.muscle_breakdown, projection: w.projection,
+            split_critique: w.split_critique)
+        return PlanBundle(content: content, scan: scan)
+    }
+
     private struct PlanResponse: Decodable { let content: PlanContent; let scan: ScoreCard }
+    private struct SavedPlanRow: Decodable {
+        let workout: WorkoutBlob
+        let macros: PlanContent.Macros
+        let scan_id: String?
+        struct WorkoutBlob: Decodable {
+            let goal_label: String
+            let summary: String
+            let weekly_split: [PlanContent.Day]
+            let priorities: [PlanContent.Priority]
+            let muscle_breakdown: [PlanContent.Breakdown]
+            let projection: PlanContent.Projection
+            let split_critique: String?
+        }
+    }
 
     // MARK: logging (workouts, meals, streak)
     private func restURL(_ table: String, query: [URLQueryItem] = []) -> URL {
