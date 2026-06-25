@@ -233,25 +233,24 @@ struct RevealFunnelView: View {
     ]
 
     private var reviewsCarousel: some View {
-        VStack(spacing: 8) {
-            TabView {
-                ForEach(reviews.indices, id: \.self) { i in
-                    VStack(spacing: 8) {
-                        HStack(spacing: 3) {
-                            ForEach(0..<5, id: \.self) { _ in
-                                Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(Theme.acc)
-                            }
+        TabView {
+            ForEach(reviews.indices, id: \.self) { i in
+                VStack(spacing: 9) {
+                    HStack(spacing: 3) {
+                        ForEach(0..<5, id: \.self) { _ in
+                            Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(Theme.acc)
                         }
-                        Text("“\(reviews[i].0)”").font(.system(size: 13.5)).foregroundStyle(Color(hex: 0xD2D2D8))
-                            .multilineTextAlignment(.center).lineSpacing(2).padding(.horizontal, 24)
-                        Text("— \(reviews[i].1)").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
                     }
-                    .padding(.horizontal, 8)
+                    Text("“\(reviews[i].0)”").font(.system(size: 13.5)).foregroundStyle(Color(hex: 0xD2D2D8))
+                        .multilineTextAlignment(.center).lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+                    Text("— \(reviews[i].1)").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
+                    Spacer(minLength: 0)
                 }
+                .padding(.horizontal, 26).padding(.top, 4)
             }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .frame(height: 130)
         }
+        .tabViewStyle(.page(indexDisplayMode: .always))
+        .frame(height: 132)
     }
 
     private var paywallTerms: String {
@@ -270,9 +269,14 @@ struct RevealFunnelView: View {
                     HStack(spacing: 6) {
                         Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
                         if best {
-                            Text("SAVE 88%").font(.system(size: 9, weight: .bold))
+                            Text("BEST VALUE").font(.system(size: 9, weight: .bold))
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+                            Text("SAVE 88%").font(.system(size: 9, weight: .bold))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Capsule().fill(Theme.acc.opacity(0.18)))
+                                .overlay(Capsule().stroke(Theme.acc, lineWidth: 1))
+                                .foregroundStyle(Theme.acc)
                         }
                     }
                     Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.mut)
