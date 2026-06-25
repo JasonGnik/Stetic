@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import RevenueCat
 
 // The reveal funnel: capture the photo, build investment + FOMO with NO AI spend,
 // gate the real Gemini scan behind a (stubbed) paywall, then reveal.
@@ -182,7 +183,31 @@ struct RevealFunnelView: View {
         )
     }
 
-    // MARK: paywall (STUB — swap for RevenueCat later)
+    // MARK: paywall (RevenueCat; falls back to built-in prices + dev path when the key isn't set)
+    @ObservedObject private var purchases = PurchaseManager.shared
+    @State private var purchasing = false
+
+    private var annualPkg: Package? { purchases.annual }
+    private var weeklyPkg: Package? { purchases.weekly }
+    private var selectedPackage: Package? { selectedPlan == "annual" ? annualPkg : weeklyPkg }
+
+    private func perWeek(_ p: StoreProduct) -> String {
+        let weekly = NSDecimalNumber(decimal: p.price).dividing(by: NSDecimalNumber(value: 52))
+        let f = NumberFormatter(); f.numberStyle = .currency; f.currencyCode = p.currencyCode
+        return f.string(from: weekly) ?? p.localizedPriceString
+    }
+
+    private func purchaseAndScan() {
+        // No RC key yet / simulator → just proceed (dev path).
+        guard purchases.configured, let pkg = selectedPackage else { startRealScan(); return }
+        purchasing = true
+        Task {
+            let ok = await purchases.purchase(pkg)
+            purchasing = false
+            if ok { startRealScan() }
+        }
+    }
+
     private let perks = [
         "Your physique score & rank",
         "A full breakdown of your weak points",
@@ -213,8 +238,13 @@ struct RevealFunnelView: View {
                     .padding(.horizontal, 30).padding(.top, 22)
 
                     VStack(spacing: 12) {
-                        planRow("annual", "Annual", "$1.15", "/wk", "$59.99/yr · 3-day free trial", best: true)
-                        planRow("weekly", "Weekly", "$9.99", "/wk", "Billed weekly", best: false)
+                        planRow("annual", "Annual",
+                                annualPkg.map { perWeek($0.storeProduct) } ?? "$1.15", "/wk",
+                                annualPkg.map { "\($0.storeProduct.localizedPriceString)/yr · 3-day free trial" } ?? "$59.99/yr · 3-day free trial",
+                                best: true)
+                        planRow("weekly", "Weekly",
+                                weeklyPkg?.storeProduct.localizedPriceString ?? "$9.99", "/wk",
+                                "Billed weekly", best: false)
                     }
                     .padding(.horizontal, 22).padding(.top, 24)
 
@@ -223,12 +253,30 @@ struct RevealFunnelView: View {
             }
             .scrollIndicators(.hidden)
 
-            primaryButton(selectedPlan == "annual" ? "Start my 3-day free trial" : "Continue with weekly") { startRealScan() }
+            Button { purchaseAndScan() } label: {
+                HStack(spacing: 8) {
+                    if purchasing { ProgressView().tint(Color(hex: 0x0E0E10)) }
+                    Text(selectedPlan == "annual" ? "Start my 3-day free trial" : "Continue with weekly")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .frame(maxWidth: .infinity).padding(15)
+                .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
+                .foregroundStyle(Color(hex: 0x0E0E10))
+            }
+            .disabled(purchasing)
+            .padding(.horizontal, 22).padding(.bottom, 14)
+
             Text(paywallTerms)
                 .font(.system(size: 10.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
                 .padding(.horizontal, 30).padding(.top, 2).padding(.bottom, 6)
-            Text("Restore purchases").font(.system(size: 12)).foregroundStyle(Theme.mut).padding(.bottom, 12)
+            Button {
+                Task { if await purchases.restore() { startRealScan() } }
+            } label: {
+                Text("Restore purchases").font(.system(size: 12)).foregroundStyle(Theme.mut)
+            }
+            .padding(.bottom, 12)
         }
+        .task { await purchases.loadOffering() }
     }
 
     // Placeholder testimonials — swap for real App Store reviews before launch.

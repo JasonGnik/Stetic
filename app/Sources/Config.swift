@@ -8,11 +8,11 @@ import Foundation
 // Settings → API → "anon public"). The anon key is meant to be shipped in the app.
 enum Config {
     // Set true to use the hosted project, or run with STETIC_REMOTE=1.
-    static let useRemote = ProcessInfo.processInfo.environment["STETIC_REMOTE"] == "1" || false
+    static let useRemote = ProcessInfo.processInfo.environment["STETIC_REMOTE"] == "1" || true
 
     // ── Remote (hosted Supabase project) ──
     static let remoteURL = URL(string: "https://bnamfaocppltrcvnbmcv.supabase.co")!
-    static let remoteAnonKey = "PASTE_YOUR_ANON_PUBLIC_KEY_HERE"
+    static let remoteAnonKey = "sb_publishable_inNzfUY7JL3VsImbV37dRg_qggjoR0n"
 
     // ── Local (Docker stack, ports shifted +30) ──
     static let localURL = URL(string: "http://127.0.0.1:54351")!
@@ -25,4 +25,12 @@ enum Config {
     // Fixed dev account (created on first use). Real auth (Apple Sign In) comes later.
     static let devEmail = "dev@stetic.local"
     static let devPassword = "stetic-dev-pw"
+
+    // RevenueCat PUBLIC SDK key. Paste the App Store app's `appl_...` key once it's
+    // created in RevenueCat (Apps → App Store app). Safe to embed (public key).
+    // Until set, the paywall falls back to its built-in prices and the dev path.
+    static let revenueCatKey = "appl_PASTE_YOUR_REVENUECAT_PUBLIC_KEY"
+    static var revenueCatConfigured: Bool { revenueCatKey.hasPrefix("appl_") && !revenueCatKey.contains("PASTE") }
+    // The entitlement identifier you created in RevenueCat.
+    static let entitlementID = "Stetic Pro"
 }
