@@ -226,7 +226,7 @@ struct RevealFunnelView: View {
 
     // Placeholder testimonials — swap for real App Store reviews before launch.
     private let reviews: [(String, String)] = [
-        ("Went from a 5.8 to Diamond in 8 weeks. The plan just works.", "Dev R."),
+        ("Went from Gold to Diamond in 8 weeks. The plan just works.", "Dev R."),
         ("Finally an app that told me the truth — my back was killing my whole look.", "Marcus T."),
         ("Cancelled my coach. This is better and a fraction of the price.", "Tyler J."),
         ("First time I actually know what to do in the gym every session.", "Sam K."),
@@ -272,14 +272,12 @@ struct RevealFunnelView: View {
                             Text("BEST VALUE").font(.system(size: 9, weight: .bold))
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
-                            Text("SAVE 88%").font(.system(size: 9, weight: .bold))
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(Capsule().fill(Theme.acc.opacity(0.18)))
-                                .overlay(Capsule().stroke(Theme.acc, lineWidth: 1))
-                                .foregroundStyle(Theme.acc)
                         }
                     }
                     Text(detail).font(.system(size: 11.5)).foregroundStyle(Theme.mut)
+                    if best {
+                        Text("Save 88% vs paying weekly").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.acc)
+                    }
                 }
                 Spacer()
                 HStack(alignment: .firstTextBaseline, spacing: 1) {

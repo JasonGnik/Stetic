@@ -11,7 +11,6 @@ struct OnboardingView: View {
     @State private var seededGoalWeight = false
     @State private var splitPhoto: PhotosPickerItem?
     @State private var readingSplit = false
-    @State private var analyzed = false   // callback interstitial: loader -> reveal
 
     private var step: OnbStep { OnbStep.allCases[stepIndex] }
     private var total: Int { OnbStep.allCases.count }
@@ -64,52 +63,21 @@ struct OnboardingView: View {
             .padding(.horizontal, 22).padding(.top, 8)
             Spacer()
             Group {
-                if !analyzed {
-                    ScanningLoader(title: analysisTitle,
-                                   messages: analysisMessages, icons: ["target", "person.3.fill", "scope", "bolt.fill"])
-                        .id("loader\(stepIndex)")
-                } else {
-                    switch step {
-                    case .callback: callbackContent
-                    case .insight: insightContent
-                    case .socialProof: socialProofContent
-                    default: EmptyView()
-                    }
+                switch step {
+                case .callback: callbackContent
+                case .socialProof: socialProofContent
+                default: EmptyView()
                 }
             }
             .padding(.horizontal, 30)
             Spacer()
-            if analyzed {
-                Button { advance() } label: {
-                    Text("Continue").font(.system(size: 16, weight: .bold))
-                        .frame(maxWidth: .infinity).padding(15)
-                        .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
-                        .foregroundStyle(Color(hex: 0x0E0E10))
-                }
-                .padding(.horizontal, 22).padding(.bottom, 14)
-                .transition(.opacity)
+            Button { advance() } label: {
+                Text("Continue").font(.system(size: 16, weight: .bold))
+                    .frame(maxWidth: .infinity).padding(15)
+                    .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
+                    .foregroundStyle(Color(hex: 0x0E0E10))
             }
-        }
-        // Every interstitial "analyzes" first, then reveals the payoff — builds FOMO.
-        .task(id: stepIndex) {
-            analyzed = false
-            try? await Task.sleep(nanoseconds: 2_400_000_000)
-            withAnimation(.easeOut(duration: 0.4)) { analyzed = true }
-        }
-    }
-
-    private var analysisTitle: String {
-        switch step {
-        case .insight:     return "Analyzing your profile"
-        case .socialProof: return "Comparing your profile"
-        default:           return "Analyzing your answers"
-        }
-    }
-    private var analysisMessages: [String] {
-        switch step {
-        case .insight:     return ["Modeling your starting point", "Estimating your trajectory", "Finding your fastest path"]
-        case .socialProof: return ["Comparing to thousands of physiques", "Matching profiles like yours", "Crunching the numbers"]
-        default:           return ["Reading your goals", "Finding what's holding you back", "Mapping your fastest path"]
+            .padding(.horizontal, 22).padding(.bottom, 14)
         }
     }
 
@@ -125,23 +93,6 @@ struct OnboardingView: View {
                 .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4)
                 .foregroundStyle(Theme.mut)
         }
-        .transition(.opacity)
-    }
-
-    // Profile-based FOMO payoff (illustrative numbers, experience-aware).
-    private var insightContent: some View {
-        let beginner = data.experience == "beginner"
-        return VStack(spacing: 16) {
-            Text(beginner ? "73%" : "7 in 10")
-                .font(.system(size: 60, weight: .heavy)).foregroundStyle(Theme.acc)
-            Text(beginner ? "faster progress in your first 12 weeks" : "lifters never fix their weak points")
-                .font(.system(size: 17, weight: .bold)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-            Text(brandLimed(beginner
-                ? "Beginners who start with a real plan instead of guessing progress far faster early on. Stetic makes sure you don't waste your fastest growth window."
-                : "Most lifters plateau for years repeating the same mistakes. Stetic pinpoints what's holding you back and builds the plan to fix it."))
-                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(4).foregroundStyle(Theme.mut)
-        }
-        .transition(.opacity)
     }
 
     // NOTE: count + reviews are placeholders for real app metrics / testimonials.
@@ -236,7 +187,7 @@ struct OnboardingView: View {
         case .age:        ageStep
         case .attribution: singleSelect(OnbOptions.attribution, data.attribution) { data.attribution = $0 }
         case .reminders:  remindersStep
-        case .callback, .socialProof, .insight: EmptyView()   // rendered by interstitialView
+        case .callback, .socialProof: EmptyView()   // rendered by interstitialView
         }
     }
 
@@ -433,7 +384,7 @@ struct OnboardingView: View {
         case .equipmentDetail: return true   // optional
         case .attribution: return data.attribution != nil
         case .reminders: return true   // tap-to-finish
-        case .callback, .socialProof, .insight: return true
+        case .callback, .socialProof: return true
         }
     }
 

@@ -120,7 +120,8 @@ struct PlanView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text(String(format: "%.1f", m.projected_score))
                                 .font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.txt)
-                            Text(String(format: "+%.1f", m.points_gain))
+                            // cumulative gain from the starting score (not the previous milestone)
+                            Text(String(format: "+%.1f", max(0, m.projected_score - scan.aesthetic_score)))
                                 .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.acc)
                         }
                         Text(tier.label).font(.system(size: 12, weight: .bold)).foregroundStyle(tier.color)
