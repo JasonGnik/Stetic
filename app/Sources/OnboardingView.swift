@@ -311,8 +311,7 @@ struct OnboardingView: View {
                 optionCard(o.label, o.sub, selected: data.reminders == (o.id == "yes")) {
                     data.reminders = (o.id == "yes")
                     if data.reminders {
-                        UNUserNotificationCenter.current()
-                            .requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+                        NotificationManager.enableTrainingReminders(daysPerWeek: data.daysPerWeek ?? 4)
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { advance() }
                 }
