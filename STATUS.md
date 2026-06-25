@@ -107,5 +107,14 @@ Dev flags bypass the sign-in gate (use the dev account). On the sign-in screen, 
 ## Pricing (current)
 Weekly **$9.99/wk** + Annual **$59.99/yr** ($1.15/wk, "SAVE 88%", 3-day trial). Two tiers, no monthly. Prices now flow from RevenueCat; the in-app numbers are fallbacks. Still open to revisit.
 
+## Progressive overload + Today calendar + meal-scan polish (part 5)
+- **Progressive overload (SessionLogView):** each exercise shows its rep-range target pill + "Last: w×r" line; per-set "last N" to beat; beating last reps or hitting the top of range fires a green pulse + haptic + inline "you're going up next session" banner; finishing shows a celebration overlay listing exercises to add weight to. `LoggedExercise.repRange` added (optional, back-compatible); `RepRange` parser in LogModels.
+- **Today week strip:** current-week 7-day calendar — logged days = green check, scheduled-but-missed = ✕, today = ring, rest = muted. Edit opens `ScheduleSheet` (pick training weekdays + reminder time → `NotificationManager.setTrainingReminders`). Stored in AppStorage (`trainWeekdays`, `trainHour`).
+- **Deload banner:** JP doctrine ~8 wks. Shows when weeksTraining ≥ 8 (anchored to first workout or last deload); "Done" resets the 8-week clock (`deloadAnchor`).
+- **Meal scan:** fixed status-bar overlap (ZStack so content respects safe area, was floating under the clock/X); sleeker scan animation (targeting grid + sweeping line + detection nodes that light up + walking status steps); fixed results-photo framing.
+
+## Coach-gap review (from the "what a coach does" research) — not yet built
+Covered: programming, nutrition+scan, progress, weak points, accountability (streak+timed reminders), onboarding/assessment, celebrations. **Gaps worth considering:** (1) **workout adjustment/swap** — "only have dumbbells today / traveling / 30 min" on-the-fly substitution (real coach behavior we lack); (2) **weekly check-in** that nudges macro/volume adjustments; (3) **community/challenges** later (retention lever). Niche/identity = marketing, already our positioning.
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

@@ -14,44 +14,106 @@ struct MealScanView: View {
     @State private var est = MealEstimate(name: "Meal", calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, confidence: "")
     @State private var saving = false
     @State private var editTarget: EditTarget?
+    @State private var startedAt = Date()
+    private let scanDuration: TimeInterval = 2.8   // shared with run() so the bar lands as results appear
     enum Phase { case scanning, results }
     struct EditTarget: Identifiable { let id = UUID(); var index: Int? }   // nil = new item
 
     var body: some View {
-        Group {
+        ZStack {
+            Theme.bg.ignoresSafeArea()
             if phase == .scanning { scanningView } else { resultsView }
         }
-        .background(Theme.bg.ignoresSafeArea())
         .task { await run() }
         .sheet(item: $editTarget) { target in itemEditor(target) }
     }
 
-    // MARK: scanning (loading) — photo + sweeping scan line, no error mid-scan
+    // The analysis steps the scanner appears to walk through.
+    private let scanSteps = ["Detecting foods", "Estimating portions", "Calculating macros", "Finishing up"]
+    // Where the pulsing "detection" nodes sit (fractions of the frame).
+    private let nodes: [CGPoint] = [.init(x: 0.32, y: 0.40), .init(x: 0.62, y: 0.34),
+                                    .init(x: 0.50, y: 0.58), .init(x: 0.72, y: 0.62), .init(x: 0.38, y: 0.68)]
+
+    // MARK: scanning (loading) — photo + an AI vision sweep + a climbing progress bar.
     private var scanningView: some View {
         VStack(spacing: 0) {
             header("Scanning meal")
+            Spacer(minLength: 8)
             GeometryReader { geo in
                 let w = geo.size.width, h = geo.size.height
                 ZStack {
                     Image(uiImage: image).resizable().scaledToFill().frame(width: w, height: h).clipped()
-                    Rectangle().fill(Color.black.opacity(0.28))
+                    Rectangle().fill(Color.black.opacity(0.22))
+                    scanGrid(w: w, h: h)
                     cornerBrackets(w: w, h: h)
                     TimelineView(.animation) { tl in
                         let t = tl.date.timeIntervalSinceReferenceDate
-                        let y = (sin(t * 1.6) * 0.5 + 0.5) * h
+                        let sweep = (t.truncatingRemainder(dividingBy: 1.8)) / 1.8   // 0→1 sweep, top→bottom
+                        let y = sweep * h
                         ZStack {
-                            Rectangle().fill(LinearGradient(colors: [.clear, Theme.acc.opacity(0.5), .clear], startPoint: .top, endPoint: .bottom))
-                                .frame(height: 60).position(x: w / 2, y: y)
-                            Rectangle().fill(Theme.acc).frame(height: 2).shadow(color: Theme.acc, radius: 6).position(x: w / 2, y: y)
+                            // bright sweeping band + crisp line
+                            Rectangle().fill(LinearGradient(colors: [.clear, Theme.acc.opacity(0.55), .clear], startPoint: .top, endPoint: .bottom))
+                                .frame(height: 120).position(x: w / 2, y: y)
+                            Rectangle().fill(Theme.acc).frame(height: 2.5)
+                                .shadow(color: Theme.acc, radius: 12).position(x: w / 2, y: y)
+                            ForEach(nodes.indices, id: \.self) { idx in
+                                let nx = nodes[idx].x * w, ny = nodes[idx].y * h
+                                detectionNode(active: abs(ny - y) < 70).position(x: nx, y: ny)
+                            }
                         }
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 18))
             }
-            .frame(height: 380).padding(.horizontal, 18)
-            Text("Identifying foods…").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut).padding(.top, 16)
+            .frame(height: 300).padding(.horizontal, 18)
+
+            // Big, unmistakable loading block: title + climbing bar + current step.
+            TimelineView(.animation) { tl in
+                let elapsed = tl.date.timeIntervalSince(startedAt)
+                let frac = min(0.97, max(0.04, elapsed / scanDuration))
+                let step = scanSteps[min(scanSteps.count - 1, Int(frac * Double(scanSteps.count)))]
+                VStack(spacing: 12) {
+                    Text("Analyzing your meal").font(.system(size: 19, weight: .heavy)).foregroundStyle(Theme.txt)
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.line)
+                            Capsule().fill(LinearGradient(colors: [Theme.acc.opacity(0.7), Theme.acc], startPoint: .leading, endPoint: .trailing))
+                                .frame(width: g.size.width * frac)
+                                .shadow(color: Theme.acc.opacity(0.5), radius: 6)
+                        }
+                    }
+                    .frame(height: 8)
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles").font(.system(size: 12)).foregroundStyle(Theme.acc)
+                        Text(step + "…").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.mut)
+                            .contentTransition(.opacity)
+                        Spacer()
+                        Text("\(Int(frac * 100))%").font(.system(size: 13.5, weight: .heavy)).foregroundStyle(Theme.acc)
+                            .monospacedDigit()
+                    }
+                }
+                .padding(.horizontal, 22).padding(.top, 22)
+            }
             Spacer()
         }
+    }
+
+    // Faint targeting grid behind the sweep, for a "vision system" feel.
+    private func scanGrid(w: CGFloat, h: CGFloat) -> some View {
+        Path { p in
+            let step: CGFloat = 44
+            var x: CGFloat = 0; while x < w { p.move(to: .init(x: x, y: 0)); p.addLine(to: .init(x: x, y: h)); x += step }
+            var y: CGFloat = 0; while y < h { p.move(to: .init(x: 0, y: y)); p.addLine(to: .init(x: w, y: y)); y += step }
+        }.stroke(Theme.acc.opacity(0.10), lineWidth: 0.5)
+    }
+
+    private func detectionNode(active: Bool) -> some View {
+        ZStack {
+            Circle().stroke(Theme.acc.opacity(active ? 0.9 : 0.0), lineWidth: 1.5).frame(width: 26, height: 26)
+            Circle().fill(Theme.acc.opacity(active ? 0.9 : 0.0)).frame(width: 5, height: 5)
+        }
+        .scaleEffect(active ? 1 : 0.5)
+        .animation(.easeOut(duration: 0.35), value: active)
     }
 
     // MARK: results (editable) — Cal AI style
@@ -61,8 +123,8 @@ struct MealScanView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     Image(uiImage: image).resizable().scaledToFill()
-                        .frame(height: 180).frame(maxWidth: .infinity).clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .frame(maxWidth: .infinity).frame(height: 200)
+                        .clipped().clipShape(RoundedRectangle(cornerRadius: 16))
 
                     // name + servings stepper
                     HStack(alignment: .top) {
@@ -231,21 +293,35 @@ struct MealScanView: View {
     // MARK: flow
     private func run() async {
         if let preset { est = preset; withAnimation { phase = .results }; return }
-        do {
-            let result = try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: dataB64))
-            await MainActor.run {
-                est = result
-                if est.items.isEmpty && est.baseCalories <= 0 {
-                    est.note = "Couldn't read it automatically — add your foods below."
-                }
-                withAnimation(.easeOut(duration: 0.3)) { phase = .results }
-            }
-        } catch {
-            await MainActor.run {
-                est.note = "Couldn't read it automatically — add your foods below."
-                withAnimation { phase = .results }
-            }
+        let start = Date()
+        await MainActor.run { startedAt = start }
+        let minScanTime = scanDuration   // always let the scan animation play through
+
+        var result = try? await scanOnce()
+        // The same plate occasionally comes back empty — retry once before falling back.
+        if isEmpty(result) { result = try? await scanOnce() }
+
+        // Keep the animation on screen for at least minScanTime so it never just flashes.
+        let elapsed = Date().timeIntervalSince(start)
+        if elapsed < minScanTime {
+            try? await Task.sleep(nanoseconds: UInt64((minScanTime - elapsed) * 1_000_000_000))
         }
+        await MainActor.run {
+            if let result, !isEmpty(result) {
+                est = result
+            } else {
+                est.note = "Add your foods below to log this meal."
+            }
+            withAnimation(.easeOut(duration: 0.3)) { phase = .results }
+        }
+    }
+
+    private func scanOnce() async throws -> MealEstimate {
+        try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: dataB64))
+    }
+    private func isEmpty(_ e: MealEstimate?) -> Bool {
+        guard let e else { return true }
+        return e.items.isEmpty && e.baseCalories <= 0
     }
 
     private func add() async {

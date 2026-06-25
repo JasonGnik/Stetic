@@ -15,9 +15,40 @@ struct LoggedExercise: Codable, Identifiable, Hashable {
     var id = UUID()
     var name: String
     var target: String
+    var repRange: String?      // e.g. "5-9" — what we're working towards (optional: older logs lack it)
     var sets: [LoggedSet]
 
-    enum CodingKeys: String, CodingKey { case name, target, sets }
+    enum CodingKeys: String, CodingKey { case name, target, repRange, sets }
+}
+
+// Deload cadence — JP doctrine: pull back roughly every 8 weeks.
+enum Deload {
+    static let cycleWeeks = 8
+    // Weeks since the anchor (an explicit reset date, else the earliest training date).
+    static func weeks(anchor: String, earliest: String?) -> Int {
+        let start = anchor.isEmpty ? (earliest ?? "") : anchor
+        guard let d = LogDate.fmt.date(from: start) else { return 0 }
+        return (Calendar.current.dateComponents([.day], from: d, to: Date()).day ?? 0) / 7
+    }
+    static func isDue(_ weeks: Int) -> Bool { weeks >= cycleWeeks }
+    // The smallest sensible jump when you earn a weight increase.
+    static func increment(for weight: Double) -> Double { weight >= 30 ? 5 : 2.5 }
+    static func round5(_ w: Double) -> Double { (w / 5).rounded() * 5 }
+}
+
+// A rep target like "5-9" parsed into its low/high bounds, for progressive-overload cues.
+struct RepRange {
+    let low: Int
+    let high: Int
+    init?(_ raw: String?) {
+        guard let raw, !raw.isEmpty else { return nil }
+        let nums = raw.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }
+        guard let first = nums.first else { return nil }
+        low = first
+        high = nums.count > 1 ? max(first, nums[1]) : first
+    }
+    var label: String { low == high ? "\(low)" : "\(low)–\(high)" }
+    func contains(_ reps: Int) -> Bool { reps >= low && reps <= high }
 }
 
 // A completed (or in-progress) training session.

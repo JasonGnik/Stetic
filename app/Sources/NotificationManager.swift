@@ -19,6 +19,24 @@ enum NotificationManager {
         }
     }
 
+    // Schedule reminders on specific weekdays at a chosen hour (from the Today schedule).
+    static func setTrainingReminders(weekdays: Set<Int>, hour: Int) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+            guard granted else { return }
+            center.removePendingNotificationRequests(withIdentifiers: weekdayIds)
+            for wd in weekdays where (1...7).contains(wd) {
+                var dc = DateComponents(); dc.weekday = wd; dc.hour = hour
+                let content = UNMutableNotificationContent()
+                content.title = "Stetic"
+                content.body = "Time to train — keep your streak alive."
+                content.sound = .default
+                let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+                center.add(UNNotificationRequest(identifier: "stetic.train.\(wd)", content: content, trigger: trigger))
+            }
+        }
+    }
+
     static func disableTrainingReminders() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: weekdayIds)
     }

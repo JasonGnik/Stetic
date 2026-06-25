@@ -61,6 +61,11 @@ struct HomeView: View {
     @State private var meals: [MealLog] = []
     @AppStorage("healthConnected") private var healthConnected = false
     @State private var steps = 0
+    @State private var showSchedule = false
+    @State private var streakFlare = false
+    @AppStorage("trainWeekdays") private var trainWeekdaysRaw = ""   // e.g. "2,4,6"
+    @AppStorage("trainHour") private var trainHour = 17
+    @AppStorage("deloadAnchor") private var deloadAnchor = ""        // yyyy-MM-dd
 
     // Only real training days are in the rotation — never "rest"/"recovery" entries.
     private var split: [PlanContent.Day] {
@@ -81,6 +86,8 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text(greeting).font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                weekStrip
+                if deloadDue { deloadBanner }
                 streakCard
                 healthCard
                 upNextCard
@@ -95,8 +102,130 @@ struct HomeView: View {
             if healthConnected { steps = await HealthKitManager.shared.todaySteps() }
         }
         .sheet(item: $session) { day in
-            SessionLogView(day: day) { Task { await refresh(); meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? [] } }
+            SessionLogView(day: day) {
+                Task {
+                    await refresh()
+                    meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? []
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) { streakFlare = true }
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    withAnimation(.easeOut(duration: 0.4)) { streakFlare = false }
+                }
+            }
         }
+        .sheet(isPresented: $showSchedule) {
+            ScheduleSheet(weekdays: trainingDays, hour: trainHour) { days, hour in
+                trainWeekdaysRaw = days.sorted().map(String.init).joined(separator: ",")
+                trainHour = hour
+                NotificationManager.setTrainingReminders(weekdays: days, hour: hour)
+            }
+        }
+    }
+
+    // MARK: week strip — which days you train, what you've done, what's next
+    // Training weekdays: the user's saved choice, else a sensible spread from the split size.
+    private var trainingDays: Set<Int> {
+        let saved = Set(trainWeekdaysRaw.split(separator: ",").compactMap { Int($0) })
+        if !saved.isEmpty { return saved }
+        return Self.defaultWeekdays(forTrainingDays: max(1, split.count))
+    }
+    static func defaultWeekdays(forTrainingDays n: Int) -> Set<Int> {
+        switch min(7, max(1, n)) {       // weekday: 1=Sun … 7=Sat
+        case 1: return [2]; case 2: return [2, 5]; case 3: return [2, 4, 6]
+        case 4: return [2, 3, 5, 6]; case 5: return [2, 3, 4, 5, 6]
+        case 6: return [2, 3, 4, 5, 6, 7]; default: return [1, 2, 3, 4, 5, 6, 7]
+        }
+    }
+    private var weekDates: [Date] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        guard let start = cal.dateInterval(of: .weekOfYear, for: today)?.start else { return [] }
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: start) }
+    }
+
+    private var weekStrip: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("THIS WEEK").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+                Spacer()
+                Button { showSchedule = true } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar").font(.system(size: 10, weight: .bold))
+                        Text("\(trainingDays.count)× · \(hourLabel(trainHour))").font(.system(size: 11, weight: .semibold))
+                    }.foregroundStyle(Theme.acc)
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach(weekDates, id: \.self) { d in dayChip(d) }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+    }
+
+    private func dayChip(_ date: Date) -> some View {
+        let cal = Calendar.current
+        let wd = cal.component(.weekday, from: date)
+        let isToday = cal.isDateInToday(date)
+        let isPast = date < cal.startOfDay(for: Date())
+        let logged = workoutDates.contains(LogDate.string(date))
+        let train = trainingDays.contains(wd)
+        let letters = ["", "S", "M", "T", "W", "T", "F", "S"]
+        return VStack(spacing: 6) {
+            Text(letters[wd]).font(.system(size: 11, weight: .bold)).foregroundStyle(isToday ? Theme.acc : Theme.mut)
+            ZStack {
+                Circle().fill(logged ? Theme.acc : Color.clear)
+                    .frame(width: 30, height: 30)
+                    .overlay(Circle().stroke(chipStroke(train: train, logged: logged, isToday: isToday, isPast: isPast), lineWidth: isToday ? 2 : 1))
+                if logged {
+                    Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(Color(hex: 0x0E0E10))
+                } else if train && isPast {
+                    Image(systemName: "xmark").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.mut)
+                } else if train {
+                    Circle().fill(Theme.acc).frame(width: 6, height: 6)
+                }
+            }
+            Text("\(cal.component(.day, from: date))").font(.system(size: 10, weight: .semibold)).foregroundStyle(isToday ? Theme.txt : Theme.mut)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    private func chipStroke(train: Bool, logged: Bool, isToday: Bool, isPast: Bool) -> Color {
+        if logged { return .clear }
+        if isToday { return Theme.acc }
+        if train { return Theme.acc.opacity(0.5) }
+        return Theme.line
+    }
+    private func hourLabel(_ h: Int) -> String {
+        let ampm = h < 12 ? "am" : "pm"; let hr = h % 12 == 0 ? 12 : h % 12
+        return "\(hr)\(ampm)"
+    }
+
+    // MARK: deload — JP doctrine: pull back every ~8 weeks
+    private var weeksTraining: Int {
+        let cal = Calendar.current
+        let anchorStr = deloadAnchor.isEmpty ? (workoutDates.last ?? "") : deloadAnchor
+        guard let start = LogDate.fmt.date(from: anchorStr) else { return 0 }
+        return (cal.dateComponents([.day], from: start, to: Date()).day ?? 0) / 7
+    }
+    private var deloadDue: Bool { weeksTraining >= 8 }
+    private var deloadBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "wind").font(.system(size: 18)).foregroundStyle(Theme.amber)
+                .frame(width: 42, height: 42).background(Circle().fill(Theme.amber.opacity(0.14)))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Deload week").font(.system(size: 15, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text("\(weeksTraining) weeks in — drop to ~60% volume this week so you keep growing.")
+                    .font(.system(size: 11.5)).foregroundStyle(Theme.mut).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Button { deloadAnchor = LogDate.today } label: {
+                Text("Done").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.amber)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: 0x1E1A12))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.amber.opacity(0.25), lineWidth: 1)))
     }
 
     private var greeting: String {
@@ -143,9 +272,10 @@ struct HomeView: View {
     private var streakCard: some View {
         HStack(spacing: 16) {
             ZStack {
-                Circle().fill(Theme.acc.opacity(0.14)).frame(width: 64, height: 64)
-                Image(systemName: "flame.fill").font(.system(size: 28)).foregroundStyle(Theme.acc)
+                Circle().fill(Color(hex: 0xFF7A1A).opacity(streakFlare ? 0.28 : 0.14)).frame(width: 64, height: 64)
+                FireFlame(size: 30, flare: streakFlare)
             }
+            .scaleEffect(streakFlare ? 1.18 : 1)
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(streak) day\(streak == 1 ? "" : "s")").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
                 Text(streak == 0 ? "Log a session to start your streak" : "Training streak — keep it alive")
@@ -214,6 +344,56 @@ struct HomeView: View {
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// Pick training weekdays + a reminder time. Drives the week strip and notifications.
+struct ScheduleSheet: View {
+    @State var weekdays: Set<Int>
+    @State var hour: Int
+    var onSave: (Set<Int>, Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private let labels = [(1, "S"), (2, "M"), (3, "T"), (4, "W"), (5, "T"), (6, "F"), (7, "S")]
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
+            Text("Training schedule").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+            Text("Which days do you train?").font(.system(size: 12)).foregroundStyle(Theme.mut)
+            HStack(spacing: 8) {
+                ForEach(labels, id: \.0) { wd, letter in
+                    let on = weekdays.contains(wd)
+                    Button {
+                        if on { weekdays.remove(wd) } else { weekdays.insert(wd) }
+                    } label: {
+                        Text(letter).font(.system(size: 15, weight: .bold))
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(on ? Theme.acc : Theme.card)
+                                .overlay(Circle().stroke(on ? .clear : Theme.line, lineWidth: 1)))
+                            .foregroundStyle(on ? Color(hex: 0x0E0E10) : Theme.txt)
+                    }
+                }
+            }
+            DatePicker("Reminder time",
+                       selection: Binding(
+                        get: { Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date() },
+                        set: { hour = Calendar.current.component(.hour, from: $0) }),
+                       displayedComponents: .hourAndMinute)
+                .datePickerStyle(.compact).labelsHidden().padding(.top, 4)
+                .colorScheme(.dark)
+            Button {
+                onSave(weekdays, hour); dismiss()
+            } label: {
+                Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+            }
+            .disabled(weekdays.isEmpty)
+            Spacer()
+        }
+        .padding(.horizontal, 22)
+        .background(Theme.bg.ignoresSafeArea())
+        .presentationDetents([.height(330)])
     }
 }
 

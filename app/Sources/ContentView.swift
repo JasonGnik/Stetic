@@ -29,6 +29,17 @@ struct ContentView: View {
         }
     }
 
+    #if DEBUG
+    // Dev fast-path: sign in the dev account, mark onboarded (persists), jump to the app.
+    // After pressing once, future launches restore the session and land on home directly.
+    private func devSkip() async {
+        try? await ScanAPI.shared.ensureSession()
+        if let uid = await ScanAPI.shared.currentUserID() { await PurchaseManager.shared.identify(uid) }
+        onboarded = true
+        withAnimation { stage = .home }
+    }
+    #endif
+
     var body: some View {
         if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
@@ -38,6 +49,9 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_MEALSCAN"] == "2" {
+            // DEV: exercise the live scanning animation (no preset → runs the loader).
+            MealScanView(image: UIImage(named: "sample") ?? UIImage(), dataB64: "", onLogged: {})
         } else if env["STETIC_MEALSCAN"] == "1" {
             MealScanView(image: UIImage(named: "sample") ?? UIImage(),
                          dataB64: "", onLogged: {},
@@ -62,7 +76,18 @@ struct ContentView: View {
             case .loading:
                 ZStack { Theme.bg.ignoresSafeArea() }.task { await checkSession() }
             case .welcome:
-                WelcomeView { withAnimation { stage = .intro } }
+                ZStack(alignment: .top) {
+                    WelcomeView { withAnimation { stage = .intro } }
+                    #if DEBUG
+                    Button { Task { await devSkip() } } label: {
+                        Text("Dev: skip to app →").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.acc)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(Theme.card))
+                    }
+                    .padding(.top, 8)
+                    #endif
+                }
             case .intro:
                 IntroView { withAnimation { stage = .onboarding } }
             case .onboarding:
