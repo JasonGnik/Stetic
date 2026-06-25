@@ -293,6 +293,25 @@ actor ScanAPI {
         return (try? JSONDecoder().decode([MealLog].self, from: data)) ?? []
     }
 
+    // Score history for the progress chart (oldest → newest).
+    func scanPoints() async throws -> [ScanPoint] {
+        let (data, s) = try await authed(restURL("scans", query: [
+            .init(name: "select", value: "aesthetic_score,body_fat,potential,rank_tier,created_at"),
+            .init(name: "order", value: "created_at.asc")]), method: "GET")
+        guard s == 200 else { return [] }
+        return (try? JSONDecoder().decode([ScanPoint].self, from: data)) ?? []
+    }
+
+    // Recent logged sessions (for the history list).
+    func recentWorkouts(limit: Int = 14) async throws -> [WorkoutLog] {
+        let (data, s) = try await authed(restURL("workout_logs", query: [
+            .init(name: "select", value: "id,log_date,day_label,exercises"),
+            .init(name: "order", value: "log_date.desc"),
+            .init(name: "limit", value: "\(limit)")]), method: "GET")
+        guard s == 200 else { return [] }
+        return (try? JSONDecoder().decode([WorkoutLog].self, from: data)) ?? []
+    }
+
     func deleteMeal(id: String) async throws {
         let (data, s) = try await authed(restURL("meal_logs", query: [.init(name: "id", value: "eq.\(id)")]),
                                          method: "DELETE", prefer: "return=minimal")

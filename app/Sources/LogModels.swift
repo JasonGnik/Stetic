@@ -53,6 +53,25 @@ struct MealEstimate: Codable, Identifiable {
     enum CodingKeys: String, CodingKey { case name, calories, protein_g, carbs_g, fat_g, confidence, note }
 }
 
+// A single scan reduced to its plottable numbers (for the progress chart).
+struct ScanPoint: Codable, Identifiable {
+    var id = UUID()
+    let aesthetic_score: Double
+    var body_fat: Double?
+    var potential: Double?
+    let rank_tier: String
+    let created_at: String
+
+    enum CodingKeys: String, CodingKey { case aesthetic_score, body_fat, potential, rank_tier, created_at }
+
+    var date: Date {
+        let a = ISO8601DateFormatter(); a.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = a.date(from: created_at) { return d }
+        let b = ISO8601DateFormatter(); b.formatOptions = [.withInternetDateTime]
+        return b.date(from: created_at) ?? Date()
+    }
+}
+
 enum LogDate {
     static let fmt: DateFormatter = {
         let f = DateFormatter()

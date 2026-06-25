@@ -1,0 +1,154 @@
+import SwiftUI
+import Charts
+
+// Progress + profile: score over time, latest delta, recent sessions, re-scan.
+struct ProgressScreen: View {
+    let scan: ScoreCard?
+    let onNewScan: () -> Void
+
+    @State private var points: [ScanPoint] = []
+    @State private var sessions: [WorkoutLog] = []
+
+    private var latest: ScanPoint? { points.last }
+    private var previous: ScanPoint? { points.count >= 2 ? points[points.count - 2] : nil }
+    private var delta: Double? { guard let l = latest, let p = previous else { return nil }; return l.aesthetic_score - p.aesthetic_score }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Progress").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                scoreHeader
+                if points.count >= 2 { chartCard } else { needMoreCard }
+                rescanButton
+                if !sessions.isEmpty { sessionsSection }
+            }
+            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 32)
+        }
+        .background(Theme.bg.ignoresSafeArea())
+        .scrollIndicators(.hidden)
+        .task {
+            points = (try? await ScanAPI.shared.scanPoints()) ?? []
+            sessions = (try? await ScanAPI.shared.recentWorkouts()) ?? []
+        }
+    }
+
+    private var scoreHeader: some View {
+        let score = latest?.aesthetic_score ?? scan?.aesthetic_score ?? 0
+        let tier = Tier.forScore(score)
+        return HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(format: "%.1f", score)).font(.system(size: 34, weight: .heavy)).foregroundStyle(tier.color)
+                Text(tier.label).font(.system(size: 12, weight: .bold)).foregroundStyle(tier.color)
+            }
+            if let d = delta {
+                let up = d >= 0
+                HStack(spacing: 3) {
+                    Image(systemName: up ? "arrow.up.right" : "arrow.down.right").font(.system(size: 11, weight: .bold))
+                    Text(String(format: "%+.1f", d)).font(.system(size: 13, weight: .bold))
+                }
+                .foregroundStyle(up ? Theme.acc : Theme.red)
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(Capsule().fill((up ? Theme.acc : Theme.red).opacity(0.15)))
+                Text("since last scan").font(.system(size: 11)).foregroundStyle(Theme.mut)
+            }
+            Spacer()
+            if let bf = latest?.body_fat {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(String(format: "%.0f%%", bf)).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.txt)
+                    Text("body fat").font(.system(size: 10)).foregroundStyle(Theme.mut)
+                }
+            }
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+    }
+
+    private var chartCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("AESTHETIC SCORE").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+            Chart {
+                ForEach(points) { p in
+                    AreaMark(x: .value("Date", p.date), y: .value("Score", p.aesthetic_score))
+                        .foregroundStyle(.linearGradient(colors: [Theme.acc.opacity(0.28), Theme.acc.opacity(0.02)],
+                                                         startPoint: .top, endPoint: .bottom))
+                        .interpolationMethod(.catmullRom)
+                    LineMark(x: .value("Date", p.date), y: .value("Score", p.aesthetic_score))
+                        .foregroundStyle(Theme.acc).lineStyle(.init(lineWidth: 2.5))
+                        .interpolationMethod(.catmullRom)
+                    PointMark(x: .value("Date", p.date), y: .value("Score", p.aesthetic_score))
+                        .foregroundStyle(Theme.acc).symbolSize(36)
+                }
+            }
+            .chartYScale(domain: chartLow...10)
+            .chartYAxis { AxisMarks(values: .automatic(desiredCount: 4)) { v in
+                AxisGridLine().foregroundStyle(Theme.line.opacity(0.5))
+                AxisValueLabel().foregroundStyle(Theme.mut)
+            } }
+            .chartXAxis { AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+                AxisValueLabel(format: .dateTime.month().day()).foregroundStyle(Theme.mut)
+            } }
+            .frame(height: 180)
+            .clipped()
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    private var chartLow: Double {
+        let mn = points.map { $0.aesthetic_score }.min() ?? 0
+        return max(0, (mn - 1).rounded(.down))
+    }
+
+    private var needMoreCard: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 26)).foregroundStyle(Theme.acc)
+            Text("Re-scan to see your climb").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
+            Text("Your score, rank and weak points — tracked over time.").font(.system(size: 12))
+                .foregroundStyle(Theme.mut).multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 26)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+    }
+
+    private var rescanButton: some View {
+        Button(action: onNewScan) {
+            HStack(spacing: 10) {
+                Image(systemName: "camera.viewfinder").font(.system(size: 16, weight: .bold))
+                Text("New scan").font(.system(size: 15, weight: .bold))
+            }
+            .frame(maxWidth: .infinity).padding(14)
+            .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
+            .foregroundStyle(Color(hex: 0x0E0E10))
+        }
+    }
+
+    private var sessionsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("RECENT SESSIONS").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+            ForEach(sessions) { s in
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill").font(.system(size: 18)).foregroundStyle(Theme.acc)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(s.day_label ?? "Session").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+                        Text(relativeDay(s.log_date)).font(.system(size: 11)).foregroundStyle(Theme.mut)
+                    }
+                    Spacer()
+                    if let n = s.exercises.first.map({ _ in s.exercises.count }), n > 0 {
+                        Text("\(n) exercises").font(.system(size: 11)).foregroundStyle(Theme.mut)
+                    }
+                }
+                .padding(13).frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
+            }
+        }
+    }
+
+    private func relativeDay(_ s: String?) -> String {
+        guard let s, let d = LogDate.fmt.date(from: s) else { return "" }
+        let cal = Calendar.current
+        if cal.isDateInToday(d) { return "Today" }
+        if cal.isDateInYesterday(d) { return "Yesterday" }
+        let f = DateFormatter(); f.dateFormat = "EEE, MMM d"
+        return f.string(from: d)
+    }
+}

@@ -5,6 +5,7 @@ import PhotosUI
 // gate the real Gemini scan behind a (stubbed) paywall, then reveal.
 struct RevealFunnelView: View {
     var name: String = ""
+    var rescan: Bool = false        // re-scan (already entitled): skip FOMO/paywall, go straight to scoring
     var onFinish: (() -> Void)? = nil
 
     enum Phase { case capture, fomo, bluff, tease, paywall, scanning, result, error }
@@ -65,8 +66,8 @@ struct RevealFunnelView: View {
                              : "Add at least one. Front is most accurate — side & back sharpen it.")
                 .font(.system(size: 12)).foregroundStyle(Theme.mut).multilineTextAlignment(.center).padding(.horizontal, 30)
 
-            Button { withAnimation { phase = .fomo } } label: {
-                Text("Continue").font(.system(size: 16, weight: .bold))
+            Button { withAnimation { rescan ? startRealScan() : (phase = .fomo) } } label: {
+                Text(rescan ? "Score my physique" : "Continue").font(.system(size: 16, weight: .bold))
                     .frame(maxWidth: .infinity).padding(14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(hasAnyPhoto ? Theme.acc : Theme.line))
                     .foregroundStyle(hasAnyPhoto ? Color(hex: 0x0E0E10) : Theme.mut)
@@ -275,6 +276,15 @@ struct RevealFunnelView: View {
                 ScoreCardView(card: card, onGetPlan: { showPlan = true })
                     .fullScreenCover(isPresented: $showPlan) {
                         PlanView(onStart: { showPlan = false; onFinish?() })
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if rescan {
+                            Button { onFinish?() } label: {
+                                Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
+                                    .padding(9).background(Circle().fill(Theme.card))
+                            }
+                            .padding(.top, 8).padding(.trailing, 16)
+                        }
                     }
             }
         }

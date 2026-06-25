@@ -27,13 +27,17 @@ struct MainTabView: View {
                 .tabItem { Label("Plan", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(1)
             NutritionView(target: bundle?.content.macros)
                 .tabItem { Label("Food", systemImage: "fork.knife") }.tag(2)
-            ProfileView(scan: bundle?.scan, onNewScan: { showScan = true })
-                .tabItem { Label("Profile", systemImage: "person.fill") }.tag(3)
+            ProgressScreen(scan: bundle?.scan, onNewScan: { showScan = true })
+                .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(3)
         }
         .tint(Theme.acc)
         .task { await refresh() }
         .fullScreenCover(isPresented: $showScan) {
-            RevealFunnelView(name: name, onFinish: { showScan = false; Task { await refresh() } })
+            RevealFunnelView(name: name, rescan: true, onFinish: {
+                showScan = false
+                bundle = nil   // a re-scan produces a new plan — drop the cached one
+                Task { await refresh() }
+            })
         }
     }
 
@@ -163,49 +167,6 @@ struct HomeView: View {
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Profile
-struct ProfileView: View {
-    let scan: ScoreCard?
-    let onNewScan: () -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Profile").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
-                if let scan {
-                    HStack(spacing: 14) {
-                        VStack(spacing: 2) {
-                            Text(String(format: "%.1f", scan.aesthetic_score)).font(.system(size: 26, weight: .heavy)).foregroundStyle(scan.tier.color)
-                            Text(scan.tier.label).font(.system(size: 11, weight: .bold)).foregroundStyle(scan.tier.color)
-                        }
-                        Divider().frame(height: 38).overlay(Theme.line)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Latest scan").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
-                            Text("Re-scan to track your ascension").font(.system(size: 11)).foregroundStyle(Theme.mut)
-                        }
-                        Spacer()
-                    }
-                    .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
-                }
-                Button(action: onNewScan) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "camera.viewfinder").font(.system(size: 16, weight: .bold))
-                        Text("New scan").font(.system(size: 15, weight: .bold))
-                    }
-                    .frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
-                    .foregroundStyle(Color(hex: 0x0E0E10))
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 32)
-        }
-        .background(Theme.bg.ignoresSafeArea())
-        .scrollIndicators(.hidden)
     }
 }
 
