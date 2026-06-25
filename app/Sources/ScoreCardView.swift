@@ -6,10 +6,11 @@ struct ScoreCardView: View {
     let card: ScoreCard
     var onGetPlan: () -> Void = {}
     var onScanAnother: (() -> Void)? = nil
+    var showPlanCTA: Bool = true
 
     var body: some View {
         ScrollView {
-            ScoreCardBody(card: card, onGetPlan: onGetPlan, onScanAnother: onScanAnother)
+            ScoreCardBody(card: card, onGetPlan: onGetPlan, onScanAnother: onScanAnother, showPlanCTA: showPlanCTA)
         }
         .scrollIndicators(.hidden)
         .background(Theme.bg.ignoresSafeArea())
@@ -20,6 +21,7 @@ struct ScoreCardBody: View {
     let card: ScoreCard
     var onGetPlan: () -> Void = {}
     var onScanAnother: (() -> Void)? = nil
+    var showPlanCTA: Bool = true
     @State private var showEstInfo = false
 
     var body: some View {
@@ -31,7 +33,7 @@ struct ScoreCardBody: View {
             potentialCallout
             musclesSection
             climbSection
-            cta
+            if showPlanCTA { cta }
             if let onScanAnother {
                 Button("Scan another", action: onScanAnother)
                     .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut)
@@ -83,7 +85,7 @@ struct ScoreCardBody: View {
                 Text(String(format: "%.1f", card.aesthetic_score))
                     .font(.system(size: 46, weight: .bold))
                     .foregroundStyle(Theme.txt)
-                Text("/10 aesthetic")
+                Text("/10 Stetic Score")
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.mut)
             }

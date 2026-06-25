@@ -8,6 +8,7 @@ struct SessionLogView: View {
 
     @State private var exercises: [LoggedExercise]
     @State private var saving = false
+    @State private var lastByExercise: [String: [LoggedSet]] = [:]   // beat-the-logbook reference
 
     init(day: PlanContent.Day, onDone: @escaping () -> Void) {
         self.day = day; self.onDone = onDone
@@ -33,6 +34,26 @@ struct SessionLogView: View {
             footer
         }
         .background(Theme.bg.ignoresSafeArea())
+        .task { await loadLast() }
+    }
+
+    // Pre-fill weights from the last time each exercise was logged (progressive overload =
+    // beat the logbook). Hit the top of the rep range to failure → add a little next time.
+    private func loadLast() async {
+        let logs = (try? await ScanAPI.shared.recentWorkouts(limit: 30)) ?? []
+        var map: [String: [LoggedSet]] = [:]
+        for log in logs {   // newest first
+            for ex in log.exercises where map[ex.name] == nil {
+                if ex.sets.contains(where: { $0.weight > 0 || $0.reps > 0 }) { map[ex.name] = ex.sets }
+            }
+        }
+        lastByExercise = map
+        for i in exercises.indices {
+            guard let last = map[exercises[i].name] else { continue }
+            for j in exercises[i].sets.indices where j < last.count {
+                exercises[i].sets[j].weight = last[j].weight
+            }
+        }
     }
 
     private var header: some View {
@@ -50,6 +71,13 @@ struct SessionLogView: View {
                 Spacer()
                 Text("\(doneCount)/\(totalSets) sets").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.acc)
             }
+            HStack(spacing: 6) {
+                Image(systemName: "bolt.fill").font(.system(size: 10)).foregroundStyle(Theme.acc)
+                Text("Beat last session — every set to failure. Top of the rep range? Add a little weight.")
+                    .font(.system(size: 11)).foregroundStyle(Theme.mut)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 2)
         }
         .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 8)
     }
@@ -62,6 +90,10 @@ struct SessionLogView: View {
                 Text(exercises[i].target).font(.system(size: 10, weight: .semibold))
                     .padding(.horizontal, 7).padding(.vertical, 3)
                     .background(Capsule().fill(Theme.line)).foregroundStyle(Theme.mut)
+            }
+            if let last = lastByExercise[exercises[i].name], !last.isEmpty {
+                Text("Last: " + last.map { "\(Int($0.weight))×\($0.reps)" }.joined(separator: " · "))
+                    .font(.system(size: 10.5)).foregroundStyle(Theme.acc.opacity(0.85))
             }
             ForEach(exercises[i].sets.indices, id: \.self) { j in setRow(i, j) }
         }

@@ -62,7 +62,13 @@ struct HomeView: View {
     @AppStorage("healthConnected") private var healthConnected = false
     @State private var steps = 0
 
-    private var split: [PlanContent.Day] { bundle?.content.weekly_split ?? [] }
+    // Only real training days are in the rotation — never "rest"/"recovery" entries.
+    private var split: [PlanContent.Day] {
+        (bundle?.content.weekly_split ?? []).filter {
+            let s = ($0.day + " " + $0.focus).lowercased()
+            return !s.contains("rest") && !s.contains("recovery") && !$0.exercises.isEmpty
+        }
+    }
     private var streak: Int { Streak.count(from: workoutDates) }
     private var loggedToday: Bool { workoutDates.contains(LogDate.today) }
     private var upNext: PlanContent.Day? {

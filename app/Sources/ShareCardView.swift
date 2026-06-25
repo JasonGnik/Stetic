@@ -23,7 +23,7 @@ struct ShareCardView: View {
                 Text("/10").font(.system(size: 24, weight: .bold)).foregroundStyle(Theme.mut)
             }
             .padding(.top, 6)
-            Text(name.isEmpty ? "Aesthetic score" : "\(name)'s aesthetic score")
+            Text(name.isEmpty ? "Stetic Score" : "\(name)'s Stetic Score")
                 .font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.mut)
             HStack(spacing: 22) {
                 stat(String(format: "%.0f%%", card.body_fat), "Body fat")

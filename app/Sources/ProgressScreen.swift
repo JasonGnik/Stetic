@@ -100,7 +100,7 @@ struct ProgressScreen: View {
 
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("AESTHETIC SCORE").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+            Text("STETIC SCORE").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
             Chart {
                 ForEach(points) { p in
                     AreaMark(x: .value("Date", p.date), y: .value("Score", p.aesthetic_score))
@@ -149,7 +149,7 @@ struct ProgressScreen: View {
         Button(action: onNewScan) {
             HStack(spacing: 10) {
                 Image(systemName: "camera.viewfinder").font(.system(size: 16, weight: .bold))
-                Text("New scan").font(.system(size: 15, weight: .bold))
+                Text("Re-scan my physique").font(.system(size: 15, weight: .bold))
             }
             .frame(maxWidth: .infinity).padding(14)
             .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))

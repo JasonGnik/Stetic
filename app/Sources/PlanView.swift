@@ -68,8 +68,8 @@ struct PlanView: View {
 
                 includedHeader
                 projectionHero(p.projection, scan: scan)
-                if let crit = p.split_critique, !crit.isEmpty {
-                    section("YOUR CURRENT SPLIT") { critique(crit) }
+                if (p.split_critique?.isEmpty == false) || (p.split_changes?.isEmpty == false) {
+                    section("YOUR CURRENT SPLIT") { critique(p.split_critique, changes: p.split_changes) }
                 }
                 macros(p.macros)
                 section("PRIORITIES") { priorities(p.priorities) }
@@ -158,10 +158,27 @@ struct PlanView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func critique(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 13)).foregroundStyle(Theme.amber).padding(.top, 1)
-            Text(text).font(.system(size: 12.5)).foregroundStyle(Color(hex: 0xD2D2D8)).lineSpacing(3)
+    private func critique(_ headline: String?, changes: [PlanContent.SplitChange]?) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let headline, !headline.isEmpty {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 13)).foregroundStyle(Theme.amber).padding(.top, 1)
+                    Text(headline).font(.system(size: 13, weight: .semibold)).foregroundStyle(Color(hex: 0xE6E0CF)).lineSpacing(3)
+                }
+            }
+            if let changes, !changes.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(changes) { c in
+                        HStack(alignment: .top, spacing: 9) {
+                            Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.acc).padding(.top, 3)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(c.change).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                                Text(c.why).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineSpacing(2)
+                            }
+                        }
+                    }
+                }
+            }
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)

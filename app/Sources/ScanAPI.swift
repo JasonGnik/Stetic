@@ -193,7 +193,7 @@ actor ScanAPI {
             goal_label: w.goal_label, summary: w.summary, macros: row.macros,
             weekly_split: w.weekly_split, priorities: w.priorities,
             muscle_breakdown: w.muscle_breakdown, projection: w.projection,
-            split_critique: w.split_critique)
+            split_critique: w.split_critique, split_changes: w.split_changes)
         return PlanBundle(content: content, scan: scan)
     }
 
@@ -210,6 +210,7 @@ actor ScanAPI {
             let muscle_breakdown: [PlanContent.Breakdown]
             let projection: PlanContent.Projection
             let split_critique: String?
+            let split_changes: [PlanContent.SplitChange]?
         }
     }
 

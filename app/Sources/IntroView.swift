@@ -132,12 +132,12 @@ struct IntroView: View {
 struct IntroSlide {
     let title: String; let sub: String
     static let all = [
-        IntroSlide(title: "Train for years.\nStill not there.",
-                   sub: "Most guys can't see what's holding them back. Stetic scans your body, finds your weak points, and builds the plan to fix them."),
+        IntroSlide(title: "Stop guessing\nin the gym.",
+                   sub: "Whether you're just starting or stuck after years, most people can't see what's holding them back. Stetic finds it for you."),
         IntroSlide(title: "Know exactly\nwhere you stand.",
                    sub: "Get scored 1–10 and ranked against the ideal — from Bronze all the way to Greek God."),
-        IntroSlide(title: "Engineered\nto sculpt you.",
-                   sub: "Your plan is built on the science of how muscle actually grows — aimed straight at the weak points breaking your frame."),
+        IntroSlide(title: "A coach\nin your pocket.",
+                   sub: "Coaching-level guidance — built on the science of how muscle actually grows — aimed straight at the weak points breaking your frame."),
         IntroSlide(title: "Ascend.",
                    sub: "Climb the ranks, turn weak points into strengths, and walk in with confidence. Re-scan and watch it happen."),
     ]

@@ -34,7 +34,7 @@ export function planPrompt(scan: any, profile: PlanProfile): string {
     ? `${profile.age}yo ${profile.sex ?? "male"}, ${profile.height_cm}cm, ${profile.weight_kg}kg (bf ${scan.body_fat}% → lean mass ≈ ${Math.round((profile.weight_kg) * (1 - (scan.body_fat ?? 15) / 100))}kg)`
     : `bf ${scan.body_fat}%`;
   const splitNote = profile.current_split
-    ? `\nThe user's CURRENT routine: "${profile.current_split}"${profile.training_duration ? ` (running it for ${profile.training_duration})` : ""}. In "split_critique", explain honestly why this routine is likely leaving their weak points (${ranked.split(",")[0]?.trim()}) behind, referencing the JP principles (junk volume vs intensity, frequency, progressive overload). Be specific, not generic.`
+    ? `\nThe user's CURRENT routine: "${profile.current_split}"${profile.training_duration ? ` (running it for ${profile.training_duration})` : ""}. In "split_critique" give ONE short sentence (max ~20 words) naming the core problem with this routine for their weak points (${ranked.split(",")[0]?.trim()}). Then in "split_changes" list 3-4 concrete, scannable changes from THEIR routine to THIS plan — each as {change, why}: 'change' = the specific thing that's different (short, e.g. "16+ sets per muscle → 2 hard working sets"), 'why' = the plain-language reason (one short sentence). Reference JP principles (junk volume vs intensity, training to failure, frequency, progressive overload) but never name the coach. Do NOT write a long paragraph.`
     : "";
 
   return `You are Stetic's coach. The product sells a lean, proportional "movie-star / Greek-god" aesthetic — NOT a mass-monster look. Build a plan that moves THIS user toward that.
@@ -66,7 +66,7 @@ OUTPUT REQUIREMENTS:
   3) Adjust TDEE for goal AND pace: lose_fat = deficit, gain_muscle/both = surplus. Scale the size by pace — slow ≈ ±250 kcal, recommended ≈ −450/+300, aggressive ≈ −650/+450.
   4) Remaining calories after protein are split 65% to CARBS / 35% to FAT (carbs 4 kcal/g, fat 9 kcal/g). Constraints: fat ≥ 0.3 g/lb of LEAN mass; carbs ≥ ~120 g.
   Give a short PLAIN-LANGUAGE rationale (why this calorie target and protein level fit their goal). Do NOT name any coach, program, methodology, or formula, and do NOT explain how the numbers were derived.
-- weekly_split: exactly ${days} sessions, JP rep scheme — MATCH the ebook:
+- weekly_split: exactly ${days} TRAINING sessions — do NOT include rest/recovery days as entries (the user only logs training days). JP rep scheme — MATCH the ebook:
   • Most exercises = **2 working sets**: a heavy TOP set (5-9 or 6-9 reps) then a BACK-OFF set ~10% lighter on compounds / ~5% on isolation in the 10-12 range. Write reps as "5-9, 10-12" (top, back-off).
   • Isolation / finisher movements = 2 sets of "15-20".
   • Biceps/arm movements may use 3 sets "6-9, 10-12, 15-20".
@@ -176,6 +176,14 @@ export const PLAN_SCHEMA = {
       required: ["milestones"],
     },
     split_critique: { type: "string" },
+    split_changes: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { change: { type: "string" }, why: { type: "string" } },
+        required: ["change", "why"],
+      },
+    },
   },
   required: ["goal_label", "summary", "macros", "weekly_split", "priorities", "muscle_breakdown", "projection"],
 } as const;

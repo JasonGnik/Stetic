@@ -81,6 +81,9 @@ Deno.serve(async (req) => {
     return json({ error: "plan generation failed" }, 502);
   }
 
+  // One plan at a time — a new plan replaces the old.
+  await supabase.from("plans").delete().eq("user_id", user.id);
+
   const { data: saved, error: insErr } = await supabase
     .from("plans")
     .insert({
@@ -94,6 +97,7 @@ Deno.serve(async (req) => {
         muscle_breakdown: plan.muscle_breakdown,
         projection: plan.projection,
         split_critique: plan.split_critique ?? null,
+        split_changes: plan.split_changes ?? null,
       },
       macros: plan.macros,
     })

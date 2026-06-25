@@ -113,7 +113,7 @@ struct RevealFunnelView: View {
                     .font(.system(size: 28, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
             }
             WithVsWithoutChart().frame(height: 220).padding(.horizontal, 30).padding(.top, 24)
-            Text(brandLimed("Most guys plateau — they train without a plan built on their weak points and leave their potential on the table. Stetic changes the line."))
+            Text(brandLimed("Most people stall — training without a plan built on their weak points and leaving their potential on the table. Stetic changes the line."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(4)
                 .foregroundStyle(Theme.mut).padding(.horizontal, 34).padding(.top, 22)
             Spacer()
@@ -263,9 +263,9 @@ struct RevealFunnelView: View {
     // MARK: scanning (REAL Gemini) + result
     private var scanningView: some View {
         ScanningLoader(
-            title: "Scoring your aesthetics",
+            title: "Scoring your physique",
             messages: ["Sending to the model", "Scoring leanness & proportion",
-                       "Ranking your muscle groups", "Computing your aesthetic score", "Finalizing"],
+                       "Ranking your muscle groups", "Computing your Stetic Score", "Finalizing"],
             icons: ["bolt.fill", "drop.fill", "list.number", "star.fill", "checkmark.seal.fill"]
         )
     }
@@ -273,19 +273,18 @@ struct RevealFunnelView: View {
     private var resultView: some View {
         Group {
             if let card {
-                ScoreCardView(card: card, onGetPlan: { showPlan = true })
-                    .fullScreenCover(isPresented: $showPlan) {
-                        PlanView(onStart: { showPlan = false; onFinish?() })
+                if rescan {
+                    // Progress update: show the new score, no plan CTA, a Done button to return.
+                    VStack(spacing: 0) {
+                        ScoreCardView(card: card, showPlanCTA: false)
+                        primaryButton("Done") { onFinish?() }
                     }
-                    .overlay(alignment: .topTrailing) {
-                        if rescan {
-                            Button { onFinish?() } label: {
-                                Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
-                                    .padding(9).background(Circle().fill(Theme.card))
-                            }
-                            .padding(.top, 8).padding(.trailing, 16)
+                } else {
+                    ScoreCardView(card: card, onGetPlan: { showPlan = true })
+                        .fullScreenCover(isPresented: $showPlan) {
+                            PlanView(onStart: { showPlan = false; onFinish?() })
                         }
-                    }
+                }
             }
         }
     }
@@ -325,7 +324,8 @@ struct RevealFunnelView: View {
                 guard !inputs.isEmpty else { throw APIError.decode }
                 let result = try await ScanAPI.shared.scan(images: inputs)
                 await MainActor.run { card = result; withAnimation { phase = .result } }
-                await ScanAPI.shared.prefetchPlan()   // ready before they tap "Get my full plan"
+                // Progress-only re-scans just update the score — no (expensive) plan regen.
+                if !rescan { await ScanAPI.shared.prefetchPlan() }
             } catch {
                 await MainActor.run { errorMsg = error.localizedDescription; phase = .error }
             }

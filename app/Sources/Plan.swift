@@ -10,6 +10,13 @@ struct PlanContent: Codable {
     let muscle_breakdown: [Breakdown]
     let projection: Projection
     var split_critique: String?
+    var split_changes: [SplitChange]?
+
+    struct SplitChange: Codable, Identifiable {
+        var id: String { change }
+        let change: String
+        let why: String
+    }
 
     struct Projection: Codable {
         let milestones: [Milestone]
