@@ -7,8 +7,9 @@ struct NutritionView: View {
 
     @State private var meals: [MealLog] = []
     @State private var pickerItem: PhotosPickerItem?
-    @State private var scanning = false
-    @State private var estimate: MealEstimate?
+    @State private var scanImage: UIImage?
+    @State private var scanB64: String?
+    @State private var showScan = false
     @State private var errorMsg: String?
     @State private var showManual = false
     @State private var mName = ""
@@ -56,15 +57,13 @@ struct NutritionView: View {
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .task { await reload() }
-        .onChange(of: pickerItem) { _, v in Task { await runScan(v) } }
-        .sheet(item: $estimate) { est in confirmSheet(est) }
+        .onChange(of: pickerItem) { _, v in Task { await loadPhoto(v) } }
         .sheet(isPresented: $showManual) { manualSheet }
-        .overlay { if scanning { ZStack { Theme.bg.ignoresSafeArea()
-            ScanningLoader(title: "Reading your meal",
-                           messages: ["Identifying the food", "Estimating portion size",
-                                      "Counting calories", "Breaking down macros"],
-                           icons: ["fork.knife", "scalemass", "flame.fill", "chart.pie.fill"])
-        }.transition(.opacity) } }
+        .fullScreenCover(isPresented: $showScan) {
+            if let img = scanImage, let b64 = scanB64 {
+                MealScanView(image: img, dataB64: b64, onLogged: { Task { await reload() } })
+            }
+        }
     }
 
     private var summaryCard: some View {
@@ -170,36 +169,6 @@ struct NutritionView: View {
         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
     }
 
-    private func confirmSheet(_ est: MealEstimate) -> some View {
-        VStack(spacing: 16) {
-            Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
-            Text("Add this meal?").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
-            VStack(spacing: 6) {
-                Text(est.name).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt).multilineTextAlignment(.center)
-                Text("\(Int(est.calories)) cal · P \(Int(est.protein_g)) · C \(Int(est.carbs_g)) · F \(Int(est.fat_g))")
-                    .font(.system(size: 13)).foregroundStyle(Theme.mut)
-                Text("Confidence: \(est.confidence)\(est.note.map { $0.isEmpty ? "" : " · \($0)" } ?? "")")
-                    .font(.system(size: 11)).foregroundStyle(Theme.mut).multilineTextAlignment(.center)
-            }
-            .padding(16).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card))
-            HStack(spacing: 10) {
-                Button { estimate = nil } label: {
-                    Text("Discard").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)).foregroundStyle(Theme.txt)
-                }
-                Button { Task { await save(est) } } label: {
-                    Text("Add to today").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
-                }
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .background(Theme.bg.ignoresSafeArea())
-        .presentationDetents([.height(320)])
-    }
-
     private var manualSheet: some View {
         VStack(spacing: 14) {
             Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
@@ -246,20 +215,21 @@ struct NutritionView: View {
     // MARK: actions
     private func reload() async { meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? [] }
 
-    private func runScan(_ item: PhotosPickerItem?) async {
+    private func loadPhoto(_ item: PhotosPickerItem?) async {
         guard let item else { return }
-        errorMsg = nil; scanning = true
-        defer { scanning = false; pickerItem = nil }
-        guard let data = try? await item.loadTransferable(type: Data.self) else { errorMsg = "Couldn't read that photo."; return }
-        let jpeg = UIImage(data: data)?.jpegData(compressionQuality: 0.8) ?? data
-        do {
-            estimate = try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: jpeg.base64EncodedString()))
-        } catch { errorMsg = "Scan failed — try a clearer photo." }
+        errorMsg = nil
+        defer { pickerItem = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self), let ui = UIImage(data: data) else {
+            errorMsg = "Couldn't read that photo."; return
+        }
+        let jpeg = ui.jpegData(compressionQuality: 0.8) ?? data
+        scanImage = ui
+        scanB64 = jpeg.base64EncodedString()
+        showScan = true
     }
 
     private func save(_ est: MealEstimate) async {
         try? await ScanAPI.shared.logMeal(est)
-        estimate = nil
         await reload()
     }
 

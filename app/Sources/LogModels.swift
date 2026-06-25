@@ -43,6 +43,7 @@ struct MealLog: Codable, Identifiable {
 struct MealEstimate: Codable, Identifiable {
     var id = UUID()
     let name: String
+    var items: [Item] = []
     let calories: Double
     let protein_g: Double
     let carbs_g: Double
@@ -50,7 +51,13 @@ struct MealEstimate: Codable, Identifiable {
     let confidence: String
     var note: String?
 
-    enum CodingKeys: String, CodingKey { case name, calories, protein_g, carbs_g, fat_g, confidence, note }
+    struct Item: Codable, Identifiable, Hashable {
+        var id: String { name }
+        let name: String
+        var portion: String?
+    }
+
+    enum CodingKeys: String, CodingKey { case name, items, calories, protein_g, carbs_g, fat_g, confidence, note }
 }
 
 // A single scan reduced to its plottable numbers (for the progress chart).

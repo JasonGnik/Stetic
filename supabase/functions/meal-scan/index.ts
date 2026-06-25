@@ -23,6 +23,14 @@ const MEAL_SCHEMA = {
   type: "object",
   properties: {
     name: { type: "string" },
+    items: {                          // distinct foods detected (for the scan animation)
+      type: "array",
+      items: {
+        type: "object",
+        properties: { name: { type: "string" }, portion: { type: "string" } },
+        required: ["name"],
+      },
+    },
     calories: { type: "number" },
     protein_g: { type: "number" },
     carbs_g: { type: "number" },
@@ -66,11 +74,12 @@ Deno.serve(async (req) => {
 
   const prompt =
     `You are a nutrition estimator. Identify the food/meal in this photo and estimate ` +
-    `the calories and macros for the portion actually shown. If multiple items are on the ` +
-    `plate, sum them and name the meal naturally (e.g. "Chicken, rice & broccoli"). Be ` +
-    `realistic, not rounded to marketing numbers. Set confidence by how clearly you can ` +
-    `judge the portion. Put any key assumption in 'note' (e.g. "assumed ~200g cooked chicken"). ` +
-    `Numbers only — do not refuse; give your best estimate.`;
+    `the calories and macros for the portion actually shown. List each distinct food you ` +
+    `see in 'items' with a short name and rough portion (e.g. {name:"Chicken breast", portion:"~200g"}, ` +
+    `{name:"White rice", portion:"~1 cup"}). If multiple items are on the plate, sum them and ` +
+    `name the whole meal naturally (e.g. "Chicken, rice & broccoli"). Be realistic, not rounded ` +
+    `to marketing numbers. Set confidence by how clearly you can judge the portion. Put any key ` +
+    `assumption in 'note'. Numbers only — do not refuse; give your best estimate.`;
 
   const body = {
     contents: [{
@@ -122,6 +131,12 @@ Deno.serve(async (req) => {
   return json({
     meal: {
       name: String(meal.name ?? "Meal"),
+      items: Array.isArray(meal.items)
+        ? meal.items.map((it: { name?: string; portion?: string }) => ({
+          name: String(it?.name ?? ""),
+          portion: String(it?.portion ?? ""),
+        })).filter((it: { name: string }) => it.name)
+        : [],
       calories: Math.round(meal.calories ?? 0),
       protein_g: Math.round(meal.protein_g ?? 0),
       carbs_g: Math.round(meal.carbs_g ?? 0),
