@@ -18,6 +18,8 @@ struct ContentView: View {
     var body: some View {
         if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
+        } else if env["STETIC_SETTINGS"] == "1" {
+            SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
         } else if env["STETIC_SESSION"] == "1" {

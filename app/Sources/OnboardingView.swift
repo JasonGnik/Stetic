@@ -385,6 +385,7 @@ struct OnboardingView: View {
     private func advance() {
         unit = 0
         error = nil
+        UserDefaults.standard.set(data.daysPerWeek ?? 4, forKey: "steticDays")
         if stepIndex < total - 1 {
             let next = nextIndex(after: stepIndex)
             // Seed the goal-weight slider from current weight the first time we land on it.

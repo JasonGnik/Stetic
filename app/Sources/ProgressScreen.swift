@@ -13,6 +13,7 @@ struct ProgressScreen: View {
     @State private var weights: [WeightPoint] = []
     @State private var goalKg: Double?
     @State private var showWeightSheet = false
+    @State private var showSettings = false
     @State private var entryKg: Double = 80
     @State private var entryUnit = 0   // 0 = lb, 1 = kg
 
@@ -26,7 +27,13 @@ struct ProgressScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Progress").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                HStack {
+                    Text("Progress").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Spacer()
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape.fill").font(.system(size: 18)).foregroundStyle(Theme.mut)
+                    }
+                }
                 scoreHeader
                 weightCard
                 if points.count >= 2 { chartCard } else { needMoreCard }
@@ -54,6 +61,7 @@ struct ProgressScreen: View {
             await loadWeights()
         }
         .sheet(isPresented: $showWeightSheet) { weightSheet }
+        .sheet(isPresented: $showSettings) { SettingsView() }
         .task(id: scan?.id) {
             if let scan { shareURL = await MainActor.run { ShareCard.makeImageURL(scan, name: name) } }
         }
