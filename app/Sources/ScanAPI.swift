@@ -311,6 +311,42 @@ actor ScanAPI {
         return (try? JSONDecoder().decode([MealLog].self, from: data)) ?? []
     }
 
+    // No-photo path: estimate a baseline scan from onboarding answers, save it, return it.
+    func estimateScan() async throws -> ScoreCard {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        struct P: Decodable { var sex: String?; var experience: String?; var goal: String?; var activity_level: String? }
+        let (pd, ps) = try await authed(restURL("profiles", query: [
+            .init(name: "select", value: "sex,experience,goal,activity_level"),
+            .init(name: "id", value: "eq.\(uid)")]), method: "GET")
+        let p = (ps == 200 ? try? JSONDecoder().decode([P].self, from: pd).first : nil) ?? nil
+
+        let base: Double = ["beginner": 3.4, "intermediate": 5.2, "advanced": 6.6][p?.experience ?? ""] ?? 4.5
+        let active = p?.activity_level == "active" || p?.activity_level == "very_active"
+        let score = (base + (active ? 0.3 : 0)).rounded(toPlaces: 1)
+        let bf: Double = ["lose_fat": 22, "gain_muscle": 15, "both": 18][p?.goal ?? ""] ?? 18
+        let potential = min(9.5, (score + 2.6)).rounded(toPlaces: 1)
+        let symmetry = min(9.0, score + 0.5).rounded(toPlaces: 1)
+        let sex = p?.sex ?? "male"
+        let tier = Tier.forScore(score).rawValue
+        let groups = ["chest", "back", "shoulders", "arms", "legs", "abs"]
+        let offs = [0.2, -0.3, 0.0, 0.1, -0.2, 0.1]
+        let muscles = zip(groups, offs).map { (g, o) -> ScoreCard.Muscle in
+            ScoreCard.Muscle(group: g, score: max(1, min(9.5, (score + o))).rounded(toPlaces: 1), visible: false, note: "Estimated")
+        }
+        let verdict = "Estimated from your answers. Scan a photo any time for your true Stetic Score and a real weak-point breakdown."
+
+        let muscleJSON = muscles.map { ["group": $0.group, "score": $0.score, "visible": $0.visible, "note": $0.note] as [String: Any] }
+        let row: [String: Any] = ["user_id": uid, "sex": sex, "aesthetic_score": score, "rank_tier": tier,
+            "body_fat": bf, "symmetry": symmetry, "potential": potential, "muscles": muscleJSON,
+            "verdict": verdict, "photo_count": 0, "estimated": true]
+        let body = try JSONSerialization.data(withJSONObject: row)
+        let (d, s) = try await authed(restURL("scans"), method: "POST", body: body, prefer: "return=minimal")
+        guard s == 201 || s == 204 else { throw APIError.http(s, String(data: d, encoding: .utf8) ?? "") }
+        return ScoreCard(aesthetic_score: score, rank_tier: tier, body_fat: bf, symmetry: symmetry,
+                         potential: potential, muscles: muscles, verdict: verdict, estimated: true)
+    }
+
     // Score history for the progress chart (oldest → newest).
     func scanPoints() async throws -> [ScanPoint] {
         let (data, s) = try await authed(restURL("scans", query: [
@@ -373,4 +409,8 @@ actor ScanAPI {
         struct Img: Encodable { let mimeType: String; let dataB64: String }
     }
     private struct ScanResponse: Decodable { let scan: ScoreCard }
+}
+
+private extension Double {
+    func rounded(toPlaces n: Int) -> Double { let m = pow(10.0, Double(n)); return (self * m).rounded() / m }
 }

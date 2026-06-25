@@ -89,6 +89,12 @@ struct ScoreCardBody: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.mut)
             }
+            if card.estimated {
+                Text("ESTIMATED — SCAN FOR YOUR REAL SCORE").font(.system(size: 9, weight: .bold)).tracking(0.5)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Capsule().fill(Theme.amber.opacity(0.16)))
+                    .foregroundStyle(Theme.amber)
+            }
         }
         .padding(.top, 2)
     }

@@ -74,6 +74,13 @@ struct RevealFunnelView: View {
             }
             .disabled(!hasAnyPhoto)
             .padding(.horizontal, 26)
+            if !rescan {
+                Button { withAnimation { phase = .fomo } } label: {
+                    Text("Skip — build my plan from my answers")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
+                }
+                .padding(.top, 2)
+            }
             Spacer()
         }
         .onChange(of: items[0]) { _, v in Task { await load(0, v) } }
@@ -355,8 +362,10 @@ struct RevealFunnelView: View {
                     let jpeg = UIImage(data: d)?.jpegData(compressionQuality: 0.85) ?? d
                     return ScanAPI.ImageInput(mimeType: "image/jpeg", dataB64: jpeg.base64EncodedString())
                 }
-                guard !inputs.isEmpty else { throw APIError.decode }
-                let result = try await ScanAPI.shared.scan(images: inputs)
+                // No photo → estimate a baseline from their onboarding answers.
+                let result = inputs.isEmpty
+                    ? try await ScanAPI.shared.estimateScan()
+                    : try await ScanAPI.shared.scan(images: inputs)
                 await MainActor.run { card = result; withAnimation { phase = .result } }
                 // Progress-only re-scans just update the score — no (expensive) plan regen.
                 if !rescan { await ScanAPI.shared.prefetchPlan() }

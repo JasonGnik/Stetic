@@ -11,6 +11,7 @@ struct ScoreCard: Codable, Identifiable {
     let muscles: [Muscle]
     let verdict: String
     var size_flag: String? = nil
+    var estimated: Bool = false
 
     struct Muscle: Codable, Identifiable {
         var id: String { group }
@@ -21,7 +22,7 @@ struct ScoreCard: Codable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case aesthetic_score, rank_tier, body_fat, symmetry, potential, muscles, verdict, size_flag
+        case aesthetic_score, rank_tier, body_fat, symmetry, potential, muscles, verdict, size_flag, estimated
     }
 }
 
