@@ -302,6 +302,35 @@ actor ScanAPI {
         return (try? JSONDecoder().decode([ScanPoint].self, from: data)) ?? []
     }
 
+    func logWeight(_ kg: Double) async throws {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        struct Row: Encodable { let user_id: String; let weight_kg: Double }
+        let body = try JSONEncoder().encode(Row(user_id: uid, weight_kg: kg))
+        let (data, s) = try await authed(restURL("weight_logs"), method: "POST", body: body, prefer: "return=minimal")
+        guard s == 201 || s == 204 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
+    func weightPoints() async throws -> [WeightPoint] {
+        let (data, s) = try await authed(restURL("weight_logs", query: [
+            .init(name: "select", value: "weight_kg,logged_at"),
+            .init(name: "order", value: "logged_at.asc")]), method: "GET")
+        guard s == 200 else { return [] }
+        return (try? JSONDecoder().decode([WeightPoint].self, from: data)) ?? []
+    }
+
+    // Current + goal weight from the profile (kg).
+    func weightTargets() async throws -> (current: Double?, goal: Double?) {
+        try await ensureSession()
+        guard let uid = userId else { return (nil, nil) }
+        let (data, s) = try await authed(restURL("profiles", query: [
+            .init(name: "select", value: "weight_kg,goal_weight_kg"),
+            .init(name: "id", value: "eq.\(uid)")]), method: "GET")
+        struct R: Decodable { let weight_kg: Double?; let goal_weight_kg: Double? }
+        guard s == 200, let r = (try? JSONDecoder().decode([R].self, from: data))?.first else { return (nil, nil) }
+        return (r.weight_kg, r.goal_weight_kg)
+    }
+
     // Recent logged sessions (for the history list).
     func recentWorkouts(limit: Int = 14) async throws -> [WorkoutLog] {
         let (data, s) = try await authed(restURL("workout_logs", query: [

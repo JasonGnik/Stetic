@@ -72,6 +72,20 @@ struct ScanPoint: Codable, Identifiable {
     }
 }
 
+// A bodyweight entry.
+struct WeightPoint: Codable, Identifiable {
+    var id = UUID()
+    let weight_kg: Double
+    let logged_at: String
+    enum CodingKeys: String, CodingKey { case weight_kg, logged_at }
+    var date: Date {
+        let a = ISO8601DateFormatter(); a.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = a.date(from: logged_at) { return d }
+        let b = ISO8601DateFormatter(); b.formatOptions = [.withInternetDateTime]
+        return b.date(from: logged_at) ?? Date()
+    }
+}
+
 enum LogDate {
     static let fmt: DateFormatter = {
         let f = DateFormatter()

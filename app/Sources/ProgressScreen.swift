@@ -10,6 +10,14 @@ struct ProgressScreen: View {
     @State private var points: [ScanPoint] = []
     @State private var sessions: [WorkoutLog] = []
     @State private var shareURL: URL?
+    @State private var weights: [WeightPoint] = []
+    @State private var goalKg: Double?
+    @State private var showWeightSheet = false
+    @State private var entryKg: Double = 80
+    @State private var entryUnit = 0   // 0 = lb, 1 = kg
+
+    private func lb(_ kg: Double) -> Int { Int((kg * 2.20462).rounded()) }
+    private var currentKg: Double? { weights.last?.weight_kg }
 
     private var latest: ScanPoint? { points.last }
     private var previous: ScanPoint? { points.count >= 2 ? points[points.count - 2] : nil }
@@ -20,6 +28,7 @@ struct ProgressScreen: View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Progress").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                 scoreHeader
+                weightCard
                 if points.count >= 2 { chartCard } else { needMoreCard }
                 HStack(spacing: 10) {
                     rescanButton
@@ -42,7 +51,9 @@ struct ProgressScreen: View {
         .task {
             points = (try? await ScanAPI.shared.scanPoints()) ?? []
             sessions = (try? await ScanAPI.shared.recentWorkouts()) ?? []
+            await loadWeights()
         }
+        .sheet(isPresented: $showWeightSheet) { weightSheet }
         .task(id: scan?.id) {
             if let scan { shareURL = await MainActor.run { ShareCard.makeImageURL(scan, name: name) } }
         }
@@ -157,6 +168,71 @@ struct ProgressScreen: View {
                 .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
             }
         }
+    }
+
+    private var weightCard: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("BODYWEIGHT").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+                if let kg = currentKg {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(lb(kg))").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
+                        Text("lb").font(.system(size: 13)).foregroundStyle(Theme.mut)
+                        if let g = goalKg { Text("· goal \(lb(g)) lb").font(.system(size: 12)).foregroundStyle(Theme.acc) }
+                    }
+                } else {
+                    Text("Log your weight to track it").font(.system(size: 13)).foregroundStyle(Theme.mut)
+                }
+            }
+            Spacer()
+            Button {
+                entryKg = currentKg ?? goalKg ?? 80
+                showWeightSheet = true
+            } label: {
+                Text("+ Log").font(.system(size: 13, weight: .bold))
+                    .padding(.horizontal, 14).padding(.vertical, 9)
+                    .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+            }
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+    }
+
+    private var weightSheet: some View {
+        VStack(spacing: 18) {
+            Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
+            Text("Log your weight").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+            Text(entryUnit == 0 ? "\(lb(entryKg)) lb" : "\(Int(entryKg)) kg")
+                .font(.system(size: 40, weight: .heavy)).foregroundStyle(Theme.txt)
+            Slider(value: $entryKg, in: 40...180, step: 1).tint(Theme.acc).padding(.horizontal, 30)
+            HStack(spacing: 8) {
+                ForEach(["lb", "kg"].indices, id: \.self) { i in
+                    Button { entryUnit = i } label: {
+                        Text(["lb", "kg"][i]).font(.system(size: 13, weight: .semibold))
+                            .padding(.horizontal, 16).padding(.vertical, 7)
+                            .background(Capsule().fill(entryUnit == i ? Theme.acc : Theme.card))
+                            .foregroundStyle(entryUnit == i ? Color(hex: 0x0E0E10) : Theme.mut)
+                    }.buttonStyle(.plain)
+                }
+            }
+            Button {
+                Task { try? await ScanAPI.shared.logWeight(entryKg); showWeightSheet = false; await loadWeights() }
+            } label: {
+                Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+            }
+            .padding(.horizontal, 20)
+            Spacer()
+        }
+        .background(Theme.bg.ignoresSafeArea())
+        .presentationDetents([.height(330)])
+    }
+
+    private func loadWeights() async {
+        weights = (try? await ScanAPI.shared.weightPoints()) ?? []
+        let t = (try? await ScanAPI.shared.weightTargets()) ?? (current: nil, goal: nil)
+        goalKg = t.goal
+        if currentKg == nil, let c = t.current { entryKg = c }
     }
 
     private func relativeDay(_ s: String?) -> String {
