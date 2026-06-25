@@ -5,6 +5,7 @@ import SwiftUI
     var name: String = ""       // first name, for personalization
     var sex: String?            // male | female
     var goal: String? = ProcessInfo.processInfo.environment["STETIC_GOAL"]  // lose_fat | gain_muscle | both
+    var motivation: Set<String> = [] // why they downloaded — lean, muscle, confident, event, attention, stuck
     var obstacles: Set<String> = [] // plateau, dont_know, look_same, intimidated, slow
     var focus: Set<String> = [] // arms, shoulders, chest, abs, back, legs, lower_bf
     var experience: String?     // beginner | intermediate | advanced
@@ -18,11 +19,13 @@ import SwiftUI
     var age: Int = 25
     var activity: String?       // sedentary | light | active | very_active
     var pace: String?           // slow | recommended | aggressive
+    var stakes: String?         // 6-mo concern: confidence | health | energy | opportunities (funnel priming, not persisted yet)
+    var commitment: String?     // all_in | committed | testing (not persisted yet)
     var reminders: Bool = true  // workout reminder opt-in
     var attribution: String?    // how they heard about us
 
     var payload: ScanAPI.ProfileInput {
-        .init(sex: sex, goal: goal, focus: Array(focus), experience: experience,
+        .init(sex: sex, goal: goal, motivation: Array(motivation), focus: Array(focus), experience: experience,
               currentSplit: currentSplit.trimmingCharacters(in: .whitespacesAndNewlines),
               daysPerWeek: daysPerWeek, equipment: equipment,
               heightCm: heightCm, weightKg: weightKg, age: age,
@@ -34,7 +37,7 @@ import SwiftUI
 // Sourced obstacle callbacks (no invented stats). Shown after the obstacles step.
 struct ObstacleCallback { let headline: String; let body: String }
 enum Callbacks {
-    static let priority = ["plateau", "look_same", "slow", "dont_know", "intimidated"]
+    static let priority = ["look_same", "wasting_time", "plateau", "consistent", "dont_know", "intimidated"]
     // Stats sourced (see code-review notes): ~50% quit within 6 months; abs at 10-13% bf;
     // ~47% gym anxiety / >50% feel judged; training-to-failure helps trained lifters.
     static let map: [String: ObstacleCallback] = [
@@ -42,8 +45,10 @@ enum Callbacks {
             body: "Usually because progress stalls. In trained lifters, taking every set to true failure is what restarts growth — not piling on volume. That's how your plan is built."),
         "look_same": .init(headline: "More effort isn't more sets.",
             body: "For trained lifters, training to failure — not just adding volume — is what separates real growth from spinning your wheels. Your plan is built around that."),
-        "slow": .init(headline: "Slow results = the wrong plan.",
-            body: "Around half of people quit within 6 months because progress stalls. The fix isn't more time in the gym — it's a plan built around your body and your goal. That's exactly what you'll get."),
+        "consistent": .init(headline: "Consistency beats intensity.",
+            body: "Around half of people quit within 6 months — usually because the plan is too complicated to keep up. Yours is built to be simple enough that you actually stick to it."),
+        "wasting_time": .init(headline: "More time isn't more gains.",
+            body: "Junk volume just burns hours. Frequency and intensity on the right movements — not endless sets — is what builds an aesthetic frame. That's how your plan is built."),
         "dont_know": .init(headline: "Most physiques are capped by 1–2 weak points.",
             body: "A single lagging group can break your whole line. Stetic pinpoints yours and builds the plan around fixing it."),
         "intimidated": .init(headline: "Nearly half of people feel it too.",
@@ -56,8 +61,11 @@ enum Callbacks {
 }
 
 enum OnbStep: Int, CaseIterable {
-    case name, sex, goal, pace, obstacles, callback, experience, currentSplit, days,
+    // Easy/factual questions first (build momentum), heavier emotional ones later
+    // (obstacles → stakes → commitment), once they've already invested taps.
+    case name, sex, goal, pace, experience, currentSplit, days,
          equipment, equipmentDetail, height, weight, goalWeight, age, activity,
+         obstacles, callback, stakes, commitment,
          socialProof, attribution, reminders
 
     var isInterstitial: Bool { self == .callback || self == .socialProof }
@@ -69,9 +77,11 @@ enum OnbStep: Int, CaseIterable {
         case .goal:        return "What's your goal?"
         case .pace:        return "How fast do you want results?"
         case .obstacles:   return "What's holding you back?"
+        case .stakes:      return "Picture 6 months from now."
+        case .commitment:  return "How committed are you?"
         case .experience:  return "How long have you trained?"
         case .currentSplit: return "What are you running now?"
-        case .days:        return "Days per week?"
+        case .days:        return "How many days a week can you train?"
         case .equipment:   return "What can you train with?"
         case .equipmentDetail: return "What do you have?"
         case .height:      return "How tall are you?"
@@ -91,9 +101,11 @@ enum OnbStep: Int, CaseIterable {
         case .goal:       return "Shapes your plan and nutrition."
         case .pace:       return "Sets how aggressive your nutrition is."
         case .obstacles:  return "Pick any that apply — we'll target them."
+        case .stakes:     return "If nothing changes, what would bother you most?"
+        case .commitment: return "Be honest — it shapes how hard we push you."
         case .experience: return "Sets your starting intensity."
         case .currentSplit: return "We'll analyse why it's leaving your weak points behind."
-        case .days:       return "We build around your real schedule."
+        case .days:       return "We'll build your split around your real schedule."
         case .equipment:  return "We only program what you can do."
         case .equipmentDetail: return "Pick everything you've got access to."
         case .height:      return "Used for your calorie targets."
@@ -102,7 +114,7 @@ enum OnbStep: Int, CaseIterable {
         case .age:         return "Used for your calorie targets."
         case .activity:    return "Outside the gym — drives your calories."
         case .attribution: return "Helps us reach more people like you."
-        case .reminders:   return "A nudge on training days keeps you consistent."
+        case .reminders:   return "A nudge on your training days is one of the biggest drivers of staying consistent."
         case .callback, .socialProof: return ""
         }
     }
@@ -123,13 +135,35 @@ enum OnbOptions {
                icon: "figure.strengthtraining.traditional", tint: Theme.acc),
         Option(id: "both", label: "Both — recomp", sub: "Lean out and build at once",
                icon: "arrow.triangle.2.circlepath", tint: Color(hex: 0x49B6FF)),
+        Option(id: "tone", label: "Tone up", sub: "Lean and defined, not bulky",
+               icon: "sparkles", tint: Color(hex: 0xFFC24B)),
+    ]
+    static let stakes = [
+        Option(id: "confidence", label: "Still hiding my body", sub: nil),
+        Option(id: "health", label: "My health getting worse", sub: nil),
+        Option(id: "energy", label: "Stuck with low energy", sub: nil),
+        Option(id: "opportunities", label: "Missing out on life", sub: nil),
+    ]
+    static let commitment = [
+        Option(id: "all_in", label: "I'm all in", sub: "Push me — I'll show up"),
+        Option(id: "committed", label: "Pretty committed", sub: "I'll give it real effort"),
+        Option(id: "testing", label: "Just testing it out", sub: "Show me what this can do"),
+    ]
+    static let motivation = [
+        Option(id: "lean", label: "Get lean & defined", sub: nil),
+        Option(id: "muscle", label: "Build muscle in the right places", sub: nil),
+        Option(id: "confident", label: "Feel confident shirtless", sub: nil),
+        Option(id: "event", label: "Look good for an event / summer", sub: nil),
+        Option(id: "attention", label: "Turn heads", sub: nil),
+        Option(id: "stuck", label: "Break out of a rut", sub: nil),
     ]
     static let obstacles = [
-        Option(id: "plateau", label: "I've plateaued", sub: nil),
-        Option(id: "dont_know", label: "I don't know what to train", sub: nil),
+        Option(id: "dont_know", label: "I don't know what to do in the gym", sub: nil),
+        Option(id: "consistent", label: "I can't stay consistent", sub: nil),
         Option(id: "look_same", label: "I train hard but look the same", sub: nil),
-        Option(id: "intimidated", label: "Intimidated in the gym", sub: nil),
-        Option(id: "slow", label: "Results are too slow", sub: nil),
+        Option(id: "wasting_time", label: "I spend hours in the gym for little result", sub: nil),
+        Option(id: "plateau", label: "I've hit a plateau", sub: nil),
+        Option(id: "intimidated", label: "I feel lost or intimidated", sub: nil),
     ]
     static let focus = [
         Option(id: "shoulders", label: "Shoulders", sub: nil),

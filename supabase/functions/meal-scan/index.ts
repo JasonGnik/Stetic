@@ -23,12 +23,19 @@ const MEAL_SCHEMA = {
   type: "object",
   properties: {
     name: { type: "string" },
-    items: {                          // distinct foods detected (for the scan animation)
+    items: {                          // distinct foods detected, each with its own macros
       type: "array",
       items: {
         type: "object",
-        properties: { name: { type: "string" }, portion: { type: "string" } },
-        required: ["name"],
+        properties: {
+          name: { type: "string" },
+          portion: { type: "string" },
+          calories: { type: "number" },
+          protein_g: { type: "number" },
+          carbs_g: { type: "number" },
+          fat_g: { type: "number" },
+        },
+        required: ["name", "calories", "protein_g", "carbs_g", "fat_g"],
       },
     },
     calories: { type: "number" },
@@ -73,13 +80,13 @@ Deno.serve(async (req) => {
   if (!image?.dataB64 || !image?.mimeType) return json({ error: "no image" }, 400);
 
   const prompt =
-    `You are a nutrition estimator. Identify the food/meal in this photo and estimate ` +
-    `the calories and macros for the portion actually shown. List each distinct food you ` +
-    `see in 'items' with a short name and rough portion (e.g. {name:"Chicken breast", portion:"~200g"}, ` +
-    `{name:"White rice", portion:"~1 cup"}). If multiple items are on the plate, sum them and ` +
-    `name the whole meal naturally (e.g. "Chicken, rice & broccoli"). Be realistic, not rounded ` +
-    `to marketing numbers. Set confidence by how clearly you can judge the portion. Put any key ` +
-    `assumption in 'note'. Numbers only — do not refuse; give your best estimate.`;
+    `You are a nutrition estimator. Identify the food/meal in this photo. List EACH distinct food ` +
+    `in 'items' with a short name, a rough portion, AND its own calories + macros for the portion ` +
+    `shown (e.g. {name:"Chicken breast", portion:"~200g", calories:330, protein_g:62, carbs_g:0, fat_g:7}). ` +
+    `The top-level calories/protein_g/carbs_g/fat_g must equal the SUM of the items. Name the whole ` +
+    `meal naturally (e.g. "Chicken, rice & broccoli"). Be realistic, not rounded to marketing numbers. ` +
+    `Set confidence by how clearly you can judge the portions. Put any key assumption in 'note'. ` +
+    `Numbers only — do not refuse; give your best estimate.`;
 
   const body = {
     contents: [{
@@ -90,7 +97,7 @@ Deno.serve(async (req) => {
       ],
     }],
     generationConfig: {
-      temperature: 0.2,
+      temperature: 0,   // deterministic: same plate shouldn't jitter calories run-to-run
       responseMimeType: "application/json",
       responseSchema: MEAL_SCHEMA,
     },
@@ -132,9 +139,13 @@ Deno.serve(async (req) => {
     meal: {
       name: String(meal.name ?? "Meal"),
       items: Array.isArray(meal.items)
-        ? meal.items.map((it: { name?: string; portion?: string }) => ({
+        ? meal.items.map((it: Record<string, unknown>) => ({
           name: String(it?.name ?? ""),
           portion: String(it?.portion ?? ""),
+          calories: Math.round(Number(it?.calories ?? 0)),
+          protein_g: Math.round(Number(it?.protein_g ?? 0)),
+          carbs_g: Math.round(Number(it?.carbs_g ?? 0)),
+          fat_g: Math.round(Number(it?.fat_g ?? 0)),
         })).filter((it: { name: string }) => it.name)
         : [],
       calories: Math.round(meal.calories ?? 0),

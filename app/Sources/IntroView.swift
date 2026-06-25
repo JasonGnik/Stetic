@@ -133,13 +133,13 @@ struct IntroSlide {
     let title: String; let sub: String
     static let all = [
         IntroSlide(title: "Stop guessing\nin the gym.",
-                   sub: "Whether you're just starting or stuck after years, most people can't see what's holding them back. Stetic finds it for you."),
+                   sub: "Most people train for years and never see what's actually holding their physique back. Stetic finds it in one scan."),
         IntroSlide(title: "Know exactly\nwhere you stand.",
-                   sub: "Get scored 1–10 and ranked against the ideal — from Bronze all the way to Greek God."),
-        IntroSlide(title: "A coach\nin your pocket.",
-                   sub: "Coaching-level guidance — built on the science of how muscle actually grows — aimed straight at the weak points breaking your frame."),
+                   sub: "Get scored 1–10 and ranked against the aesthetic ideal — from Bronze all the way to Greek God."),
+        IntroSlide(title: "Smart programming,\nnot bro science.",
+                   sub: "A plan built on how muscle actually grows, aimed at your weak points — so you progress faster and spend less time in the gym."),
         IntroSlide(title: "Ascend.",
-                   sub: "Climb the ranks, turn weak points into strengths, and walk in with confidence. Re-scan and watch it happen."),
+                   sub: "Get lean, build the right muscle, and walk in with confidence. Re-scan and watch your rank climb."),
     ]
 }
 

@@ -29,7 +29,7 @@ enum Config {
     // RevenueCat PUBLIC SDK key. Paste the App Store app's `appl_...` key once it's
     // created in RevenueCat (Apps → App Store app). Safe to embed (public key).
     // Until set, the paywall falls back to its built-in prices and the dev path.
-    static let revenueCatKey = "appl_PASTE_YOUR_REVENUECAT_PUBLIC_KEY"
+    static let revenueCatKey = "appl_HuwOnJsXnxvsLWhmOzCXfKQJoGa"
     static var revenueCatConfigured: Bool { revenueCatKey.hasPrefix("appl_") && !revenueCatKey.contains("PASTE") }
     // The entitlement identifier you created in RevenueCat.
     static let entitlementID = "Stetic Pro"

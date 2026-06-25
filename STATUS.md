@@ -61,7 +61,36 @@ Dev flags bypass the sign-in gate (use the dev account). On the sign-in screen, 
 5. **Female rubric calibration** (only male calibrated — needs a few female physique photos).
 6. Replace placeholder social proof ("12,000+", testimonials) with real numbers/reviews.
 7. One real end-to-end scan to sanity-check scoring accuracy now the flow is settled.
-8. **Backlog:** food database + sample meal plan; sign-out in Settings; refine onboarding from Jason's transcript teardown.
+8. **Backlog:** food database + sample meal plan; sign-out in Settings; exercise demos (text only today — normalize plan exercise names to a canonical aesthetic-movement vocab before adding a GIF library v1.1; form-check deferred to V2).
+
+**Polish done (2026-06-25, transcript-teardown session):**
+- **Scan consistency cache** — same photo set+sex now returns the stored card instead of re-calling Gemini (which drifts run-to-run even at temp 0). New migration `…130000_scan_photo_hash.sql` (adds `photo_hash` col) + lookup wired in `scan/index.ts` via the existing `photoSetHash()`. **Needs `supabase db push` + `functions deploy scan` to the live project to take effect.**
+- **Meal scan** temp `0.2 → 0` (less calorie jitter on the same plate). **Needs `functions deploy meal-scan`.**
+- **Affirmation screen 1** — gender-neutral reaffirm interstitial added before `name` (`OnbStep.affirm`). Shifts `STETIC_ONB_STEP` indices by +1.
+- **Capture photo preview** no longer crops — `scaledToFill → scaledToFit` over the card (`RevealFunnelView` photoSlot).
+- ⚠️ **Verify on device:** all onboarding interstitials (affirm/callback/socialProof) show a faint duplicate of the CTA near the top **in the simulator only (suspected)**. Tracks purely with the button's presence; survives every layout variant — looks like a sim rendering artifact. Pre-existing on callback/socialProof. Confirm it's absent on real hardware during the device-test pass.
+
+**Funnel restructure + onboarding gaps (2026-06-25, part 2):**
+- **Sign-in moved to the END** (right before the paywall), per SPEC §2 + PrayerLock/PuffCount. `ContentView` no longer gates on sign-in: new users go `intro → onboarding → funnel`, and `OnboardingView` now hands answers up (no save) — they're held in `ContentView.pendingProfile` and persisted via `saveProfile` only **after** sign-in inside `RevealFunnelView` (new `.signin` phase). Returning onboarded users still skip to home.
+- **Fixed onboarding save crash** — `activity_level`/`pace` columns were missing (empty macro-fields migration); added `…140000_add_profile_activity_pace.sql`. **Needs `supabase db push`.**
+- **Personalized FOMO** — projection now computed from their answers (experience/activity) showing "Likely plateau: X → Your potential: Y" tier pills + name.
+- **Trial mechanics** — new `.trialReminder` screen ("we'll remind you", Today/Day 2/Day 3 timeline) between the paywall CTA and purchase (annual only; weekly buys directly). Paywall header personalized ("Your plan is ready, {name} · Built for people exactly like you").
+- **Intro copy** sharpened to name the lean/movie-star promise + "smart programming, not bro science."
+- **Haptics** on onboarding sliders + step transitions.
+- Dev screenshot flags: `STETIC_FUNNEL_PHASE=signin|trial` added.
+- ⚠️ Apple Sign In still needs a **device** to verify the new in-funnel placement (sim uses "Continue as dev").
+
+**Onboarding content + meal scanner (2026-06-25, part 3):**
+- **Welcome checkmark is now the true first screen** (`WelcomeView`, before the intro). Pulled out of onboarding.
+- **Onboarding questions consolidated:** removed the redundant "what brought you here" (motivation) step and the focus step from the main flow; **obstacles upgraded** to real gym pain points (don't know what to do / can't stay consistent / train hard but look same / hours for little result / plateau / lost or intimidated) with matching stat callbacks.
+- **Focus moved to the no-photo path only** — new `.focusPick` screen ("No photo? No problem.") shows when they Skip the scan; saved into the profile + used by `estimateScan` (focus areas estimated as lagging/priority).
+- **Meal scanner reworked to Cal AI style** (`MealScanView`): scan → loading (no jarring error) → editable results card: photo, name, **servings stepper**, big calories, macro chips, **ingredient list you can add / edit / remove**, totals recompute live. Failure now lands in the editor (add manually) instead of a dead-end error.
+  - `meal-scan` edge function + `MealEstimate` now carry **per-item macros**; decode is resilient (falls back to totals) so it works pre-deploy. **Needs `supabase functions deploy meal-scan`** for per-ingredient calories.
+  - **Still TODO:** edit/delete an *already-logged* meal (tap a row in Nutrition) — not built yet; food catalog (free API: USDA FoodData Central / OpenFoodFacts — $0; paid Nutritionix/Edamam not needed) for richer "Add food".
+- **Dev test affordances:** `STETIC_HOME=1 STETIC_TAB=2` → straight to Food tab (no funnel/paywall, reuses cached plan, no regen); **"Dev: skip paywall →"** button on the paywall (DEBUG); `STETIC_MEALSCAN=1` previews the meal results screen with sample data.
+- New migration `…150000_add_profile_motivation.sql` (kept; client only writes it when non-empty, so safe pre-deploy).
+
+**Open design picks for Jason:** app-icon direction — 20 mark concepts + 10 statue concepts mocked; SVG statues were too stick-figure, so use the **image-gen prompt** (marble David-style statue, lime rim-light/kintsugi) to generate the real icon, then refine + export into `Assets.xcassets`.
 
 ## Pricing (current)
 Weekly **$9.99/wk** + Annual **$59.99/yr** ($1.15/wk, "SAVE 88%", 3-day trial). Two tiers, no monthly. Prices now flow from RevenueCat; the in-app numbers are fallbacks. Still open to revisit.

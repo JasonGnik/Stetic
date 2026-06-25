@@ -1,42 +1,209 @@
 import SwiftUI
 
-// "Scientific" meal scan: shows the photo, sweeps a scan line, pops a labeled box
-// per detected food, then counts up the calories/macros. Real items from /meal-scan.
+// Cal AI-style meal scan: scan the photo, then an editable results card —
+// total calories + macros, a servings stepper, and an ingredient list you can
+// add to / remove / edit. Totals recompute live from the items.
 struct MealScanView: View {
     let image: UIImage
     let dataB64: String
     var onLogged: () -> Void
+    var preset: MealEstimate? = nil   // DEBUG: skip the network and show a sample result
     @Environment(\.dismiss) private var dismiss
 
     @State private var phase: Phase = .scanning
-    @State private var est: MealEstimate?
-    @State private var revealed = 0          // how many item boxes shown
-    @State private var counter = 0.0         // 0→1 macro count-up
+    @State private var est = MealEstimate(name: "Meal", calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, confidence: "")
     @State private var saving = false
-    enum Phase { case scanning, done, error }
-
-    // Scattered anchor points for the item boxes (relative to the photo).
-    private let anchors: [CGPoint] = [
-        .init(x: 0.30, y: 0.32), .init(x: 0.68, y: 0.40), .init(x: 0.42, y: 0.66),
-        .init(x: 0.74, y: 0.70), .init(x: 0.24, y: 0.54), .init(x: 0.56, y: 0.24),
-    ]
+    @State private var editTarget: EditTarget?
+    enum Phase { case scanning, results }
+    struct EditTarget: Identifiable { let id = UUID(); var index: Int? }   // nil = new item
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            photo
-            readout
-            Spacer(minLength: 0)
-            controls
+        Group {
+            if phase == .scanning { scanningView } else { resultsView }
         }
         .background(Theme.bg.ignoresSafeArea())
         .task { await run() }
+        .sheet(item: $editTarget) { target in itemEditor(target) }
     }
 
-    private var header: some View {
+    // MARK: scanning (loading) — photo + sweeping scan line, no error mid-scan
+    private var scanningView: some View {
+        VStack(spacing: 0) {
+            header("Scanning meal")
+            GeometryReader { geo in
+                let w = geo.size.width, h = geo.size.height
+                ZStack {
+                    Image(uiImage: image).resizable().scaledToFill().frame(width: w, height: h).clipped()
+                    Rectangle().fill(Color.black.opacity(0.28))
+                    cornerBrackets(w: w, h: h)
+                    TimelineView(.animation) { tl in
+                        let t = tl.date.timeIntervalSinceReferenceDate
+                        let y = (sin(t * 1.6) * 0.5 + 0.5) * h
+                        ZStack {
+                            Rectangle().fill(LinearGradient(colors: [.clear, Theme.acc.opacity(0.5), .clear], startPoint: .top, endPoint: .bottom))
+                                .frame(height: 60).position(x: w / 2, y: y)
+                            Rectangle().fill(Theme.acc).frame(height: 2).shadow(color: Theme.acc, radius: 6).position(x: w / 2, y: y)
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            }
+            .frame(height: 380).padding(.horizontal, 18)
+            Text("Identifying foods…").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut).padding(.top, 16)
+            Spacer()
+        }
+    }
+
+    // MARK: results (editable) — Cal AI style
+    private var resultsView: some View {
+        VStack(spacing: 0) {
+            header("Nutrition")
+            ScrollView {
+                VStack(spacing: 14) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                        .frame(height: 180).frame(maxWidth: .infinity).clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                    // name + servings stepper
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(est.name).font(.system(size: 19, weight: .heavy)).foregroundStyle(Theme.txt)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Servings").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                        }
+                        Spacer()
+                        stepper
+                    }
+
+                    // big calories card
+                    HStack(spacing: 12) {
+                        Image(systemName: "flame.fill").font(.system(size: 22)).foregroundStyle(Theme.acc)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Calories").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                            Text("\(Int(est.shownCalories))").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.txt)
+                        }
+                        Spacer()
+                    }
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1)))
+
+                    HStack(spacing: 10) {
+                        macroChip("Protein", est.shownProtein, "bolt.fill")
+                        macroChip("Carbs", est.shownCarbs, "leaf.fill")
+                        macroChip("Fats", est.shownFat, "drop.fill")
+                    }
+
+                    // ingredients
+                    HStack {
+                        Text("Ingredients").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
+                        Spacer()
+                        Button { editTarget = EditTarget(index: nil) } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus").font(.system(size: 12, weight: .bold))
+                                Text("Add more").font(.system(size: 13, weight: .semibold))
+                            }.foregroundStyle(Theme.acc)
+                        }
+                    }
+                    .padding(.top, 4)
+
+                    if est.items.isEmpty {
+                        Text(est.note ?? "No ingredients yet — add your foods.")
+                            .font(.system(size: 13)).foregroundStyle(Theme.mut)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        ForEach(Array(est.items.enumerated()), id: \.element.id) { idx, item in
+                            ingredientRow(item, idx)
+                        }
+                    }
+                }
+                .padding(.horizontal, 18).padding(.top, 6).padding(.bottom, 20)
+            }
+            .scrollIndicators(.hidden)
+            controls
+        }
+    }
+
+    private var stepper: some View {
+        HStack(spacing: 14) {
+            Button { if est.servings > 1 { est.servings -= 1 } } label: {
+                Image(systemName: "minus").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
+                    .frame(width: 30, height: 30).background(Circle().fill(Theme.card))
+            }
+            Text("\(Int(est.servings))").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt).frame(minWidth: 16)
+            Button { est.servings += 1 } label: {
+                Image(systemName: "plus").font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0x0E0E10))
+                    .frame(width: 30, height: 30).background(Circle().fill(Theme.acc))
+            }
+        }
+    }
+
+    private func macroChip(_ label: String, _ value: Double, _ icon: String) -> some View {
+        VStack(spacing: 5) {
+            HStack(spacing: 4) {
+                Image(systemName: icon).font(.system(size: 11)).foregroundStyle(Theme.acc)
+                Text(label).font(.system(size: 11)).foregroundStyle(Theme.mut)
+            }
+            Text("\(Int(value))g").font(.system(size: 17, weight: .heavy)).foregroundStyle(Theme.txt)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1)))
+    }
+
+    private func ingredientRow(_ item: MealEstimate.Item, _ idx: Int) -> some View {
+        Button { editTarget = EditTarget(index: idx) } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt)
+                    if let p = item.portion, !p.isEmpty {
+                        Text(p).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    }
+                }
+                Spacer()
+                Text("\(Int(item.calories)) cal").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
+                Button { est.items.remove(at: idx) } label: {
+                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+                        .frame(width: 26, height: 26).background(Circle().fill(Theme.card))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.vertical, 10).padding(.horizontal, 14)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder private var controls: some View {
+        HStack(spacing: 10) {
+            Button { dismiss() } label: {
+                Text("Discard").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)).foregroundStyle(Theme.txt)
+            }
+            Button { Task { await add() } } label: {
+                HStack(spacing: 6) {
+                    if saving { ProgressView().tint(Color(hex: 0x0E0E10)) }
+                    Text("Add to today").font(.system(size: 15, weight: .bold))
+                }
+                .frame(maxWidth: .infinity).padding(14)
+                .background(RoundedRectangle(cornerRadius: 12).fill(est.shownCalories > 0 ? Theme.acc : Theme.line))
+                .foregroundStyle(est.shownCalories > 0 ? Color(hex: 0x0E0E10) : Theme.mut)
+            }
+            .disabled(saving || est.shownCalories <= 0)
+        }
+        .padding(.horizontal, 18).padding(.top, 12).padding(.bottom, 14)
+    }
+
+    // MARK: add / edit an ingredient
+    private func itemEditor(_ target: EditTarget) -> some View {
+        ItemEditor(item: target.index.map { est.items[$0] }) { result in
+            if let i = target.index { est.items[i] = result } else { est.items.append(result) }
+            editTarget = nil
+        } onCancel: { editTarget = nil }
+        .presentationDetents([.height(440)])
+    }
+
+    private func header(_ title: String) -> some View {
         HStack {
-            Text(phase == .done ? "Meal scanned" : "Scanning meal")
-                .font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+            Text(title).font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
             Spacer()
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
@@ -44,47 +211,6 @@ struct MealScanView: View {
             }
         }
         .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 12)
-    }
-
-    private var photo: some View {
-        GeometryReader { geo in
-            let w = geo.size.width, h = geo.size.height
-            ZStack {
-                Image(uiImage: image).resizable().scaledToFill()
-                    .frame(width: w, height: h).clipped()
-                Rectangle().fill(Color.black.opacity(phase == .scanning ? 0.28 : 0.12))
-
-                // corner brackets
-                cornerBrackets(w: w, h: h)
-
-                if phase == .scanning {
-                    TimelineView(.animation) { tl in
-                        let t = tl.date.timeIntervalSinceReferenceDate
-                        let y = (sin(t * 1.6) * 0.5 + 0.5) * h
-                        ZStack {
-                            Rectangle().fill(LinearGradient(colors: [.clear, Theme.acc.opacity(0.5), .clear],
-                                                            startPoint: .top, endPoint: .bottom))
-                                .frame(height: 60).position(x: w / 2, y: y)
-                            Rectangle().fill(Theme.acc).frame(height: 2)
-                                .shadow(color: Theme.acc, radius: 6).position(x: w / 2, y: y)
-                        }
-                    }
-                }
-
-                // detected-item boxes
-                if let est, phase == .done {
-                    ForEach(Array(est.items.prefix(anchors.count).enumerated()), id: \.offset) { idx, item in
-                        if idx < revealed {
-                            itemBox(item).position(x: anchors[idx].x * w, y: anchors[idx].y * h)
-                                .transition(.scale(scale: 0.6).combined(with: .opacity))
-                        }
-                    }
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-        }
-        .frame(height: 380)
-        .padding(.horizontal, 18)
     }
 
     private func cornerBrackets(w: CGFloat, h: CGFloat) -> some View {
@@ -102,107 +228,98 @@ struct MealScanView: View {
         }
     }
 
-    private func itemBox(_ item: MealEstimate.Item) -> some View {
-        HStack(spacing: 5) {
-            Circle().fill(Theme.acc).frame(width: 5, height: 5)
-            Text(item.name).font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-            if let p = item.portion, !p.isEmpty {
-                Text(p).font(.system(size: 10)).foregroundStyle(.white.opacity(0.7))
-            }
-        }
-        .padding(.horizontal, 9).padding(.vertical, 5)
-        .background(Capsule().fill(Color.black.opacity(0.7)).overlay(Capsule().stroke(Theme.acc, lineWidth: 1)))
-    }
-
-    private var readout: some View {
-        VStack(spacing: 10) {
-            if phase == .scanning {
-                Text("Identifying foods…").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut)
-            } else if phase == .error {
-                Text("Couldn't read that one — try a clearer photo.").font(.system(size: 13)).foregroundStyle(Theme.red)
-            } else if let est {
-                Text(est.name).font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt)
-                    .multilineTextAlignment(.center)
-                HStack(spacing: 22) {
-                    macro("\(Int((est.calories * counter).rounded()))", "cal", Theme.acc)
-                    macro("\(Int((est.protein_g * counter).rounded()))g", "protein", Theme.txt)
-                    macro("\(Int((est.carbs_g * counter).rounded()))g", "carbs", Theme.txt)
-                    macro("\(Int((est.fat_g * counter).rounded()))g", "fat", Theme.txt)
-                }
-                if est.confidence.lowercased() == "low" {
-                    Text("Low confidence — tweak it after adding if needed.").font(.system(size: 10.5)).foregroundStyle(Theme.mut)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity).padding(.horizontal, 20).padding(.top, 14)
-    }
-
-    private func macro(_ v: String, _ k: String, _ c: Color) -> some View {
-        VStack(spacing: 2) {
-            Text(v).font(.system(size: 18, weight: .heavy)).foregroundStyle(c)
-            Text(k).font(.system(size: 10)).foregroundStyle(Theme.mut)
-        }
-    }
-
-    @ViewBuilder private var controls: some View {
-        if phase == .done {
-            HStack(spacing: 10) {
-                Button { dismiss() } label: {
-                    Text("Discard").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)).foregroundStyle(Theme.txt)
-                }
-                Button { Task { await add() } } label: {
-                    HStack(spacing: 6) {
-                        if saving { ProgressView().tint(Color(hex: 0x0E0E10)) }
-                        Text("Add to today").font(.system(size: 15, weight: .bold))
-                    }
-                    .frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
-                }
-                .disabled(saving)
-            }
-            .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 14)
-        } else if phase == .error {
-            Button { dismiss() } label: {
-                Text("Close").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)).foregroundStyle(Theme.txt)
-            }
-            .padding(.horizontal, 18).padding(.bottom, 14)
-        } else {
-            Color.clear.frame(height: 70)
-        }
-    }
-
     // MARK: flow
     private func run() async {
+        if let preset { est = preset; withAnimation { phase = .results }; return }
         do {
             let result = try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: dataB64))
-            // No food found → soft error instead of showing a confusing "0 cal".
-            guard result.calories > 0 else { withAnimation { phase = .error }; return }
-            est = result
-            withAnimation(.easeOut(duration: 0.3)) { phase = .done }
-            // pop item boxes one at a time
-            let n = min(result.items.count, anchors.count)
-            for i in 1...max(1, n) {
-                try? await Task.sleep(nanoseconds: 260_000_000)
-                withAnimation(.spring(response: 0.35)) { revealed = i }
+            await MainActor.run {
+                est = result
+                if est.items.isEmpty && est.baseCalories <= 0 {
+                    est.note = "Couldn't read it automatically — add your foods below."
+                }
+                withAnimation(.easeOut(duration: 0.3)) { phase = .results }
             }
-            // count up macros
-            let steps = 26
-            for i in 0...steps {
-                counter = Double(i) / Double(steps)
-                try? await Task.sleep(nanoseconds: 28_000_000)
-            }
-            counter = 1
         } catch {
-            withAnimation { phase = .error }
+            await MainActor.run {
+                est.note = "Couldn't read it automatically — add your foods below."
+                withAnimation { phase = .results }
+            }
         }
     }
 
     private func add() async {
-        guard let est else { return }
         saving = true
         try? await ScanAPI.shared.logMeal(est)
         await MainActor.run { saving = false; onLogged(); dismiss() }
+    }
+}
+
+// A small add/edit form for one ingredient.
+private struct ItemEditor: View {
+    let item: MealEstimate.Item?
+    var onSave: (MealEstimate.Item) -> Void
+    var onCancel: () -> Void
+
+    @State private var name = ""
+    @State private var portion = ""
+    @State private var cals = ""
+    @State private var protein = ""
+    @State private var carbs = ""
+    @State private var fat = ""
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text(item == nil ? "Add food" : "Edit food").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+                Spacer()
+                Button { onCancel() } label: { Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut) }
+            }
+            field("Food name", $name)
+            field("Portion (e.g. 1 cup)", $portion)
+            HStack(spacing: 8) { numField("Calories", $cals); numField("Protein", $protein) }
+            HStack(spacing: 8) { numField("Carbs", $carbs); numField("Fat", $fat) }
+            Button {
+                var it = item ?? MealEstimate.Item(name: "")
+                it.name = name.isEmpty ? "Food" : name
+                it.portion = portion.isEmpty ? nil : portion
+                it.calories = Double(cals) ?? 0
+                it.protein_g = Double(protein) ?? 0
+                it.carbs_g = Double(carbs) ?? 0
+                it.fat_g = Double(fat) ?? 0
+                onSave(it)
+            } label: {
+                Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill((Double(cals) ?? 0) > 0 ? Theme.acc : Theme.line))
+                    .foregroundStyle((Double(cals) ?? 0) > 0 ? Color(hex: 0x0E0E10) : Theme.mut)
+            }
+            .disabled((Double(cals) ?? 0) <= 0)
+            Spacer()
+        }
+        .padding(.horizontal, 20).padding(.top, 18)
+        .background(Theme.bg.ignoresSafeArea())
+        .onAppear {
+            if let item {
+                name = item.name; portion = item.portion ?? ""
+                cals = item.calories > 0 ? "\(Int(item.calories))" : ""
+                protein = item.protein_g > 0 ? "\(Int(item.protein_g))" : ""
+                carbs = item.carbs_g > 0 ? "\(Int(item.carbs_g))" : ""
+                fat = item.fat_g > 0 ? "\(Int(item.fat_g))" : ""
+            }
+        }
+    }
+
+    private func field(_ label: String, _ text: Binding<String>) -> some View {
+        TextField("", text: text, prompt: Text(label).foregroundStyle(Theme.mut))
+            .font(.system(size: 15)).foregroundStyle(Theme.txt).padding(13)
+            .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
+    }
+    private func numField(_ label: String, _ text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
+            TextField("0", text: text).keyboardType(.numberPad)
+                .font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.txt).padding(11)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1)))
+        }
     }
 }

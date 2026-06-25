@@ -3,7 +3,7 @@ import UserNotifications
 import PhotosUI
 
 struct OnboardingView: View {
-    var onComplete: (String) -> Void   // passes the user's name
+    var onComplete: (OnboardingData) -> Void   // answers held locally; saved after sign-in
     @State private var data = OnboardingData()
     @State private var stepIndex = Int(ProcessInfo.processInfo.environment["STETIC_ONB_STEP"] ?? "") ?? 0
     @State private var saving = false
@@ -18,7 +18,7 @@ struct OnboardingView: View {
     // Single-select steps auto-advance on tap — no Continue button needed.
     private var needsContinue: Bool {
         switch step {
-        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution, .reminders: return false
+        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution, .reminders, .stakes, .commitment: return false
         default: return true
         }
     }
@@ -49,14 +49,17 @@ struct OnboardingView: View {
                 }
             }
         }
+        .sensoryFeedback(.selection, trigger: stepIndex)
     }
 
     // MARK: interstitials (callback, social proof) — full-screen, more cinematic
     private var interstitialView: some View {
         VStack(spacing: 0) {
             HStack {
-                Button { back() } label: {
-                    Image(systemName: "chevron.left").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+                if stepIndex > 0 {
+                    Button { back() } label: {
+                        Image(systemName: "chevron.left").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+                    }
                 }
                 Spacer()
             }
@@ -108,8 +111,8 @@ struct OnboardingView: View {
                 }
             }
             VStack(spacing: 10) {
-                reviewCard("Finally an app that told me the truth. My back was killing my whole look.", "Marcus")
-                reviewCard("Went from a 5.8 to Diamond in 8 weeks. The plan just works.", "Dev")
+                reviewCard("Leaner than I've ever been — first time my abs actually show. It knew exactly what was holding me back.", "Marcus")
+                reviewCard("Climbed from Gold to Diamond in 8 weeks, training smarter and spending less time in the gym.", "Dev")
             }
             .padding(.top, 6)
         }
@@ -176,6 +179,8 @@ struct OnboardingView: View {
         case .pace:       singleSelect(OnbOptions.pace, data.pace) { data.pace = $0 }
         case .activity:   singleSelect(OnbOptions.activity, data.activity) { data.activity = $0 }
         case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
+        case .stakes:     singleSelect(OnbOptions.stakes, data.stakes) { data.stakes = $0 }
+        case .commitment: singleSelect(OnbOptions.commitment, data.commitment) { data.commitment = $0 }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .currentSplit: splitField
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
@@ -254,6 +259,7 @@ struct OnboardingView: View {
                 .font(.system(size: 44, weight: .heavy)).foregroundStyle(Theme.txt)
                 .frame(maxWidth: .infinity)
             Slider(value: value, in: range, step: 1).tint(Theme.acc)
+                .sensoryFeedback(.selection, trigger: value.wrappedValue)
             HStack(spacing: 8) {
                 ForEach(units.indices, id: \.self) { i in
                     Button { unit = i } label: {
@@ -353,6 +359,7 @@ struct OnboardingView: View {
             Text("\(data.age)").font(.system(size: 44, weight: .heavy)).foregroundStyle(Theme.txt)
                 .frame(maxWidth: .infinity)
             Slider(value: Binding(get: { Double(data.age) }, set: { data.age = Int($0) }), in: 14...90, step: 1).tint(Theme.acc)
+                .sensoryFeedback(.selection, trigger: data.age)
             Text("years").font(.system(size: 13)).foregroundStyle(Theme.mut)
         }
         .padding(.top, 20)
@@ -376,6 +383,8 @@ struct OnboardingView: View {
         case .activity: return data.activity != nil
         case .goal: return data.goal != nil
         case .obstacles: return true   // optional
+        case .stakes: return data.stakes != nil
+        case .commitment: return data.commitment != nil
         case .experience: return data.experience != nil
         case .currentSplit: return true   // optional
         case .days: return data.daysPerWeek != nil
@@ -423,16 +432,8 @@ struct OnboardingView: View {
             }
             withAnimation { stepIndex = next }; return
         }
-        // last step → persist
-        saving = true
-        Task {
-            do {
-                try await ScanAPI.shared.saveProfile(data.payload)
-                await MainActor.run { saving = false; onComplete(data.name) }
-            } catch {
-                await MainActor.run { saving = false; self.error = "Couldn't save: \(error.localizedDescription)" }
-            }
-        }
+        // last step → hand the answers up; they're persisted after sign-in (right before the paywall)
+        onComplete(data)
     }
 }
 

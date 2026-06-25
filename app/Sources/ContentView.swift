@@ -4,9 +4,10 @@ struct ContentView: View {
     private let env = ProcessInfo.processInfo.environment
     @State private var stage: Stage
     @State private var userName = ""
+    @State private var pendingProfile: ScanAPI.ProfileInput?   // held until sign-in (right before paywall)
     @AppStorage("steticOnboarded") private var onboarded = false
 
-    enum Stage { case loading, signIn, intro, onboarding, main, home }
+    enum Stage { case loading, welcome, intro, onboarding, main, home }
 
     init() {
         let e = ProcessInfo.processInfo.environment
@@ -18,11 +19,13 @@ struct ContentView: View {
     }
 
     private func checkSession() async {
+        // No sign-in gate up front — new users go straight into the funnel and only
+        // create an account right before the paywall. Returning, onboarded users skip to home.
         if await ScanAPI.shared.restoreSession() {
             if let uid = await ScanAPI.shared.currentUserID() { await PurchaseManager.shared.identify(uid) }
-            stage = onboarded ? .home : .intro
+            stage = onboarded ? .home : .welcome
         } else {
-            stage = .signIn
+            stage = .welcome
         }
     }
 
@@ -35,6 +38,19 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_MEALSCAN"] == "1" {
+            MealScanView(image: UIImage(named: "sample") ?? UIImage(),
+                         dataB64: "", onLogged: {},
+                         preset: MealEstimate(
+                            name: "Caesar salad with chicken",
+                            items: [
+                                .init(name: "Grilled chicken", portion: "~150g", calories: 250, protein_g: 46, carbs_g: 0, fat_g: 6),
+                                .init(name: "Romaine lettuce", portion: "2 cups", calories: 16, protein_g: 1, carbs_g: 3, fat_g: 0),
+                                .init(name: "Parmesan", portion: "2 tbsp", calories: 43, protein_g: 4, carbs_g: 1, fat_g: 3),
+                                .init(name: "Croutons", portion: "1/4 cup", calories: 31, protein_g: 1, carbs_g: 5, fat_g: 1),
+                                .init(name: "Caesar dressing", portion: "1 tbsp", calories: 80, protein_g: 1, carbs_g: 1, fat_g: 9),
+                            ],
+                            calories: 420, protein_g: 53, carbs_g: 10, fat_g: 19, confidence: "high"))
         } else if env["STETIC_SESSION"] == "1" {
             SessionLogView(day: .init(day: "Pull Day", focus: "Back, rear delts & biceps", exercises: [
                 .init(name: "Weighted Pull-up", sets: 2, reps: "5-9, 10-12", target: "lats", note: nil),
@@ -45,17 +61,19 @@ struct ContentView: View {
             switch stage {
             case .loading:
                 ZStack { Theme.bg.ignoresSafeArea() }.task { await checkSession() }
-            case .signIn:
-                SignInView { withAnimation { stage = .intro } }
+            case .welcome:
+                WelcomeView { withAnimation { stage = .intro } }
             case .intro:
                 IntroView { withAnimation { stage = .onboarding } }
             case .onboarding:
-                OnboardingView { name in
-                    userName = name
+                OnboardingView { data in
+                    userName = data.name
+                    pendingProfile = data.payload   // saved after sign-in, inside the funnel
                     withAnimation { stage = .main }
                 }
             case .main:
-                RevealFunnelView(name: userName, onFinish: { onboarded = true; withAnimation { stage = .home } })
+                RevealFunnelView(name: userName, profile: pendingProfile,
+                                 onFinish: { onboarded = true; withAnimation { stage = .home } })
             case .home:
                 MainTabView(name: userName)
             }

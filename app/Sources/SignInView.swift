@@ -5,6 +5,8 @@ import CryptoKit
 // First-run gate. "Sign in with Apple" creates/loads the Supabase account; a DEBUG
 // "Continue as dev" button keeps the simulator flow working (Apple sign-in needs a device).
 struct SignInView: View {
+    var title: String = "STETIC"
+    var subtitle: String = "Scan your physique. Get your plan.\nClimb the ranks."
     var onSignedIn: () -> Void
     @State private var rawNonce = ""
     @State private var error: String?
@@ -15,9 +17,11 @@ struct SignInView: View {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 16) {
                 Spacer()
-                Text("STETIC").font(.system(size: 36, weight: .heavy)).tracking(4).foregroundStyle(Theme.acc)
-                Text("Scan your physique. Get your plan.\nClimb the ranks.")
+                Text(title).font(.system(size: 32, weight: .heavy)).tracking(title == "STETIC" ? 4 : 0)
+                    .multilineTextAlignment(.center).foregroundStyle(Theme.acc)
+                Text(subtitle)
                     .font(.system(size: 15)).multilineTextAlignment(.center).foregroundStyle(Theme.mut).lineSpacing(3)
+                    .padding(.horizontal, 30)
                 Spacer()
                 SignInWithAppleButton(.signIn) { req in
                     rawNonce = Self.randomNonce()

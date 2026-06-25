@@ -5,7 +5,7 @@
 // Auth: Authorization: Bearer <supabase user jwt>
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { scorePhotos } from "../_shared/scoring.ts";
+import { photoSetHash, scorePhotos } from "../_shared/scoring.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -69,6 +69,19 @@ Deno.serve(async (req) => {
     sex = profile?.sex ?? "male";
   }
 
+  // ── consistency cache: same photo set + sex → return the stored card, no model call.
+  // (Gemini drifts run-to-run even at temp 0; this keeps an identical photo from flip-flopping.)
+  const hash = await photoSetHash(sex, images);
+  const { data: cached } = await supabase
+    .from("scans")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("photo_hash", hash)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (cached) return json({ scan: cached });
+
   // ── score (photos used in-memory only, never persisted) ──
   let card;
   try {
@@ -92,6 +105,7 @@ Deno.serve(async (req) => {
       muscles: card.muscles,
       verdict: card.verdict,
       photo_count: images.length,
+      photo_hash: hash,
     })
     .select()
     .single();

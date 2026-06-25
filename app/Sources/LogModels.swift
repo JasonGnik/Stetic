@@ -42,20 +42,50 @@ struct MealLog: Codable, Identifiable {
 // What /meal-scan returns before the user confirms and saves it.
 struct MealEstimate: Codable, Identifiable {
     var id = UUID()
-    let name: String
+    var name: String
     var items: [Item] = []
-    let calories: Double
-    let protein_g: Double
-    let carbs_g: Double
-    let fat_g: Double
-    let confidence: String
+    var calories: Double
+    var protein_g: Double
+    var carbs_g: Double
+    var fat_g: Double
+    var confidence: String
     var note: String?
+    var servings: Double = 1
 
     struct Item: Codable, Identifiable, Hashable {
-        var id: String { name }
-        let name: String
+        var id = UUID()
+        var name: String
         var portion: String?
+        var calories: Double = 0
+        var protein_g: Double = 0
+        var carbs_g: Double = 0
+        var fat_g: Double = 0
+        enum CodingKeys: String, CodingKey { case name, portion, calories, protein_g, carbs_g, fat_g }
+        init(name: String, portion: String? = nil, calories: Double = 0, protein_g: Double = 0, carbs_g: Double = 0, fat_g: Double = 0) {
+            self.name = name; self.portion = portion; self.calories = calories
+            self.protein_g = protein_g; self.carbs_g = carbs_g; self.fat_g = fat_g
+        }
+        init(from d: Decoder) throws {   // macros optional so it survives an older meal-scan response
+            let c = try d.container(keyedBy: CodingKeys.self)
+            name = try c.decode(String.self, forKey: .name)
+            portion = try c.decodeIfPresent(String.self, forKey: .portion)
+            calories = try c.decodeIfPresent(Double.self, forKey: .calories) ?? 0
+            protein_g = try c.decodeIfPresent(Double.self, forKey: .protein_g) ?? 0
+            carbs_g = try c.decodeIfPresent(Double.self, forKey: .carbs_g) ?? 0
+            fat_g = try c.decodeIfPresent(Double.self, forKey: .fat_g) ?? 0
+        }
     }
+
+    // Totals derive from items when they carry macros; otherwise fall back to the model's totals.
+    private func sum(_ kp: (Item) -> Double) -> Double { items.reduce(0) { $0 + kp($1) } }
+    var baseCalories: Double { sum(\.calories) > 0 ? sum(\.calories) : calories }
+    var baseProtein: Double  { sum(\.calories) > 0 ? sum(\.protein_g) : protein_g }
+    var baseCarbs: Double    { sum(\.calories) > 0 ? sum(\.carbs_g) : carbs_g }
+    var baseFat: Double      { sum(\.calories) > 0 ? sum(\.fat_g) : fat_g }
+    var shownCalories: Double { (baseCalories * servings).rounded() }
+    var shownProtein: Double  { (baseProtein * servings).rounded() }
+    var shownCarbs: Double    { (baseCarbs * servings).rounded() }
+    var shownFat: Double      { (baseFat * servings).rounded() }
 
     enum CodingKeys: String, CodingKey { case name, items, calories, protein_g, carbs_g, fat_g, confidence, note }
 }
