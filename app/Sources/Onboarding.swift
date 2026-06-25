@@ -57,10 +57,10 @@ enum Callbacks {
 
 enum OnbStep: Int, CaseIterable {
     case name, sex, goal, pace, obstacles, callback, experience, currentSplit, days,
-         equipment, equipmentDetail, height, weight, goalWeight, age, activity,
+         insight, equipment, equipmentDetail, height, weight, goalWeight, age, activity,
          socialProof, attribution, reminders
 
-    var isInterstitial: Bool { self == .callback || self == .socialProof }
+    var isInterstitial: Bool { self == .callback || self == .socialProof || self == .insight }
 
     var title: String {
         switch self {
@@ -81,7 +81,7 @@ enum OnbStep: Int, CaseIterable {
         case .activity:    return "How active are you?"
         case .attribution: return "How did you hear about us?"
         case .reminders:   return "Stay on track?"
-        case .callback, .socialProof: return ""
+        case .callback, .socialProof, .insight: return ""
         }
     }
     var subtitle: String {
@@ -103,7 +103,7 @@ enum OnbStep: Int, CaseIterable {
         case .activity:    return "Outside the gym — drives your calories."
         case .attribution: return "Helps us reach more people like you."
         case .reminders:   return "A nudge on training days keeps you consistent."
-        case .callback, .socialProof: return ""
+        case .callback, .socialProof, .insight: return ""
         }
     }
 }
