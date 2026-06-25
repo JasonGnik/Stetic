@@ -11,6 +11,7 @@ struct OnboardingView: View {
     @State private var seededGoalWeight = false
     @State private var splitPhoto: PhotosPickerItem?
     @State private var readingSplit = false
+    @State private var analyzed = false   // callback interstitial: loader -> reveal
 
     private var step: OnbStep { OnbStep.allCases[stepIndex] }
     private var total: Int { OnbStep.allCases.count }
@@ -71,27 +72,48 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 30)
             Spacer()
-            Button { advance() } label: {
-                Text("Continue").font(.system(size: 16, weight: .bold))
-                    .frame(maxWidth: .infinity).padding(15)
-                    .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
-                    .foregroundStyle(Color(hex: 0x0E0E10))
+            if step != .callback || analyzed {
+                Button { advance() } label: {
+                    Text("Continue").font(.system(size: 16, weight: .bold))
+                        .frame(maxWidth: .infinity).padding(15)
+                        .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
+                        .foregroundStyle(Color(hex: 0x0E0E10))
+                }
+                .padding(.horizontal, 22).padding(.bottom, 14)
+                .transition(.opacity)
             }
-            .padding(.horizontal, 22).padding(.bottom, 14)
+        }
+        // "Analyzing → reveal" — builds FOMO instead of a static stat appearing.
+        .task(id: stepIndex) {
+            guard step == .callback else { analyzed = true; return }
+            analyzed = false
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            withAnimation(.easeOut(duration: 0.4)) { analyzed = true }
         }
     }
 
-    private var callbackContent: some View {
-        let cb = Callbacks.pick(data.obstacles)
-        return VStack(spacing: 18) {
-            Image(systemName: "chart.bar.doc.horizontal")
-                .font(.system(size: 46, weight: .semibold)).foregroundStyle(Theme.acc)
-            Text(cb.headline)
-                .font(.system(size: 26, weight: .heavy)).multilineTextAlignment(.center)
-                .foregroundStyle(Theme.txt)
-            Text(brandLimed(cb.body))
-                .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4)
-                .foregroundStyle(Theme.mut)
+    @ViewBuilder private var callbackContent: some View {
+        if analyzed {
+            let cb = Callbacks.pick(data.obstacles)
+            VStack(spacing: 18) {
+                Image(systemName: "chart.bar.doc.horizontal")
+                    .font(.system(size: 46, weight: .semibold)).foregroundStyle(Theme.acc)
+                Text(cb.headline)
+                    .font(.system(size: 26, weight: .heavy)).multilineTextAlignment(.center)
+                    .foregroundStyle(Theme.txt)
+                Text(brandLimed(cb.body))
+                    .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4)
+                    .foregroundStyle(Theme.mut)
+            }
+            .transition(.opacity)
+        } else {
+            ScanningLoader(
+                title: "Analyzing your answers",
+                messages: ["Reading your goals", "Comparing to thousands of physiques",
+                           "Finding what's holding you back", "Mapping your fastest path"],
+                icons: ["target", "person.3.fill", "scope", "bolt.fill"]
+            )
+            .transition(.opacity)
         }
     }
 
