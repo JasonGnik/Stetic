@@ -90,6 +90,18 @@ Dev flags bypass the sign-in gate (use the dev account). On the sign-in screen, 
 - **Dev test affordances:** `STETIC_HOME=1 STETIC_TAB=2` → straight to Food tab (no funnel/paywall, reuses cached plan, no regen); **"Dev: skip paywall →"** button on the paywall (DEBUG); `STETIC_MEALSCAN=1` previews the meal results screen with sample data.
 - New migration `…150000_add_profile_motivation.sql` (kept; client only writes it when non-empty, so safe pre-deploy).
 
+**Requested roadmap (not built yet — 2026-06-25, part 4):**
+- **Sign-in options** — Apple can't be the only one. Add **Google + email** (Supabase: enable Google provider + OAuth client; enable Email). Phone = skip (SMS cost). Apple-only today.
+- **Food APIs / catalog** — all free: `food-search` edge fn → USDA FoodData Central (whole foods) + OpenFoodFacts (barcodes). **Barcode scan** (camera→OpenFoodFacts), **label scan** (Gemini OCR), text search, built-in common-foods list. Feeds the meal editor's "Add food". Fixes the per-item 0-cal once `meal-scan` is also deployed.
+- **Meal log like MyFitnessPal** — `meal_type` (breakfast/lunch/dinner/snacks), group day by type, add-to-meal via scan/search/saved, **saved meals** table, **sample meals** per goal, optional scheduled meal reminders.
+- **Progressive overload feature** — surface the JP double-progression target ("hit top of range to failure → add smallest load"); track top-of-range hits. **Rest timer** in the logbook (easy).
+- **Deload prompt** — JP says deload every ~8–12 wks; show a banner/reminder based on weeks since plan start.
+- **Exercise demos** — don't hand-draw (not sleek); link-out "see how" now, evaluate a free GIF set (free-exercise-db / wger, check license) later.
+- **Form check** (WrestleAI-style) — record a set → Gemini video analysis + cue rubric. Moderate effort (video capture + token cost + per-lift rubric). Strong V2/viral feature.
+- **FOMO stat** — "likely plateau Gold → potential Diamond" is meaningless pre-scan; replace with a real sourced stat (e.g. people who train without a plan / quit rate) and keep tier projection for AFTER the real scan.
+- **Capture now has a camera option** (built); physique scan can shoot or pick from library.
+- Note: progress *photos* comparison conflicts with the ephemeral-photo privacy stance — decide before building.
+
 **Open design picks for Jason:** app-icon direction — 20 mark concepts + 10 statue concepts mocked; SVG statues were too stick-figure, so use the **image-gen prompt** (marble David-style statue, lime rim-light/kintsugi) to generate the real icon, then refine + export into `Assets.xcassets`.
 
 ## Pricing (current)

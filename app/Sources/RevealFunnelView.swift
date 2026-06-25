@@ -23,6 +23,7 @@ struct RevealFunnelView: View {
     @State private var showPlan = false
     @State private var didDevInit = false
     @State private var capturePage = 0           // front/side/back carousel page
+    @State private var showCamera = false
     @State private var selectedPlan = "annual"   // annual | weekly
 
     var body: some View {
@@ -71,6 +72,19 @@ struct RevealFunnelView: View {
                 }
             }
 
+            Button { showCamera = true } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "camera.fill").font(.system(size: 14, weight: .semibold))
+                    Text("Take \(slotLabels[capturePage].lowercased()) photo").font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(Theme.acc)
+                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc.opacity(0.10))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.acc.opacity(0.35), lineWidth: 1)))
+            }
+            .padding(.horizontal, 22)
+            Text("or tap the card to choose from your library").font(.system(size: 11)).foregroundStyle(Theme.mut)
+
             Toggle(isOn: $includeLegs) {
                 Text("Include legs (full-body score)").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
             }
@@ -100,6 +114,15 @@ struct RevealFunnelView: View {
         .onChange(of: items[0]) { _, v in Task { await load(0, v) } }
         .onChange(of: items[1]) { _, v in Task { await load(1, v) } }
         .onChange(of: items[2]) { _, v in Task { await load(2, v) } }
+        .sheet(isPresented: $showCamera) {
+            CameraPicker { img in
+                let slot = capturePage
+                images[slot] = img
+                datas[slot] = img.jpegData(compressionQuality: 0.85)
+                showCamera = false
+            }
+            .ignoresSafeArea()
+        }
     }
 
     // One large angle card in the capture carousel.
