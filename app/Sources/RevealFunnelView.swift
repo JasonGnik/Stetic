@@ -210,6 +210,8 @@ struct RevealFunnelView: View {
                         planRow("weekly", "Weekly", "$9.99", "/wk", "Billed weekly", best: false)
                     }
                     .padding(.horizontal, 22).padding(.top, 24)
+
+                    reviewsCarousel.padding(.top, 22)
                 }
             }
             .scrollIndicators(.hidden)
@@ -219,6 +221,36 @@ struct RevealFunnelView: View {
                 .font(.system(size: 10.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
                 .padding(.horizontal, 30).padding(.top, 2).padding(.bottom, 6)
             Text("Restore purchases").font(.system(size: 12)).foregroundStyle(Theme.mut).padding(.bottom, 12)
+        }
+    }
+
+    // Placeholder testimonials — swap for real App Store reviews before launch.
+    private let reviews: [(String, String)] = [
+        ("Went from a 5.8 to Diamond in 8 weeks. The plan just works.", "Dev R."),
+        ("Finally an app that told me the truth — my back was killing my whole look.", "Marcus T."),
+        ("Cancelled my coach. This is better and a fraction of the price.", "Tyler J."),
+        ("First time I actually know what to do in the gym every session.", "Sam K."),
+    ]
+
+    private var reviewsCarousel: some View {
+        VStack(spacing: 8) {
+            TabView {
+                ForEach(reviews.indices, id: \.self) { i in
+                    VStack(spacing: 8) {
+                        HStack(spacing: 3) {
+                            ForEach(0..<5, id: \.self) { _ in
+                                Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(Theme.acc)
+                            }
+                        }
+                        Text("“\(reviews[i].0)”").font(.system(size: 13.5)).foregroundStyle(Color(hex: 0xD2D2D8))
+                            .multilineTextAlignment(.center).lineSpacing(2).padding(.horizontal, 24)
+                        Text("— \(reviews[i].1)").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .frame(height: 130)
         }
     }
 
@@ -238,7 +270,7 @@ struct RevealFunnelView: View {
                     HStack(spacing: 6) {
                         Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
                         if best {
-                            Text("BEST VALUE").font(.system(size: 9, weight: .bold))
+                            Text("SAVE 88%").font(.system(size: 9, weight: .bold))
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
                         }
