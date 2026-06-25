@@ -193,7 +193,7 @@ actor ScanAPI {
     }
 
     // MARK: plan
-    struct PlanBundle { let content: PlanContent; let scan: ScoreCard }
+    struct PlanBundle { let content: PlanContent; let scan: ScoreCard; var id: String? = nil; var startedAt: String? = nil }
     private var cachedPlan: PlanBundle?
 
     // Generate a fresh plan right after a scan (while the user reads the score card),
@@ -230,12 +230,20 @@ actor ScanAPI {
     }
 
     // Rebuild the latest plan from the DB (the /plan function persists each one).
+    // Prefer the active plan; fall back to plain-latest if the status column isn't
+    // deployed yet (migration is the user's step).
     func fetchLatestPlan() async throws -> PlanBundle? {
-        let (data, s) = try await authed(restURL("plans", query: [
-            .init(name: "select", value: "workout,macros,scan_id"),
-            .init(name: "order", value: "created_at.desc"),
-            .init(name: "limit", value: "1"),
-        ]), method: "GET")
+        func query(activeOnly: Bool) -> [URLQueryItem] {
+            var q: [URLQueryItem] = [
+                .init(name: "select", value: "id,workout,macros,scan_id,created_at"),
+                .init(name: "order", value: "created_at.desc"),
+                .init(name: "limit", value: "1"),
+            ]
+            if activeOnly { q.append(.init(name: "status", value: "eq.active")) }
+            return q
+        }
+        var (data, s) = try await authed(restURL("plans", query: query(activeOnly: true)), method: "GET")
+        if s == 400 { (data, s) = try await authed(restURL("plans", query: query(activeOnly: false)), method: "GET") }
         guard s == 200,
               let rows = try? JSONDecoder().decode([SavedPlanRow].self, from: data),
               let row = rows.first, let scanId = row.scan_id else { return nil }
@@ -253,11 +261,41 @@ actor ScanAPI {
             weekly_split: w.weekly_split, priorities: w.priorities,
             muscle_breakdown: w.muscle_breakdown, projection: w.projection,
             split_critique: w.split_critique, split_changes: w.split_changes)
-        return PlanBundle(content: content, scan: scan)
+        return PlanBundle(content: content, scan: scan, id: row.id, startedAt: row.created_at)
+    }
+
+    // MARK: plan lifecycle (active → archived/finished, delete, regenerate)
+    func setPlanStatus(_ id: String, _ status: String) async throws {
+        struct Body: Encodable { let status: String; let finished_at: String? }
+        let finishedAt = status == "finished" ? ISO8601DateFormatter().string(from: Date()) : nil
+        let body = try JSONEncoder().encode(Body(status: status, finished_at: finishedAt))
+        let (data, s) = try await authed(restURL("plans", query: [.init(name: "id", value: "eq.\(id)")]),
+                                         method: "PATCH", body: body, prefer: "return=minimal")
+        guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+        clearPlanCache()
+    }
+
+    func deletePlan(_ id: String) async throws {
+        let (data, s) = try await authed(restURL("plans", query: [.init(name: "id", value: "eq.\(id)")]),
+                                         method: "DELETE", prefer: "return=minimal")
+        guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+        clearPlanCache()
+    }
+
+    // Build a fresh plan from the latest scan (new active block). Archives the current
+    // one first when we know its id so only one plan stays active.
+    func regeneratePlan(archiving currentId: String?) async throws -> PlanBundle {
+        if let currentId { try? await setPlanStatus(currentId, "archived") }
+        clearPlanCache()
+        let generated = try await generatePlan()      // inserts a new active plan row
+        clearPlanCache()
+        return (try? await fetchLatestPlan()) ?? generated   // re-fetch to pick up its id
     }
 
     private struct PlanResponse: Decodable { let content: PlanContent; let scan: ScoreCard }
     private struct SavedPlanRow: Decodable {
+        let id: String?
+        let created_at: String?
         let workout: WorkoutBlob
         let macros: PlanContent.Macros
         let scan_id: String?

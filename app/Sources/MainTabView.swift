@@ -23,7 +23,7 @@ struct MainTabView: View {
             HomeView(name: name, bundle: bundle, workoutDates: workoutDates,
                      goFood: { tab = 2 }, refresh: { await refresh() })
                 .tabItem { Label("Today", systemImage: "bolt.heart.fill") }.tag(0)
-            PlanView(showsClose: false)
+            PlanView(showsClose: false, onRescan: { showScan = true })
                 .tabItem { Label("Plan", systemImage: "list.bullet.rectangle.portrait.fill") }.tag(1)
             NutritionView(target: bundle?.content.macros)
                 .tabItem { Label("Food", systemImage: "fork.knife") }.tag(2)

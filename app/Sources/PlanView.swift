@@ -3,11 +3,41 @@ import SwiftUI
 struct PlanView: View {
     var showsClose: Bool = true
     var onStart: (() -> Void)? = nil
+    var onRescan: (() -> Void)? = nil      // present the physique re-scan flow (main app only)
     @Environment(\.dismiss) private var dismiss
     @State private var phase: Phase = .loading
     @State private var bundle: ScanAPI.PlanBundle?
+    @State private var confirm: PlanAction?
 
     enum Phase: Equatable { case loading, ready, error(String) }
+
+    enum PlanAction: Identifiable {
+        case newPlan, finish, archive, delete
+        var id: Int { hashValue }
+        var title: String {
+            switch self {
+            case .newPlan: return "Generate a new plan?"
+            case .finish:  return "Finish this block?"
+            case .archive: return "Archive this plan?"
+            case .delete:  return "Delete this plan?"
+            }
+        }
+        var message: String {
+            switch self {
+            case .newPlan: return "We'll build a fresh plan from your latest scan. Your current plan is archived."
+            case .finish:  return "Marks this block done and builds your next one from your latest scan. Re-scan first for the most accurate progression."
+            case .archive: return "Moves this plan to your history and starts a fresh one."
+            case .delete:  return "Permanently removes this plan. This can't be undone."
+            }
+        }
+        var button: String {
+            switch self {
+            case .newPlan: return "New plan"; case .finish: return "Finish & rebuild"
+            case .archive: return "Archive"; case .delete: return "Delete"
+            }
+        }
+        var destructive: Bool { self == .delete }
+    }
 
     var body: some View {
         ZStack {
@@ -19,11 +49,53 @@ struct PlanView: View {
             }
         }
         .task { await load() }
+        .confirmationDialog(confirm?.title ?? "", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible, presenting: confirm) { action in
+            Button(action.button, role: action.destructive ? .destructive : nil) { perform(action) }
+            Button("Cancel", role: .cancel) {}
+        } message: { action in Text(action.message) }
     }
 
     private func load() async {
         do { bundle = try await ScanAPI.shared.plan(); phase = .ready }
         catch { phase = .error(error.localizedDescription) }
+    }
+
+    // Weeks elapsed in the current block (1-based), capped at the block length.
+    private var weekInfo: (current: Int, total: Int)? {
+        guard let started = bundle?.startedAt else { return nil }
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = iso.date(from: started) ?? { let b = ISO8601DateFormatter(); b.formatOptions = [.withInternetDateTime]; return b.date(from: started) }()
+        guard let date else { return nil }
+        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+        return (min(8, days / 7 + 1), 8)
+    }
+
+    private func perform(_ action: PlanAction) {
+        let id = bundle?.id
+        Task {
+            switch action {
+            case .delete:
+                if let id { try? await ScanAPI.shared.deletePlan(id) }
+                await reload()
+            case .archive:
+                if let id { try? await ScanAPI.shared.setPlanStatus(id, "archived") }
+                await reload()
+            case .newPlan, .finish:
+                if action == .finish, let id { try? await ScanAPI.shared.setPlanStatus(id, "finished") }
+                await MainActor.run { phase = .loading }
+                let fresh = try? await ScanAPI.shared.regeneratePlan(archiving: action == .newPlan ? id : nil)
+                await MainActor.run {
+                    if let fresh { bundle = fresh; phase = .ready } else { Task { await reload() } }
+                }
+            }
+        }
+    }
+
+    private func reload() async {
+        await MainActor.run { phase = .loading }
+        ScanAPI.shared.clearPlanCache()
+        do { bundle = try await ScanAPI.shared.plan(); await MainActor.run { phase = .ready } }
+        catch { await MainActor.run { phase = .error(error.localizedDescription) } }
     }
 
     // MARK: states
@@ -50,13 +122,23 @@ struct PlanView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Your Plan").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
-                        Text(p.goal_label.uppercased())
-                            .font(.system(size: 10.5, weight: .bold)).tracking(0.6)
-                            .foregroundStyle(Color(hex: 0x0E0E10))
-                            .padding(.horizontal, 9).padding(.vertical, 4)
-                            .background(Capsule().fill(Theme.acc))
+                        HStack(spacing: 6) {
+                            Text(p.goal_label.uppercased())
+                                .font(.system(size: 10.5, weight: .bold)).tracking(0.6)
+                                .foregroundStyle(Color(hex: 0x0E0E10))
+                                .padding(.horizontal, 9).padding(.vertical, 4)
+                                .background(Capsule().fill(Theme.acc))
+                            if let wk = weekInfo {
+                                Text("WEEK \(wk.current) OF \(wk.total)")
+                                    .font(.system(size: 10.5, weight: .bold)).tracking(0.4)
+                                    .foregroundStyle(Theme.mut)
+                                    .padding(.horizontal, 9).padding(.vertical, 4)
+                                    .background(Capsule().fill(Theme.card).overlay(Capsule().stroke(Theme.line, lineWidth: 1)))
+                            }
+                        }
                     }
                     Spacer()
+                    if onRescan != nil { planMenu }
                     if showsClose {
                         Button { dismiss() } label: {
                             Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
@@ -88,6 +170,22 @@ struct PlanView: View {
             .padding(.horizontal, 22).padding(.top, 14).padding(.bottom, 36)
         }
         .scrollIndicators(.hidden)
+    }
+
+    private var planMenu: some View {
+        Menu {
+            if let onRescan {
+                Button { onRescan() } label: { Label("Re-scan my physique", systemImage: "camera.viewfinder") }
+            }
+            Button { confirm = .newPlan } label: { Label("Generate a new plan", systemImage: "sparkles") }
+            Button { confirm = .finish } label: { Label("Finish this block", systemImage: "flag.checkered") }
+            Divider()
+            Button { confirm = .archive } label: { Label("Archive plan", systemImage: "archivebox") }
+            Button(role: .destructive) { confirm = .delete } label: { Label("Delete plan", systemImage: "trash") }
+        } label: {
+            Image(systemName: "ellipsis").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
+                .frame(width: 34, height: 34).background(Circle().fill(Theme.card))
+        }
     }
 
     // MARK: projection — current starting point → "where you can get to" (the game)
