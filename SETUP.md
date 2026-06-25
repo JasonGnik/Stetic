@@ -1,58 +1,36 @@
-# Stetic — account setup (RevenueCat + Apple)
+# Stetic — account setup status (Supabase / Apple / RevenueCat)
 
-What you need to do in the web dashboards so the paywall + Apple Sign In aren't blocked when we
-reach them. Do these when you have ~30 min; none block the screens I'm building now.
+State of the dashboard setup as of 2026-06-25. Bundle id everywhere: **`com.stetic.app`**.
+For overall project status see STATUS.md.
 
-Bundle id everywhere: **`com.stetic.app`**
+## ✅ DONE
+- **Supabase deployed live** — project `bnamfaocppltrcvnbmcv`. Migrations pushed, 4 functions
+  deployed, secrets set (`GEMINI_API_KEY`, `STETIC_DEV_BYPASS_ENTITLEMENT=true`), email-confirm off.
+  App `Config.swift` `useRemote=true` + publishable key.
+- **App Store Connect** — app "Stetic" created. Two auto-renewable subs in a group:
+  - **Stetic Weekly** — product id `stetic.weekly`, $9.99/week.
+  - **Stetic Annual** — product id `stetic.anual` *(note: missing an 'n', immutable, fine)*, $59.99/year, **3-day free trial** intro offer.
+  - Metadata cleared (per-sub localization + review screenshot = `app-store-assets/paywall-review-screenshot.png`).
+- **RevenueCat** — App Store app added with In-App-Purchase key + App Store Connect API key.
+  Entitlement **`Stetic Pro`** → both App Store products attached. Offering **`default`** →
+  Weekly pkg→`stetic.weekly`, Annual pkg→`stetic.anual`. **`appl_` public SDK key pasted into
+  `Config.swift → revenueCatKey`** (safe to embed; the app reads prices/packages from RC).
+- **Apple Sign In** — App ID capability enabled; Supabase Auth → Providers → **Apple enabled**
+  (Client ID `com.stetic.app`; native flow needs no Services ID/secret). App entitlement added,
+  sign-in screen + token exchange built.
+- **HealthKit** — App ID capability enabled; entitlement in app.
 
----
+## ⬜ REMAINING
+1. **Device test** the live flow: Apple sign-in → onboarding → scan → paywall → **sandbox Apple ID**
+   purchase → confirm unlock. (Sandbox testers: App Store Connect → Users and Access → Sandbox.)
+2. **RC → Supabase webhook** (not built): RevenueCat → Integrations → Webhooks → point at a new
+   `rc-webhook` edge function that upserts the `subscriptions` table; then set
+   `STETIC_DEV_BYPASS_ENTITLEMENT=false` so the backend cost-firewall is real.
+3. **Privacy Policy + Terms** pages hosted (required for HealthKit + subscriptions); update the
+   Settings links (currently placeholder `stetic.app/privacy|terms`).
+4. **App Store listing** — icon, screenshots, description, keywords, age rating, category; submit
+   (first subscription submits with the first binary).
 
-## 1. App Store Connect — create the app + subscription products
-
-1. **App Store Connect → Apps → +** → New App. Platform iOS, name "Stetic", bundle id `com.stetic.app`
-   (create the App ID first in Apple Developer → Certificates, IDs & Profiles → Identifiers if needed,
-   with **Sign In with Apple** capability checked).
-2. **Subscriptions** (App Store Connect → your app → Monetization → Subscriptions):
-   - Create a **Subscription Group**: "Stetic Pro".
-   - Add two auto-renewable subscriptions in that group:
-     - **Weekly** — product id `stetic_weekly`, price $7.99/week.
-     - **Annual** — product id `stetic_annual`, price $119.99/year. Add an **Introductory Offer →
-       Free Trial → 3 days** on this one only.
-   - (Optional, for exit-intent) a second annual at $59.99 OR handle the discount via a promotional
-     offer later. Simpler to start: one weekly + one annual w/ trial.
-   - Fill required metadata (display name, description, review screenshot). Status can sit at
-     "Ready to Submit" — they get reviewed with the app's first submission.
-3. Generate an **App-Specific Shared Secret**: App Store Connect → your app → App Information →
-   (or Users & Access → Integrations → In-App Purchase) → copy it for RevenueCat.
-
-## 2. RevenueCat — wire the products (you already made the project)
-
-1. **Project → Apps → + New** → Apple App Store. Bundle id `com.stetic.app`. Paste the **App-Specific
-   Shared Secret** from step 1.3.
-2. **Entitlements → +** → identifier `pro`.
-3. **Products → +** → add `stetic_weekly` and `stetic_annual` (must match App Store product ids).
-   Attach both to the `pro` entitlement.
-4. **Offerings → +** → identifier `default`. Add two **packages**: Weekly → `stetic_weekly`,
-   Annual → `stetic_annual`. Make Annual the default.
-5. **API Keys** → copy the **Public SDK Key (Apple)** — this is the only thing the app needs.
-   **Send me that key** (it's a publishable key, safe to embed).
-6. (Later, I'll set up) **Integrations → Webhooks** → point at a Supabase edge function so an active
-   purchase writes to the `subscriptions` table (server-side entitlement = the cost firewall).
-
-## 3. Apple Sign In (for account creation)
-
-1. **Apple Developer → Identifiers → `com.stetic.app`** → ensure **Sign In with Apple** is enabled.
-2. In Xcode you'll need to set your **Development Team** on the target (Signing & Capabilities).
-   Tell me your Team ID, or set it in `app/project.yml` (`DEVELOPMENT_TEAM`).
-3. **Supabase → Authentication → Providers → Apple** → enable. You'll need: a **Services ID**, your
-   **Team ID**, a **Key ID** + the **.p8 private key** (Apple Developer → Keys → + → Sign in with
-   Apple). I'll walk you through generating these when we wire the account screen.
-
----
-
-## What I need from you to unblock the paywall
-
-- The **RevenueCat Public SDK Key (Apple)** (step 2.5) → I add the SDK + paywall.
-- Confirm the **product ids + prices** above (or give me your preferred ids/prices).
-
-Everything else (Apple Sign In provider config) we do together when we build the account screen.
+## Notes
+- RC **public** key (`appl_`/`test_`) = safe to ship. RC **secret** key (`sk_`) = never expose (not used).
+- Keys/IDs: Team ID `8A6486RXG9`. RC appl key + Supabase publishable key live in `Config.swift`.
