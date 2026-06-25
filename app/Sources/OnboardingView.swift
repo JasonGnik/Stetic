@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import PhotosUI
 
 struct OnboardingView: View {
     var onComplete: (String) -> Void   // passes the user's name
@@ -8,6 +9,8 @@ struct OnboardingView: View {
     @State private var saving = false
     @State private var error: String?
     @State private var seededGoalWeight = false
+    @State private var splitPhoto: PhotosPickerItem?
+    @State private var readingSplit = false
 
     private var step: OnbStep { OnbStep.allCases[stepIndex] }
     private var total: Int { OnbStep.allCases.count }
@@ -282,10 +285,36 @@ struct OnboardingView: View {
             }
             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card)
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1)))
+            PhotosPicker(selection: $splitPhoto, matching: .images) {
+                HStack(spacing: 8) {
+                    if readingSplit { ProgressView().tint(Theme.acc) }
+                    else { Image(systemName: "photo.on.rectangle.angled").font(.system(size: 14, weight: .semibold)) }
+                    Text(readingSplit ? "Reading your routine…" : "Have it written down? Upload a photo")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundStyle(Theme.acc)
+                .frame(maxWidth: .infinity).padding(.vertical, 11)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc.opacity(0.10))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.acc.opacity(0.35), lineWidth: 1)))
+            }
+            .disabled(readingSplit)
             Text("Optional — but the more you tell us, the sharper the analysis of what's holding you back.")
                 .font(.system(size: 12)).foregroundStyle(Theme.mut)
         }
         .padding(.top, 6)
+        .onChange(of: splitPhoto) { _, v in Task { await readSplitPhoto(v) } }
+    }
+
+    private func readSplitPhoto(_ item: PhotosPickerItem?) async {
+        guard let item else { return }
+        readingSplit = true
+        defer { readingSplit = false; splitPhoto = nil }
+        guard let d = try? await item.loadTransferable(type: Data.self) else { return }
+        let jpeg = UIImage(data: d)?.jpegData(compressionQuality: 0.8) ?? d
+        if let text = try? await ScanAPI.shared.readSplit(.init(mimeType: "image/jpeg", dataB64: jpeg.base64EncodedString())),
+           !text.isEmpty {
+            await MainActor.run { data.currentSplit = text }
+        }
     }
 
     private var nameField: some View {

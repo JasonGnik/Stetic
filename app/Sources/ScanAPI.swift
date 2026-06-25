@@ -254,6 +254,23 @@ actor ScanAPI {
         return (try? JSONDecoder().decode([R].self, from: data).map { $0.log_date }) ?? []
     }
 
+    // Transcribe a photo of a written routine into text (onboarding split step).
+    func readSplit(_ image: ImageInput) async throws -> String {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        var req = URLRequest(url: Config.baseURL.appending(path: "functions/v1/read-split"))
+        req.httpMethod = "POST"; req.timeoutInterval = 60
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        struct Body: Encodable { let image: Img; struct Img: Encodable { let mimeType: String; let dataB64: String } }
+        req.httpBody = try JSONEncoder().encode(Body(image: .init(mimeType: image.mimeType, dataB64: image.dataB64)))
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard code(resp) == 200 else { throw APIError.http(code(resp), String(data: data, encoding: .utf8) ?? "") }
+        struct Wrap: Decodable { let text: String }
+        return (try? JSONDecoder().decode(Wrap.self, from: data))?.text ?? ""
+    }
+
     func scanMeal(_ image: ImageInput) async throws -> MealEstimate {
         try await ensureSession()
         guard let token = accessToken else { throw APIError.noSession }
