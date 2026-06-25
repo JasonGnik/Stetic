@@ -18,6 +18,8 @@ struct ContentView: View {
     var body: some View {
         if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
+        } else if env["STETIC_SCORECARD"] == "1" {
+            ScoreCardExport()
         } else if env["STETIC_SETTINGS"] == "1" {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
@@ -48,4 +50,43 @@ struct ContentView: View {
 
 #Preview {
     ContentView().preferredColorScheme(.dark)
+}
+
+// DEV: renders full-length score-card PNGs (no scroll clipping) to the app's
+// Documents dir, and shows the platinum one on screen for a device screenshot.
+struct ScoreCardExport: View {
+    var body: some View {
+        ZStack { Theme.bg.ignoresSafeArea(); ScoreCardView(card: .sample) }
+            .preferredColorScheme(.dark)
+            .task { await exportAll() }
+    }
+
+    @MainActor private func exportAll() async {
+        render(.sample, name: "scorecard-platinum.png")
+        render(ScoreCardExport.eliteSample, name: "scorecard-elite.png")
+    }
+
+    @MainActor private func render(_ card: ScoreCard, name: String) {
+        let content = ScoreCardBody(card: card)
+            .frame(width: 402)
+            .background(Theme.bg)
+            .preferredColorScheme(.dark)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 3
+        guard let img = renderer.uiImage, let data = img.pngData() else { return }
+        let url = URL.documentsDirectory.appending(path: name)
+        try? data.write(to: url)
+    }
+
+    static let eliteSample = ScoreCard(
+        aesthetic_score: 8.4, rank_tier: "elite", body_fat: 9, symmetry: 9.1, potential: 9.4,
+        muscles: [
+            .init(group: "abs", score: 9.2, visible: true, note: "Deep, defined"),
+            .init(group: "shoulders", score: 8.9, visible: true, note: "Capped delts"),
+            .init(group: "chest", score: 8.6, visible: true, note: "Full, square"),
+            .init(group: "arms", score: 8.3, visible: true, note: "Strong peak"),
+            .init(group: "legs", score: 8.0, visible: false, note: "Estimated"),
+            .init(group: "back", score: 7.4, visible: false, note: "Needs width"),
+        ],
+        verdict: "An elite, stage-ready frame. Your back width is the one thing between you and Greek God — prioritize lats and you complete the V-taper.")
 }

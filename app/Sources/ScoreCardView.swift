@@ -1,34 +1,46 @@
 import SwiftUI
 
+// Scrollable score card (on-device). Content lives in ScoreCardBody so it can
+// also be rendered to a full-length image without scroll clipping.
 struct ScoreCardView: View {
+    let card: ScoreCard
+    var onGetPlan: () -> Void = {}
+    var onScanAnother: (() -> Void)? = nil
+
+    var body: some View {
+        ScrollView {
+            ScoreCardBody(card: card, onGetPlan: onGetPlan, onScanAnother: onScanAnother)
+        }
+        .scrollIndicators(.hidden)
+        .background(Theme.bg.ignoresSafeArea())
+    }
+}
+
+struct ScoreCardBody: View {
     let card: ScoreCard
     var onGetPlan: () -> Void = {}
     var onScanAnother: (() -> Void)? = nil
     @State private var showEstInfo = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                header
-                hero
-                verdict
-                stats
-                potentialCallout
-                musclesSection
-                climbSection
-                cta
-                if let onScanAnother {
-                    Button("Scan another", action: onScanAnother)
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut)
-                        .padding(.top, 4)
-                }
+        VStack(spacing: 16) {
+            header
+            hero
+            verdict
+            stats
+            potentialCallout
+            musclesSection
+            climbSection
+            cta
+            if let onScanAnother {
+                Button("Scan another", action: onScanAnother)
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut)
+                    .padding(.top, 4)
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 10)
-            .padding(.bottom, 28)
         }
-        .scrollIndicators(.hidden)
-        .background(Theme.bg.ignoresSafeArea())
+        .padding(.horizontal, 22)
+        .padding(.top, 10)
+        .padding(.bottom, 28)
         .alert("Estimated rating", isPresented: $showEstInfo) {
             Button("Got it", role: .cancel) {}
         } message: {
