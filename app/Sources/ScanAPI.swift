@@ -33,12 +33,70 @@ actor ScanAPI {
         var attribution: String?
     }
 
+    private var refreshToken: String?
+    private let refreshKey = "stetic.refreshToken"
+
+    func currentUserID() -> String? { userId }
+    var isSignedIn: Bool { accessToken != nil }
+
     // MARK: auth (dev) — sign in, or sign up then sign in.
     func ensureSession() async throws {
         if accessToken != nil { return }
         if let tok = try? await signIn() { accessToken = tok; return }
         try await signUp()
         accessToken = try await signIn()
+    }
+
+    // MARK: Apple Sign In — exchange the Apple identity token for a Supabase session.
+    func signInWithApple(idToken: String, nonce: String) async throws {
+        let url = Config.baseURL.appending(path: "auth/v1/token")
+            .appending(queryItems: [.init(name: "grant_type", value: "id_token")])
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "provider": "apple", "id_token": idToken, "nonce": nonce,
+        ])
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try storeSession(data, code(resp))
+    }
+
+    // Restore a saved session on launch (refresh-token grant). Returns true if signed in.
+    func restoreSession() async -> Bool {
+        if accessToken != nil { return true }
+        guard let rt = UserDefaults.standard.string(forKey: refreshKey) else { return false }
+        let url = Config.baseURL.appending(path: "auth/v1/token")
+            .appending(queryItems: [.init(name: "grant_type", value: "refresh_token")])
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["refresh_token": rt])
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+              (try? storeSession(data, code(resp))) != nil else {
+            UserDefaults.standard.removeObject(forKey: refreshKey); return false
+        }
+        return true
+    }
+
+    func signOut() {
+        accessToken = nil; userId = nil; refreshToken = nil
+        UserDefaults.standard.removeObject(forKey: refreshKey)
+        clearPlanCache()
+    }
+
+    private func storeSession(_ data: Data, _ status: Int) throws {
+        guard status == 200,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let token = obj["access_token"] as? String
+        else { throw APIError.http(status, String(data: data, encoding: .utf8) ?? "") }
+        accessToken = token
+        userId = (obj["user"] as? [String: Any])?["id"] as? String
+        if let rt = obj["refresh_token"] as? String {
+            refreshToken = rt
+            UserDefaults.standard.set(rt, forKey: refreshKey)
+        }
     }
 
     private func signIn() async throws -> String {

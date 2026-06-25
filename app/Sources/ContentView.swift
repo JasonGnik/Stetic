@@ -4,15 +4,26 @@ struct ContentView: View {
     private let env = ProcessInfo.processInfo.environment
     @State private var stage: Stage
     @State private var userName = ""
+    @AppStorage("steticOnboarded") private var onboarded = false
 
-    enum Stage { case intro, onboarding, main, home }
+    enum Stage { case loading, signIn, intro, onboarding, main, home }
 
     init() {
         let e = ProcessInfo.processInfo.environment
-        let start: Stage = e["STETIC_HOME"] == "1" ? .home
+        // Dev flags use the dev account and skip the sign-in gate.
+        let devStart: Stage? = e["STETIC_HOME"] == "1" ? .home
             : e["STETIC_SKIP_ONBOARDING"] == "1" ? .main
-            : (e["STETIC_ONB_STEP"] != nil ? .onboarding : .intro)
-        _stage = State(initialValue: start)
+            : (e["STETIC_ONB_STEP"] != nil ? .onboarding : nil)
+        _stage = State(initialValue: devStart ?? .loading)
+    }
+
+    private func checkSession() async {
+        if await ScanAPI.shared.restoreSession() {
+            if let uid = await ScanAPI.shared.currentUserID() { await PurchaseManager.shared.identify(uid) }
+            stage = onboarded ? .home : .intro
+        } else {
+            stage = .signIn
+        }
     }
 
     var body: some View {
@@ -32,6 +43,10 @@ struct ContentView: View {
             ]), onDone: {})
         } else {
             switch stage {
+            case .loading:
+                ZStack { Theme.bg.ignoresSafeArea() }.task { await checkSession() }
+            case .signIn:
+                SignInView { withAnimation { stage = .intro } }
             case .intro:
                 IntroView { withAnimation { stage = .onboarding } }
             case .onboarding:
@@ -40,7 +55,7 @@ struct ContentView: View {
                     withAnimation { stage = .main }
                 }
             case .main:
-                RevealFunnelView(name: userName, onFinish: { withAnimation { stage = .home } })
+                RevealFunnelView(name: userName, onFinish: { onboarded = true; withAnimation { stage = .home } })
             case .home:
                 MainTabView(name: userName)
             }
