@@ -10,6 +10,8 @@ struct NutritionView: View {
     @State private var scanImage: UIImage?
     @State private var scanB64: String?
     @State private var showScan = false
+    @State private var showCamera = false
+    @State private var pendingPresent = false
     @State private var errorMsg: String?
     @State private var showManual = false
     @State private var mName = ""
@@ -39,6 +41,10 @@ struct NutritionView: View {
                 Text("Food").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                 summaryCard
                 actionRow
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    Text("or upload a photo").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.acc)
+                        .frame(maxWidth: .infinity)
+                }
                 if let errorMsg {
                     Text(errorMsg).font(.system(size: 12)).foregroundStyle(Theme.red)
                 }
@@ -58,12 +64,25 @@ struct NutritionView: View {
         .scrollIndicators(.hidden)
         .task { await reload() }
         .onChange(of: pickerItem) { _, v in Task { await loadPhoto(v) } }
+        .onChange(of: showCamera) { _, shown in
+            if !shown && pendingPresent { pendingPresent = false; showScan = true }
+        }
         .sheet(isPresented: $showManual) { manualSheet }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { img in present(img) }.ignoresSafeArea()
+        }
         .fullScreenCover(isPresented: $showScan) {
             if let img = scanImage, let b64 = scanB64 {
                 MealScanView(image: img, dataB64: b64, onLogged: { Task { await reload() } })
             }
         }
+    }
+
+    private func present(_ ui: UIImage) {
+        scanImage = ui
+        scanB64 = (ui.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
+        pendingPresent = true
+        showCamera = false
     }
 
     private var summaryCard: some View {
@@ -100,7 +119,7 @@ struct NutritionView: View {
 
     private var actionRow: some View {
         HStack(spacing: 10) {
-            PhotosPicker(selection: $pickerItem, matching: .images) {
+            Button { showCamera = true } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "camera.fill").font(.system(size: 15, weight: .bold))
                     Text("Scan a meal").font(.system(size: 15, weight: .bold))

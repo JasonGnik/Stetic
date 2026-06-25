@@ -25,8 +25,8 @@ struct MealScanView: View {
         VStack(spacing: 0) {
             header
             photo
-            Spacer(minLength: 0)
             readout
+            Spacer(minLength: 0)
             controls
         }
         .background(Theme.bg.ignoresSafeArea())
@@ -177,6 +177,8 @@ struct MealScanView: View {
     private func run() async {
         do {
             let result = try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: dataB64))
+            // No food found → soft error instead of showing a confusing "0 cal".
+            guard result.calories > 0 else { withAnimation { phase = .error }; return }
             est = result
             withAnimation(.easeOut(duration: 0.3)) { phase = .done }
             // pop item boxes one at a time
