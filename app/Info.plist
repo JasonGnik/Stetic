@@ -19,6 +19,10 @@
   <string>Stetic uses your photos to scan and score your physique.</string>
   <key>NSCameraUsageDescription</key>
   <string>Stetic uses the camera to scan your physique.</string>
+  <key>NSHealthShareUsageDescription</key>
+  <string>Stetic reads your steps and bodyweight to track activity and progress.</string>
+  <key>NSHealthUpdateUsageDescription</key>
+  <string>Stetic saves the bodyweight you log to Apple Health.</string>
   <!-- DEV ONLY: allow http to the local Supabase stack on 127.0.0.1 -->
   <key>NSAppTransportSecurity</key>
   <dict>

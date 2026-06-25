@@ -216,7 +216,11 @@ struct ProgressScreen: View {
                 }
             }
             Button {
-                Task { try? await ScanAPI.shared.logWeight(entryKg); showWeightSheet = false; await loadWeights() }
+                Task {
+                    try? await ScanAPI.shared.logWeight(entryKg)
+                    await HealthKitManager.shared.saveWeight(kg: entryKg)
+                    showWeightSheet = false; await loadWeights()
+                }
             } label: {
                 Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))

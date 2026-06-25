@@ -59,6 +59,8 @@ struct HomeView: View {
 
     @State private var session: PlanContent.Day?
     @State private var meals: [MealLog] = []
+    @AppStorage("healthConnected") private var healthConnected = false
+    @State private var steps = 0
 
     private var split: [PlanContent.Day] { bundle?.content.weekly_split ?? [] }
     private var streak: Int { Streak.count(from: workoutDates) }
@@ -74,6 +76,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Text(greeting).font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                 streakCard
+                healthCard
                 upNextCard
                 fuelCard
             }
@@ -81,7 +84,10 @@ struct HomeView: View {
         }
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
-        .task { meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? [] }
+        .task {
+            meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? []
+            if healthConnected { steps = await HealthKitManager.shared.todaySteps() }
+        }
         .sheet(item: $session) { day in
             SessionLogView(day: day) { Task { await refresh(); meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? [] } }
         }
@@ -91,6 +97,41 @@ struct HomeView: View {
         let h = Calendar.current.component(.hour, from: Date())
         let part = h < 12 ? "Good morning" : (h < 18 ? "Good afternoon" : "Good evening")
         return name.isEmpty ? part : "\(part), \(name)"
+    }
+
+    @ViewBuilder private var healthCard: some View {
+        if healthConnected {
+            HStack(spacing: 14) {
+                Image(systemName: "figure.walk").font(.system(size: 20)).foregroundStyle(Theme.acc)
+                    .frame(width: 44, height: 44).background(Circle().fill(Theme.acc.opacity(0.14)))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(steps.formatted()) steps").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text("Today · from Apple Health").font(.system(size: 11)).foregroundStyle(Theme.mut)
+                }
+                Spacer()
+            }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+        } else {
+            Button {
+                Task {
+                    await HealthKitManager.shared.requestAuth()
+                    healthConnected = true
+                    steps = await HealthKitManager.shared.todaySteps()
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "heart.fill").font(.system(size: 16)).foregroundStyle(Color(hex: 0xFF6B6B))
+                    Text("Connect Apple Health").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+                }
+                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1)))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var streakCard: some View {
