@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 
 // Daily nutrition: totals vs target, food grouped by meal (breakfast/lunch/dinner/
 // snacks), scan / search / manual add per meal, and edit/delete on any logged item.
@@ -7,7 +6,6 @@ struct NutritionView: View {
     let target: PlanContent.Macros?
 
     @State private var meals: [MealLog] = []
-    @State private var pickerItem: PhotosPickerItem?
     @State private var scanImage: UIImage?
     @State private var scanB64: String?
     @State private var showScan = false
@@ -22,6 +20,8 @@ struct NutritionView: View {
     @State private var presetMeal: MealEstimate?
     @State private var pendingBarcode: String?
     @State private var showIdeas = false
+    @State private var showSaved = false
+    @State private var showReminders = false
 
     // manual / edit fields
     @State private var mName = ""
@@ -38,7 +38,14 @@ struct NutritionView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Food").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                HStack {
+                    Text("Food").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Spacer()
+                    Button { showReminders = true } label: {
+                        Image(systemName: "bell.badge").font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.acc)
+                            .frame(width: 38, height: 38).background(Circle().fill(Theme.card))
+                    }
+                }
                 summaryCard
                 HStack(spacing: 10) { scanButton; ideasButton }
                 if let errorMsg { Text(errorMsg).font(.system(size: 12)).foregroundStyle(Theme.red) }
@@ -49,7 +56,6 @@ struct NutritionView: View {
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .task { await reload() }
-        .onChange(of: pickerItem) { _, v in Task { await loadPhoto(v) } }
         .onChange(of: showCamera) { _, shown in
             if !shown && pendingPresent {
                 pendingPresent = false
@@ -61,6 +67,10 @@ struct NutritionView: View {
         .sheet(isPresented: $showIdeas) {
             MealIdeasView { meal in Task { addingType = meal.type; await save(meal.asMeal) } }
         }
+        .sheet(isPresented: $showSaved) {
+            SavedMealsView { sm in Task { await save(sm.asEstimate) } }
+        }
+        .sheet(isPresented: $showReminders) { MealRemindersView() }
         .sheet(item: $editing) { editSheet($0) }
         .sheet(isPresented: $showSearch) {
             FoodSearchView(onPick: { hit in Task { await save(hit.asMeal) } },
@@ -169,10 +179,8 @@ struct NutritionView: View {
                 }
                 Menu {
                     Button { addingType = t; showCamera = true } label: { Label("Scan a photo", systemImage: "camera.fill") }
-                    Button { addingType = t; showSearch = true } label: { Label("Search foods", systemImage: "magnifyingglass") }
-                    Button { addingType = t; startManual() } label: { Label("Enter manually", systemImage: "square.and.pencil") }
-                    PhotosPicker(selection: $pickerItem, matching: .images) { Label("Upload a photo", systemImage: "photo") }
-                        .onTapGesture { addingType = t }
+                    Button { addingType = t; showSearch = true } label: { Label("Search or add food", systemImage: "magnifyingglass") }
+                    Button { addingType = t; showSaved = true } label: { Label("Saved meals", systemImage: "bookmark.fill") }
                 } label: {
                     Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Theme.acc)
                 }
@@ -286,20 +294,6 @@ struct NutritionView: View {
 
     // MARK: actions
     private func reload() async { meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? [] }
-
-    private func loadPhoto(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
-        errorMsg = nil
-        defer { pickerItem = nil }
-        guard let data = try? await item.loadTransferable(type: Data.self), let ui = UIImage(data: data) else {
-            errorMsg = "Couldn't read that photo."; return
-        }
-        let jpeg = ui.jpegData(compressionQuality: 0.8) ?? data
-        scanImage = ui
-        scanB64 = jpeg.base64EncodedString()
-        try? await Task.sleep(nanoseconds: 450_000_000)   // let the picker finish dismissing
-        showScan = true
-    }
 
     private func save(_ est: MealEstimate) async {
         try? await ScanAPI.shared.logMeal(est, mealType: addingType.rawValue)

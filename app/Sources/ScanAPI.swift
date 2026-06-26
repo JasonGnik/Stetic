@@ -471,6 +471,33 @@ actor ScanAPI {
         if s == 400 { _ = try await post(includeType: false) }   // meal_type column not deployed yet
     }
 
+    // MARK: saved meals (named combos)
+    func saveMeal(_ m: MealEstimate) async throws {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        struct Row: Encodable {
+            let user_id: String; let name: String; let items: [MealEstimate.Item]
+            let calories: Double; let protein_g: Double; let carbs_g: Double; let fat_g: Double
+        }
+        let body = try JSONEncoder().encode(Row(user_id: uid, name: m.name, items: m.items,
+            calories: m.baseCalories, protein_g: m.baseProtein, carbs_g: m.baseCarbs, fat_g: m.baseFat))
+        let (data, s) = try await authed(restURL("saved_meals"), method: "POST", body: body, prefer: "return=minimal")
+        guard s == 201 || s == 204 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
+    func savedMeals() async throws -> [SavedMeal] {
+        let (data, s) = try await authed(restURL("saved_meals", query: [
+            .init(name: "select", value: "*"), .init(name: "order", value: "created_at.desc")]), method: "GET")
+        guard s == 200 else { return [] }
+        return (try? JSONDecoder().decode([SavedMeal].self, from: data)) ?? []
+    }
+
+    func deleteSavedMeal(_ id: String) async throws {
+        let (data, s) = try await authed(restURL("saved_meals", query: [.init(name: "id", value: "eq.\(id)")]),
+                                         method: "DELETE", prefer: "return=minimal")
+        guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
     // Update an already-logged meal in place (edit flow).
     func updateMeal(id: String, name: String, calories: Double, protein_g: Double,
                     carbs_g: Double, fat_g: Double, mealType: String?) async throws {

@@ -153,6 +153,21 @@ struct MealEstimate: Codable, Identifiable {
     enum CodingKeys: String, CodingKey { case name, items, calories, protein_g, carbs_g, fat_g, confidence, note }
 }
 
+// A saved meal — a named combo of foods the user can re-log in one tap.
+struct SavedMeal: Codable, Identifiable {
+    var id: String?
+    var name: String
+    var items: [MealEstimate.Item] = []
+    var calories: Double = 0
+    var protein_g: Double = 0
+    var carbs_g: Double = 0
+    var fat_g: Double = 0
+    enum CodingKeys: String, CodingKey { case id, name, items, calories, protein_g, carbs_g, fat_g }
+    var asEstimate: MealEstimate {
+        MealEstimate(name: name, items: items, calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, confidence: "saved")
+    }
+}
+
 // A food catalog hit from /food-search (macros per the stated portion, ~100g).
 struct FoodHit: Codable, Identifiable, Hashable {
     var id = UUID()

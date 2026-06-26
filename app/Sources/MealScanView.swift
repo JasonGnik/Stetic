@@ -15,6 +15,7 @@ struct MealScanView: View {
     @State private var phase: Phase = .scanning
     @State private var est = MealEstimate(name: "Meal", calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, confidence: "")
     @State private var saving = false
+    @State private var savedMeal = false
     @State private var editTarget: EditTarget?
     @State private var showSearch = false
     @State private var startedAt = Date()
@@ -240,6 +241,13 @@ struct MealScanView: View {
 
     @ViewBuilder private var controls: some View {
         HStack(spacing: 10) {
+            Button { Task { await saveMeal() } } label: {
+                Image(systemName: savedMeal ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 16, weight: .bold)).foregroundStyle(savedMeal ? Color(hex: 0x0E0E10) : Theme.txt)
+                    .frame(width: 50, height: 50)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(savedMeal ? Theme.acc : Theme.card))
+            }
+            .disabled(savedMeal || est.shownCalories <= 0)
             Button { dismiss() } label: {
                 Text("Discard").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)).foregroundStyle(Theme.txt)
@@ -332,6 +340,11 @@ struct MealScanView: View {
         saving = true
         try? await ScanAPI.shared.logMeal(est, mealType: mealType)
         await MainActor.run { saving = false; onLogged(); dismiss() }
+    }
+
+    private func saveMeal() async {
+        try? await ScanAPI.shared.saveMeal(est)
+        await MainActor.run { withAnimation { savedMeal = true } }
     }
 }
 

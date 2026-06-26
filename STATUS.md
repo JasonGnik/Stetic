@@ -142,5 +142,16 @@ USDA via DEMO_KEY = ~30 req/hr (rate-limits at volume). Get a free `FDC_API_KEY`
 ### Still open
 - **Light mode** — deferred (whole app themes off `Theme` dark constants; real effort). Confirm before building.
 
+## Food polish: saved meals, meal reminders, camera crash fix (part 8)
+- **Camera crash fixed:** tapping Barcode set `metadataObjectTypes` to types not yet available (empty pre-config / simulator) → NSException. Now filtered to `availableMetadataObjectTypes` and applied only after the output is wired.
+- **STETIC** wordmark on the camera is now lime.
+- **Saved meals:** `saved_meals` table (migration 20260626120000) + `saveMeal/savedMeals/deleteSavedMeal`. Bookmark button on the scan results saves the combo; section "+" → "Saved meals" → one-tap re-log; delete from the list.
+- **Meal reminders:** bell on the Food header → `MealRemindersView` (per-meal toggle + time) → `NotificationManager.setMealReminders` (daily "time to eat" notifications). Stored in AppStorage.
+- **Add menu simplified:** section "+" = Scan a photo / Search or add food / Saved meals. Dropped standalone Upload (camera has library) and Enter-manually (now lives inside search as "Create a food manually").
+
+### Deploy / config (user's step)
+- `supabase db push` (saved_meals migration).
+- `FDC_API_KEY`: production → `supabase secrets set FDC_API_KEY=...`; local → `supabase/functions/.env` + `functions serve --env-file`.
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

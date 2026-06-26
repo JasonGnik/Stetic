@@ -58,7 +58,7 @@ struct FoodCameraView: View {
         HStack {
             iconButton("xmark") { dismiss() }
             Spacer()
-            Text("STETIC").font(.system(size: 16, weight: .heavy)).tracking(3).foregroundStyle(.white)
+            Text("STETIC").font(.system(size: 16, weight: .heavy)).tracking(3).foregroundStyle(Theme.acc)
             Spacer()
             iconButton("questionmark") { showHelp = true }
         }
@@ -169,10 +169,16 @@ final class CameraController: NSObject, ObservableObject,
     @Published var flashOn = false
     var onPhoto: ((UIImage) -> Void)?
     var onBarcode: ((String) -> Void)?
-    var mode: FoodScanMode = .scanFood {
-        didSet { metadataOutput.metadataObjectTypes = mode == .barcode ? Self.barcodeTypes : [] }
-    }
+    var mode: FoodScanMode = .scanFood { didSet { applyMetadataTypes() } }
     private static let barcodeTypes: [AVMetadataObject.ObjectType] = [.ean8, .ean13, .upce, .code128, .code39, .qr]
+
+    // Only set types the connected output actually supports — setting an unsupported
+    // type (or any type before the output is wired) throws an NSException → crash.
+    private func applyMetadataTypes() {
+        guard configured else { metadataOutput.metadataObjectTypes = []; return }
+        let wanted = mode == .barcode ? Self.barcodeTypes : []
+        metadataOutput.metadataObjectTypes = wanted.filter { metadataOutput.availableMetadataObjectTypes.contains($0) }
+    }
 
     func configure() {
         guard !configured else { return }
@@ -191,6 +197,7 @@ final class CameraController: NSObject, ObservableObject,
         session.commitConfiguration()
         configured = true
         available = true
+        applyMetadataTypes()   // now that the output is wired, honor the current mode
     }
 
     func start() { guard available, !session.isRunning else { return }

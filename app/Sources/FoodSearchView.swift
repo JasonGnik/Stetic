@@ -39,6 +39,19 @@ struct FoodSearchView: View {
             .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
             .padding(.horizontal, 18)
 
+            if let onManual {
+                Button { onManual(); dismiss() } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.pencil").font(.system(size: 12, weight: .bold))
+                        Text("Create a food manually").font(.system(size: 13, weight: .semibold))
+                    }.foregroundStyle(Theme.acc)
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1)))
+                    .padding(.horizontal, 18)
+                }
+                .padding(.top, 8)
+            }
+
             ScrollView {
                 LazyVStack(spacing: 8) {
                     if searching {
@@ -58,13 +71,6 @@ struct FoodSearchView: View {
                 .padding(.horizontal, 18).padding(.top, 12)
             }
             .scrollIndicators(.hidden)
-
-            if let onManual, !results.isEmpty {
-                Button { onManual(); dismiss() } label: {
-                    Text("Can't find it? Enter manually").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.acc)
-                }
-                .padding(.vertical, 12)
-            }
         }
         .background(Theme.bg.ignoresSafeArea())
         .task(id: query) {
