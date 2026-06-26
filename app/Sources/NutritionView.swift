@@ -51,7 +51,7 @@ struct NutritionView: View {
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .task { await reload() }
-        .sheet(isPresented: $showManual) { manualSheet }
+        .sheet(isPresented: $showManual) { manualSheet.keyboardDone() }
         .sheet(isPresented: $showIdeas) {
             MealIdeasView(onLog: { meal in Task { addingType = meal.type; await save(meal.asMeal) } },
                           onCraving: { showIdeas = false                       // close Ideas first, then present

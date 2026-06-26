@@ -45,6 +45,7 @@ struct SessionLogView: View {
                     .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 28)
                 }
                 .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.interactively)
                 footer
             }
             if let flash { flashBanner(flash) }
@@ -52,6 +53,7 @@ struct SessionLogView: View {
         }
         .task { await loadLast() }
         .sensoryFeedback(.success, trigger: pulsedSets.count)
+        .keyboardDone()
     }
 
     // Pre-fill weights from the last time each exercise was logged, applying progression

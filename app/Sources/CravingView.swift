@@ -102,6 +102,7 @@ struct CravingView: View {
             .scrollIndicators(.hidden)
         }
         .background(Theme.bg.ignoresSafeArea())
+        .keyboardDone()
     }
 
     private var canFetch: Bool { text.trimmingCharacters(in: .whitespaces).count >= 2 }

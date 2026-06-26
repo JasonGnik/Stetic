@@ -82,6 +82,7 @@ struct FoodSearchView: View {
             .scrollIndicators(.hidden)
         }
         .background(Theme.bg.ignoresSafeArea())
+        .keyboardDone()
     }
 
     // Instant, local suggestions while typing — no API call.

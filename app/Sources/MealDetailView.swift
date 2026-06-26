@@ -109,6 +109,7 @@ struct MealDetailView: View {
             .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 14)
         }
         .background(Theme.bg.ignoresSafeArea())
+        .keyboardDone()
         .sheet(item: $editTarget) { t in
             FoodItemEditor(item: t.index.map { items[$0] }) { result in
                 if let i = t.index { items[i] = result } else { items.append(result) }
@@ -204,6 +205,7 @@ struct FoodItemEditor: View {
         }
         .padding(.horizontal, 20).padding(.top, 18)
         .background(Theme.bg.ignoresSafeArea())
+        .keyboardDone()
         .onAppear(perform: load)
     }
 
