@@ -217,27 +217,26 @@ struct MealScanView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1)))
     }
 
+    // View-only on the scan screen (with remove). Editing a food happens after it's
+    // logged — open the meal from its section to adjust portions.
     private func ingredientRow(_ item: MealEstimate.Item, _ idx: Int) -> some View {
-        Button { editTarget = EditTarget(index: idx) } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt)
-                    if let p = item.portion, !p.isEmpty {
-                        Text(p).font(.system(size: 12)).foregroundStyle(Theme.mut)
-                    }
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt)
+                if let p = item.portion, !p.isEmpty {
+                    Text(p).font(.system(size: 12)).foregroundStyle(Theme.mut)
                 }
-                Spacer()
-                Text("\(Int(item.calories)) cal").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
-                Button { est.items.remove(at: idx) } label: {
-                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
-                        .frame(width: 26, height: 26).background(Circle().fill(Theme.card))
-                }
-                .buttonStyle(.plain)
             }
-            .padding(.vertical, 10).padding(.horizontal, 14)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
+            Spacer()
+            Text("\(Int(item.calories)) cal").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
+            Button { est.items.remove(at: idx) } label: {
+                Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+                    .frame(width: 26, height: 26).background(Circle().fill(Theme.bg))
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 10).padding(.horizontal, 14)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
     }
 
     @ViewBuilder private var controls: some View {

@@ -5,23 +5,20 @@ import SwiftUI
 struct MealDetailView: View {
     let log: MealLog
     var onChange: () -> Void
+    var onSaveAsMeal: (MealType) -> Void = { _ in }   // open the category food-picker to save a combo
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name: String
     @State private var items: [MealEstimate.Item]
-    @State private var mealType: MealType
     @State private var editTarget: EditTarget?
     @State private var showSearch = false
-    @State private var savedCombo = false
+    private var mealType: MealType { MealType.bucket(log.meal_type) }
     struct EditTarget: Identifiable { let id = UUID(); var index: Int? }
 
-    init(log: MealLog, onChange: @escaping () -> Void) {
-        self.log = log; self.onChange = onChange
-        _name = State(initialValue: log.name)
+    init(log: MealLog, onChange: @escaping () -> Void, onSaveAsMeal: @escaping (MealType) -> Void = { _ in }) {
+        self.log = log; self.onChange = onChange; self.onSaveAsMeal = onSaveAsMeal
         _items = State(initialValue: log.foods.isEmpty
             ? [.init(name: log.name, calories: log.calories, protein_g: log.protein_g, carbs_g: log.carbs_g, fat_g: log.fat_g)]
             : log.foods)
-        _mealType = State(initialValue: MealType.bucket(log.meal_type))
     }
 
     private var totalCals: Double { items.reduce(0) { $0 + $1.calories } }
@@ -31,8 +28,12 @@ struct MealDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("Meal").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+            HStack(spacing: 8) {
+                Image(systemName: mealType.icon).font(.system(size: 14)).foregroundStyle(Theme.acc)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(log.name).font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt).lineLimit(1)
+                    Text(mealType.label).font(.system(size: 11)).foregroundStyle(Theme.mut)
+                }
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
@@ -43,14 +44,6 @@ struct MealDetailView: View {
 
             ScrollView {
                 VStack(spacing: 14) {
-                    TextField("", text: $name, prompt: Text("Meal name").foregroundStyle(Theme.mut))
-                        .font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt).padding(12)
-                        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
-
-                    Picker("Meal", selection: $mealType) {
-                        ForEach(MealType.allCases) { Text($0.label).tag($0) }
-                    }.pickerStyle(.segmented)
-
                     HStack(spacing: 12) {
                         Image(systemName: "flame.fill").font(.system(size: 20)).foregroundStyle(Theme.acc)
                         Text("\(Int(totalCals))").font(.system(size: 28, weight: .heavy)).foregroundStyle(Theme.txt)
@@ -87,16 +80,16 @@ struct MealDetailView: View {
                         }.buttonStyle(.plain)
                     }
 
-                    Button { Task { await saveCombo() } } label: {
+                    Button { onSaveAsMeal(mealType); dismiss() } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: savedCombo ? "bookmark.fill" : "bookmark")
-                            Text(savedCombo ? "Saved to your meals" : "Save this as a meal")
+                            Image(systemName: "bookmark")
+                            Text("Save \(mealType.label) as a meal")
                         }
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.acc)
                         .frame(maxWidth: .infinity).padding(.vertical, 11)
                         .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
                     }
-                    .disabled(savedCombo).padding(.top, 4)
+                    .padding(.top, 4)
                 }
                 .padding(.horizontal, 18).padding(.top, 6).padding(.bottom, 20)
             }
@@ -121,7 +114,7 @@ struct MealDetailView: View {
                 if let i = t.index { items[i] = result } else { items.append(result) }
                 editTarget = nil
             } onCancel: { editTarget = nil }
-            .presentationDetents([.height(440)])
+            .presentationDetents([.height(500)])
         }
         .sheet(isPresented: $showSearch) {
             FoodSearchView(onPick: { hit in items.append(hit.asItem) },
@@ -129,12 +122,9 @@ struct MealDetailView: View {
         }
     }
 
-    private func estimate() -> MealEstimate {
-        MealEstimate(name: name.isEmpty ? "Meal" : name, items: items, calories: totalCals, protein_g: totalP, carbs_g: totalC, fat_g: totalF, confidence: "logged")
-    }
     private func saveChanges() async {
         guard let id = log.id else { dismiss(); return }
-        try? await ScanAPI.shared.updateMeal(id: id, name: name.isEmpty ? "Meal" : name,
+        try? await ScanAPI.shared.updateMeal(id: id, name: log.name,
             calories: totalCals, protein_g: totalP, carbs_g: totalC, fat_g: totalF, mealType: mealType.rawValue, items: items)
         onChange(); dismiss()
     }
@@ -142,48 +132,47 @@ struct MealDetailView: View {
         if let id = log.id { try? await ScanAPI.shared.deleteMeal(id: id) }
         onChange(); dismiss()
     }
-    private func saveCombo() async {
-        try? await ScanAPI.shared.saveMeal(estimate())
-        await MainActor.run { withAnimation { savedCombo = true } }
-    }
 }
 
-// Add/edit one food: name, amount (quantity + unit), and macros. Changing the
-// quantity rescales the macros proportionally so portions are easy to adjust.
+// Add/edit one food: name + a TYPED measure (quantity + unit). For a known food
+// (from a scan or the catalog) the macros are calculated automatically from its
+// per-unit values as you change the amount. A brand-new manual food lets you enter
+// the macros once.
 struct FoodItemEditor: View {
     let item: MealEstimate.Item?
     var onSave: (MealEstimate.Item) -> Void
     var onCancel: () -> Void
 
     @State private var name = ""
-    @State private var quantity: Double = 1
+    @State private var qtyText = "1"
     @State private var unit = "serving"
-    @State private var cals = ""
-    @State private var protein = ""
-    @State private var carbs = ""
-    @State private var fat = ""
-    @State private var ready = false
+    @State private var perCal = 0.0   // per 1 unit
+    @State private var perP = 0.0
+    @State private var perC = 0.0
+    @State private var perF = 0.0
+    @State private var mCal = ""       // manual entry (total)
+    @State private var mP = ""
+    @State private var mC = ""
+    @State private var mF = ""
+    @State private var manual = false
     private let units = ["serving", "g", "oz", "cup", "tbsp", "piece", "ml"]
-    private var step: Double { unit == "g" ? 10 : (unit == "ml" ? 50 : (unit == "cup" || unit == "tbsp" ? 0.5 : 1)) }
-    private var qtyLabel: String { quantity == quantity.rounded() ? "\(Int(quantity))" : String(format: "%.1f", quantity) }
+
+    private var qty: Double { max(0, Double(qtyText) ?? 0) }
+    private func tot(_ per: Double) -> Int { Int((per * qty).rounded()) }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             HStack {
                 Text(item == nil ? "Add food" : "Edit food").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
                 Spacer()
                 Button { onCancel() } label: { Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut) }
             }
             field("Food name", $name)
-            // amount: quantity stepper + unit picker (changing quantity scales macros)
             HStack(spacing: 10) {
-                HStack(spacing: 12) {
-                    qtyButton("minus") { setQty(max(step, quantity - step)) }
-                    Text("\(qtyLabel)").font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt).frame(minWidth: 44)
-                    qtyButton("plus") { setQty(quantity + step) }
-                }
-                .padding(.vertical, 6).padding(.horizontal, 10)
-                .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
+                TextField("1", text: $qtyText).keyboardType(.decimalPad)
+                    .font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt).multilineTextAlignment(.center)
+                    .padding(.vertical, 12).frame(width: 90)
+                    .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
                 Menu {
                     ForEach(units, id: \.self) { u in Button(u) { unit = u } }
                 } label: {
@@ -192,51 +181,72 @@ struct FoodItemEditor: View {
                         .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
                 }
             }
-            HStack(spacing: 8) { numField("Calories", $cals); numField("Protein", $protein) }
-            HStack(spacing: 8) { numField("Carbs", $carbs); numField("Fat", $fat) }
-            Button {
-                var it = item ?? MealEstimate.Item(name: "")
-                it.name = name.isEmpty ? "Food" : name
-                it.portion = "\(qtyLabel) \(unit)"
-                it.quantity = quantity; it.unit = unit
-                it.calories = Double(cals) ?? 0; it.protein_g = Double(protein) ?? 0
-                it.carbs_g = Double(carbs) ?? 0; it.fat_g = Double(fat) ?? 0
-                onSave(it)
-            } label: {
+
+            if manual {
+                Text("Enter the macros for this amount").font(.system(size: 11)).foregroundStyle(Theme.mut).frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 8) { numField("Calories", $mCal); numField("Protein", $mP) }
+                HStack(spacing: 8) { numField("Carbs", $mC); numField("Fat", $mF) }
+            } else {
+                // auto-calculated from the food's per-unit data
+                HStack(spacing: 8) {
+                    macroTile("Calories", tot(perCal)); macroTile("Protein", tot(perP), "g")
+                    macroTile("Carbs", tot(perC), "g"); macroTile("Fat", tot(perF), "g")
+                }
+                Text("Calculated for \(qtyText.isEmpty ? "0" : qtyText) \(unit).").font(.system(size: 11)).foregroundStyle(Theme.mut)
+            }
+
+            Button { save() } label: {
                 Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill((Double(cals) ?? 0) > 0 ? Theme.acc : Theme.line))
-                    .foregroundStyle((Double(cals) ?? 0) > 0 ? Color(hex: 0x0E0E10) : Theme.mut)
-            }.disabled((Double(cals) ?? 0) <= 0)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(canSave ? Theme.acc : Theme.line))
+                    .foregroundStyle(canSave ? Color(hex: 0x0E0E10) : Theme.mut)
+            }.disabled(!canSave)
             Spacer()
         }
         .padding(.horizontal, 20).padding(.top, 18)
         .background(Theme.bg.ignoresSafeArea())
-        .onAppear {
-            if let item {
-                name = item.name
-                let parsed = MealEstimate.Item.parsePortion(item.portion)
-                quantity = item.quantity != 1 ? item.quantity : parsed.0
-                unit = item.unit != "serving" ? item.unit : parsed.1
-                cals = item.calories > 0 ? "\(Int(item.calories))" : ""
-                protein = item.protein_g > 0 ? "\(Int(item.protein_g))" : ""
-                carbs = item.carbs_g > 0 ? "\(Int(item.carbs_g))" : ""
-                fat = item.fat_g > 0 ? "\(Int(item.fat_g))" : ""
-            }
-            ready = true
+        .onAppear(perform: load)
+    }
+
+    private var canSave: Bool { qty > 0 && (manual ? (Double(mCal) ?? 0) > 0 : perCal > 0) }
+
+    private func load() {
+        guard let item else { manual = true; qtyText = "1"; return }
+        name = item.name
+        let parsed = MealEstimate.Item.parsePortion(item.portion)
+        let q = item.quantity != 1 ? item.quantity : parsed.0
+        unit = item.unit != "serving" ? item.unit : parsed.1
+        qtyText = q == q.rounded() ? "\(Int(q))" : String(format: "%.1f", q)
+        let base = max(q, 0.0001)
+        if item.calories > 0 {
+            manual = false
+            perCal = item.calories / base; perP = item.protein_g / base; perC = item.carbs_g / base; perF = item.fat_g / base
+        } else {
+            manual = true
         }
     }
 
-    // Set quantity and scale macros proportionally.
-    private func setQty(_ new: Double) {
-        guard ready, quantity > 0, new > 0 else { quantity = new; return }
-        let f = new / quantity
-        cals = scaled(cals, f); protein = scaled(protein, f); carbs = scaled(carbs, f); fat = scaled(fat, f)
-        quantity = new
+    private func save() {
+        var it = item ?? MealEstimate.Item(name: "")
+        it.name = name.isEmpty ? "Food" : name
+        it.quantity = qty; it.unit = unit
+        it.portion = "\(qtyText) \(unit)"
+        if manual {
+            it.calories = Double(mCal) ?? 0; it.protein_g = Double(mP) ?? 0
+            it.carbs_g = Double(mC) ?? 0; it.fat_g = Double(mF) ?? 0
+        } else {
+            it.calories = Double(tot(perCal)); it.protein_g = Double(tot(perP))
+            it.carbs_g = Double(tot(perC)); it.fat_g = Double(tot(perF))
+        }
+        onSave(it)
     }
-    private func scaled(_ s: String, _ f: Double) -> String { let v = (Double(s) ?? 0) * f; return v > 0 ? "\(Int(v.rounded()))" : "" }
 
-    private func qtyButton(_ icon: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: icon).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt).frame(width: 28, height: 28).background(Circle().fill(Theme.bg)) }
+    private func macroTile(_ label: String, _ value: Int, _ suffix: String = "") -> some View {
+        VStack(spacing: 3) {
+            Text("\(value)\(suffix)").font(.system(size: 16, weight: .heavy)).foregroundStyle(Theme.txt)
+            Text(label).font(.system(size: 9.5)).foregroundStyle(Theme.mut)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 11)
+        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
     }
     private func field(_ label: String, _ text: Binding<String>) -> some View {
         TextField("", text: text, prompt: Text(label).foregroundStyle(Theme.mut))

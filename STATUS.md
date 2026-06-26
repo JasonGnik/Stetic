@@ -205,5 +205,11 @@ Investigated with 3 parallel Opus agents, then fixed:
 - **Portion editing:** `MealEstimate.Item` gains `quantity` + `unit` (backward-compatible, decodeIfPresent + parsePortion). Unified editor (`FoodItemEditor`, used by both MealScanView and MealDetailView; old duplicate ItemEditor removed) now has a **quantity stepper + unit picker (serving/g/oz/cup/tbsp/piece/ml)** that **rescales macros proportionally**. FoodHit seeds qty/unit from its catalog portion.
 - **Ingredient breakdown:** `meal-scan` prompt rewritten to BREAK a composite food into its components (burger → bun/patty/cheese/sauce; salad → greens/chicken/dressing), 2–6 main contributors, simple foods stay one item. Schema/UI already supported N items. **Needs `supabase functions deploy meal-scan`.**
 
+## Food editing UX refinement (part 15)
+- **FoodItemEditor:** typed measure field (quantity) + unit picker; macros **auto-calculate** from the food's per-unit data as you change the amount (read-only tiles). Manual new-food path still allows entering macros once.
+- **MealDetailView:** removed the name typer and the meal-type segmented picker (name/type now read-only header). Foods remain tappable→edit (you reach this by opening a meal from its section). "Save as a meal" now opens a **category food-selector** (`CombineFoodsSheet`) — deselect any foods in that category, name it, save the combo.
+- **MealScanView (scan results):** ingredient rows are **view-only** (with remove + add) — no tap-to-edit; portions are edited after logging via the meal section.
+- Combine flow rewritten to operate on the category's flattened foods (replaces the meal-row multiselect).
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.
