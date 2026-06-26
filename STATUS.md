@@ -74,9 +74,9 @@ Real iPhone required — the simulator can't do Apple sign-in or sandbox purchas
 5. **Rest days show a workout** — Today/Up-Next shows a session on a rest day; should say "Rest day" when nothing is scheduled. (Logging on a rest day still worked + streak persisted.)
 6. **Progress doesn't refresh after a scan** — a new scan didn't update Progress until switching tabs and back. Refresh on scan completion / onAppear.
 
-### Scoring (investigate)
-7. **Score barely moved (+0.2) for a clearly better physique** on rescan. Hypothesis: ceiling compression — if a lean-but-not-huge body already hits Mythic (near the top), a "way better" body has no room to climb. Look at the high-end of the scale / tier spacing. (Calibration is "locked v1" — change carefully.)
-8. **Weak-point inconsistency** — Plan flagged **chest as a weak point** but the scan score card did NOT show chest as weak. Card (Core-6) and plan weak-point derivation must agree.
+### Scoring (investigated 2026-06-26)
+7. **Ceiling compression CONFIRMED.** Tier ladder: elite 8.0, **mythic 8.8**, greek_god 9.3 (ScoreCard.swift:69). A lean physique scored 8.8 = only ~1.2 pts of headroom, so a much-better rescan barely moves. Root cause: scoring.ts rubric has **no top-end anchors** — it says "rate what you see, don't hard-cap" but never reserves 9+ for truly elite, so Gemini clusters scores high. **NEEDS JASON'S CALL** (product-feel + re-validate via scoring-harness): recalibrate stricter (reserve 8.5+ for stage-ready; typical lean→6-7) to restore climb headroom, vs keep generous. Not changed unilaterally (calibration locked v1).
+8. **Weak-point mismatch FIXED (needs deploy).** Root cause: the score card uses `scan.muscles`; the plan re-judged muscles in its OWN Gemini call (`muscle_breakdown`) → different ratings → chest weak in plan but not on card. Also card marks bottom-1 "weakest", plan marks bottom-2. Fix: plan.ts now forces `muscle_breakdown.rating` to EQUAL the scan's per-group score (no re-rating). **Needs `supabase functions deploy plan`.**
 
 ### Copy / wording
 9. **Onboarding screen 4 "walk in with confidence" → "walk with confidence"** (doesn't parse). Do a wording pass on the intro screens.
