@@ -148,18 +148,24 @@ struct MealDetailView: View {
     }
 }
 
-// Add/edit one food's name, portion, and macros.
+// Add/edit one food: name, amount (quantity + unit), and macros. Changing the
+// quantity rescales the macros proportionally so portions are easy to adjust.
 struct FoodItemEditor: View {
     let item: MealEstimate.Item?
     var onSave: (MealEstimate.Item) -> Void
     var onCancel: () -> Void
 
     @State private var name = ""
-    @State private var portion = ""
+    @State private var quantity: Double = 1
+    @State private var unit = "serving"
     @State private var cals = ""
     @State private var protein = ""
     @State private var carbs = ""
     @State private var fat = ""
+    @State private var ready = false
+    private let units = ["serving", "g", "oz", "cup", "tbsp", "piece", "ml"]
+    private var step: Double { unit == "g" ? 10 : (unit == "ml" ? 50 : (unit == "cup" || unit == "tbsp" ? 0.5 : 1)) }
+    private var qtyLabel: String { quantity == quantity.rounded() ? "\(Int(quantity))" : String(format: "%.1f", quantity) }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -169,13 +175,30 @@ struct FoodItemEditor: View {
                 Button { onCancel() } label: { Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut) }
             }
             field("Food name", $name)
-            field("Portion (e.g. 3 eggs)", $portion)
+            // amount: quantity stepper + unit picker (changing quantity scales macros)
+            HStack(spacing: 10) {
+                HStack(spacing: 12) {
+                    qtyButton("minus") { setQty(max(step, quantity - step)) }
+                    Text("\(qtyLabel)").font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt).frame(minWidth: 44)
+                    qtyButton("plus") { setQty(quantity + step) }
+                }
+                .padding(.vertical, 6).padding(.horizontal, 10)
+                .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
+                Menu {
+                    ForEach(units, id: \.self) { u in Button(u) { unit = u } }
+                } label: {
+                    HStack(spacing: 4) { Text(unit).font(.system(size: 15, weight: .semibold)); Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)) }
+                        .foregroundStyle(Theme.txt).frame(maxWidth: .infinity).padding(.vertical, 13)
+                        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
+                }
+            }
             HStack(spacing: 8) { numField("Calories", $cals); numField("Protein", $protein) }
             HStack(spacing: 8) { numField("Carbs", $carbs); numField("Fat", $fat) }
             Button {
                 var it = item ?? MealEstimate.Item(name: "")
                 it.name = name.isEmpty ? "Food" : name
-                it.portion = portion.isEmpty ? nil : portion
+                it.portion = "\(qtyLabel) \(unit)"
+                it.quantity = quantity; it.unit = unit
                 it.calories = Double(cals) ?? 0; it.protein_g = Double(protein) ?? 0
                 it.carbs_g = Double(carbs) ?? 0; it.fat_g = Double(fat) ?? 0
                 onSave(it)
@@ -190,13 +213,30 @@ struct FoodItemEditor: View {
         .background(Theme.bg.ignoresSafeArea())
         .onAppear {
             if let item {
-                name = item.name; portion = item.portion ?? ""
+                name = item.name
+                let parsed = MealEstimate.Item.parsePortion(item.portion)
+                quantity = item.quantity != 1 ? item.quantity : parsed.0
+                unit = item.unit != "serving" ? item.unit : parsed.1
                 cals = item.calories > 0 ? "\(Int(item.calories))" : ""
                 protein = item.protein_g > 0 ? "\(Int(item.protein_g))" : ""
                 carbs = item.carbs_g > 0 ? "\(Int(item.carbs_g))" : ""
                 fat = item.fat_g > 0 ? "\(Int(item.fat_g))" : ""
             }
+            ready = true
         }
+    }
+
+    // Set quantity and scale macros proportionally.
+    private func setQty(_ new: Double) {
+        guard ready, quantity > 0, new > 0 else { quantity = new; return }
+        let f = new / quantity
+        cals = scaled(cals, f); protein = scaled(protein, f); carbs = scaled(carbs, f); fat = scaled(fat, f)
+        quantity = new
+    }
+    private func scaled(_ s: String, _ f: Double) -> String { let v = (Double(s) ?? 0) * f; return v > 0 ? "\(Int(v.rounded()))" : "" }
+
+    private func qtyButton(_ icon: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: icon).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt).frame(width: 28, height: 28).background(Circle().fill(Theme.bg)) }
     }
     private func field(_ label: String, _ text: Binding<String>) -> some View {
         TextField("", text: text, prompt: Text(label).foregroundStyle(Theme.mut))

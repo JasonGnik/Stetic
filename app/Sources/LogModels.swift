@@ -126,16 +126,19 @@ struct MealEstimate: Codable, Identifiable {
         var id = UUID()
         var name: String
         var portion: String?
-        var calories: Double = 0
+        var calories: Double = 0      // TOTAL for the current quantity/unit (not per-unit)
         var protein_g: Double = 0
         var carbs_g: Double = 0
         var fat_g: Double = 0
-        enum CodingKeys: String, CodingKey { case name, portion, calories, protein_g, carbs_g, fat_g }
-        init(name: String, portion: String? = nil, calories: Double = 0, protein_g: Double = 0, carbs_g: Double = 0, fat_g: Double = 0) {
+        var quantity: Double = 1      // how much of `unit` this food is
+        var unit: String = "serving"  // serving | g | oz | cup | tbsp | piece | ml
+        enum CodingKeys: String, CodingKey { case name, portion, calories, protein_g, carbs_g, fat_g, quantity, unit }
+        init(name: String, portion: String? = nil, calories: Double = 0, protein_g: Double = 0, carbs_g: Double = 0, fat_g: Double = 0, quantity: Double = 1, unit: String = "serving") {
             self.name = name; self.portion = portion; self.calories = calories
             self.protein_g = protein_g; self.carbs_g = carbs_g; self.fat_g = fat_g
+            self.quantity = quantity; self.unit = unit
         }
-        init(from d: Decoder) throws {   // macros optional so it survives an older meal-scan response
+        init(from d: Decoder) throws {   // fields optional so it survives older rows / responses
             let c = try d.container(keyedBy: CodingKeys.self)
             name = try c.decode(String.self, forKey: .name)
             portion = try c.decodeIfPresent(String.self, forKey: .portion)
@@ -143,6 +146,20 @@ struct MealEstimate: Codable, Identifiable {
             protein_g = try c.decodeIfPresent(Double.self, forKey: .protein_g) ?? 0
             carbs_g = try c.decodeIfPresent(Double.self, forKey: .carbs_g) ?? 0
             fat_g = try c.decodeIfPresent(Double.self, forKey: .fat_g) ?? 0
+            quantity = try c.decodeIfPresent(Double.self, forKey: .quantity) ?? 1
+            unit = try c.decodeIfPresent(String.self, forKey: .unit) ?? "serving"
+        }
+
+        // Best-effort parse of a free-text portion (e.g. "~150g", "1 cup") into qty + unit.
+        static func parsePortion(_ s: String?) -> (Double, String) {
+            guard let s = s?.lowercased() else { return (1, "serving") }
+            let num = s.split(whereSeparator: { !"0123456789.".contains($0) }).compactMap { Double($0) }.first ?? 1
+            let unit: String
+            if s.contains("oz") { unit = "oz" } else if s.contains("ml") { unit = "ml" }
+            else if s.contains("g") { unit = "g" } else if s.contains("cup") { unit = "cup" }
+            else if s.contains("tbsp") { unit = "tbsp" } else if s.contains("piece") || s.contains("slice") { unit = "piece" }
+            else { unit = "serving" }
+            return (num, unit)
         }
     }
 
@@ -209,8 +226,9 @@ struct FoodHit: Codable, Identifiable, Hashable {
     var fat_g: Double = 0
     enum CodingKeys: String, CodingKey { case name, brand, portion, calories, protein_g, carbs_g, fat_g }
     var asItem: MealEstimate.Item {
-        .init(name: name, portion: portion.isEmpty ? nil : portion,
-              calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g)
+        let (q, u) = MealEstimate.Item.parsePortion(portion)
+        return .init(name: name, portion: portion.isEmpty ? nil : portion,
+                     calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, quantity: q, unit: u)
     }
     var asMeal: MealEstimate {
         var m = MealEstimate(name: name, calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, confidence: "catalog")

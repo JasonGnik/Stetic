@@ -199,5 +199,11 @@ User chose the full model. To build: a user **Food catalog** (create manually or
 - **Combine to meal:** each meal section "+" → "Select & save as a meal" → multi-select logged items → name → saves the combined foods to saved_meals. MealDetailView's save is now a clear "Save this as a meal" button (not a vague bookmark).
 - **JP abs sets:** plan.ts said "Abs = 4 sets" (contradicted the 2-working-set doctrine). Changed to "2-3 sets of 15-20." Re-generate a plan to apply.
 
+## Food deep-fix: loader, portions, ingredient breakdown (part 14)
+Investigated with 3 parallel Opus agents, then fixed:
+- **Scan loader (root cause):** `FoodCaptureFlow` swapped camera→scan with `withAnimation`, cross-fading the subtree and swallowing the loader frames. Fixed: wrap body in a ZStack, drop the animation on the phase change, give `MealScanView` a stable `.id` so it mounts fresh and its `.task` drives the loader. Verified on the simulator (loader shows during the swap).
+- **Portion editing:** `MealEstimate.Item` gains `quantity` + `unit` (backward-compatible, decodeIfPresent + parsePortion). Unified editor (`FoodItemEditor`, used by both MealScanView and MealDetailView; old duplicate ItemEditor removed) now has a **quantity stepper + unit picker (serving/g/oz/cup/tbsp/piece/ml)** that **rescales macros proportionally**. FoodHit seeds qty/unit from its catalog portion.
+- **Ingredient breakdown:** `meal-scan` prompt rewritten to BREAK a composite food into its components (burger → bun/patty/cheese/sauce; salad → greens/chicken/dressing), 2–6 main contributors, simple foods stay one item. Schema/UI already supported N items. **Needs `supabase functions deploy meal-scan`.**
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

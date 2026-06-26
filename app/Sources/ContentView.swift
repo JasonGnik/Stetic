@@ -49,6 +49,9 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_FOODEDIT"] == "1" {
+            ZStack { Theme.bg.ignoresSafeArea()
+                FoodItemEditor(item: .init(name: "Chicken breast", portion: "150 g", calories: 248, protein_g: 47, carbs_g: 0, fat_g: 6, quantity: 150, unit: "g"), onSave: { _ in }, onCancel: {}) }
         } else if env["STETIC_MEALUPLOAD"] == "1" {
             MealUploadProbe()
         } else if env["STETIC_MEALDETAIL"] == "1" {
@@ -130,33 +133,26 @@ struct ContentView: View {
 // DEV: reproduces the upload path — camera cover dismisses, scan cover presents via
 // the onChange dance (the exact two-fullScreenCover sequence the real flow uses).
 struct MealUploadProbe: View {
-    @State private var showCamera = true
-    @State private var showScan = false
-    @State private var pendingPresent = false
+    enum Phase { case camera, scan }
+    @State private var phase: Phase = .camera
     @State private var img: UIImage?
-    @State private var b64: String?
+    @State private var b64 = ""
     private var sample: (UIImage, String) {
         let url = Bundle.main.url(forResource: "sample", withExtension: "jpg")
         let data = (url.flatMap { try? Data(contentsOf: $0) }) ?? Data()
         return (UIImage(data: data) ?? UIImage(), data.base64EncodedString())
     }
-    var body: some View {
-        ZStack { Theme.bg.ignoresSafeArea() }
-            .fullScreenCover(isPresented: $showCamera) {
+    var body: some View {   // mirrors FoodCaptureFlow's internal camera→scan swap
+        ZStack {
+            switch phase {
+            case .camera:
                 ZStack { Color.black.ignoresSafeArea(); ProgressView().tint(.white) }
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                            let s = sample; img = s.0; b64 = s.1
-                            pendingPresent = true; showCamera = false
-                        }
-                    }
+                    .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        let s = sample; img = s.0; b64 = s.1; phase = .scan } }
+            case .scan:
+                MealScanView(image: img ?? UIImage(), dataB64: b64, onLogged: {}).id(b64)
             }
-            .onChange(of: showCamera) { _, shown in
-                if !shown && pendingPresent { pendingPresent = false; showScan = true }
-            }
-            .fullScreenCover(isPresented: $showScan) {
-                if let img, let b64 { MealScanView(image: img, dataB64: b64, onLogged: {}) }
-            }
+        }
     }
 }
 

@@ -28,6 +28,7 @@ struct MealScanView: View {
             Theme.bg.ignoresSafeArea()
             if phase == .scanning { scanningView } else { resultsView }
         }
+        .onAppear { startedAt = Date() }
         .task { await run() }
         .sheet(item: $editTarget) { target in itemEditor(target) }
         .sheet(isPresented: $showSearch) {
@@ -268,11 +269,11 @@ struct MealScanView: View {
 
     // MARK: add / edit an ingredient
     private func itemEditor(_ target: EditTarget) -> some View {
-        ItemEditor(item: target.index.map { est.items[$0] }) { result in
+        FoodItemEditor(item: target.index.map { est.items[$0] }) { result in
             if let i = target.index { est.items[i] = result } else { est.items.append(result) }
             editTarget = nil
         } onCancel: { editTarget = nil }
-        .presentationDetents([.height(440)])
+        .presentationDetents([.height(500)])
     }
 
     private func header(_ title: String) -> some View {
@@ -345,74 +346,5 @@ struct MealScanView: View {
     private func saveMeal() async {
         try? await ScanAPI.shared.saveMeal(est)
         await MainActor.run { withAnimation { savedMeal = true } }
-    }
-}
-
-// A small add/edit form for one ingredient.
-private struct ItemEditor: View {
-    let item: MealEstimate.Item?
-    var onSave: (MealEstimate.Item) -> Void
-    var onCancel: () -> Void
-
-    @State private var name = ""
-    @State private var portion = ""
-    @State private var cals = ""
-    @State private var protein = ""
-    @State private var carbs = ""
-    @State private var fat = ""
-
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text(item == nil ? "Add food" : "Edit food").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
-                Spacer()
-                Button { onCancel() } label: { Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut) }
-            }
-            field("Food name", $name)
-            field("Portion (e.g. 1 cup)", $portion)
-            HStack(spacing: 8) { numField("Calories", $cals); numField("Protein", $protein) }
-            HStack(spacing: 8) { numField("Carbs", $carbs); numField("Fat", $fat) }
-            Button {
-                var it = item ?? MealEstimate.Item(name: "")
-                it.name = name.isEmpty ? "Food" : name
-                it.portion = portion.isEmpty ? nil : portion
-                it.calories = Double(cals) ?? 0
-                it.protein_g = Double(protein) ?? 0
-                it.carbs_g = Double(carbs) ?? 0
-                it.fat_g = Double(fat) ?? 0
-                onSave(it)
-            } label: {
-                Text("Save").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12).fill((Double(cals) ?? 0) > 0 ? Theme.acc : Theme.line))
-                    .foregroundStyle((Double(cals) ?? 0) > 0 ? Color(hex: 0x0E0E10) : Theme.mut)
-            }
-            .disabled((Double(cals) ?? 0) <= 0)
-            Spacer()
-        }
-        .padding(.horizontal, 20).padding(.top, 18)
-        .background(Theme.bg.ignoresSafeArea())
-        .onAppear {
-            if let item {
-                name = item.name; portion = item.portion ?? ""
-                cals = item.calories > 0 ? "\(Int(item.calories))" : ""
-                protein = item.protein_g > 0 ? "\(Int(item.protein_g))" : ""
-                carbs = item.carbs_g > 0 ? "\(Int(item.carbs_g))" : ""
-                fat = item.fat_g > 0 ? "\(Int(item.fat_g))" : ""
-            }
-        }
-    }
-
-    private func field(_ label: String, _ text: Binding<String>) -> some View {
-        TextField("", text: text, prompt: Text(label).foregroundStyle(Theme.mut))
-            .font(.system(size: 15)).foregroundStyle(Theme.txt).padding(13)
-            .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
-    }
-    private func numField(_ label: String, _ text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
-            TextField("0", text: text).keyboardType(.numberPad)
-                .font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.txt).padding(11)
-                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1)))
-        }
     }
 }

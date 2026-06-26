@@ -86,12 +86,15 @@ Deno.serve(async (req) => {
     `from the label. The top-level totals must equal that single item. confidence "high" if the label ` +
     `is legible. Numbers only — do not refuse.`;
   const mealPrompt =
-    `You are a nutrition estimator. Identify the food/meal in this photo. List EACH distinct food ` +
-    `in 'items' with a short name, a rough portion, AND its own calories + macros for the portion ` +
-    `shown (e.g. {name:"Chicken breast", portion:"~200g", calories:330, protein_g:62, carbs_g:0, fat_g:7}). ` +
-    `The top-level calories/protein_g/carbs_g/fat_g must equal the SUM of the items. Name the whole ` +
-    `meal naturally (e.g. "Chicken, rice & broccoli"). Be realistic, not rounded to marketing numbers. ` +
-    `Set confidence by how clearly you can judge the portions. Put any key assumption in 'note'. ` +
+    `You are a nutrition estimator. Identify the meal in this photo and BREAK IT DOWN into its component foods/ingredients in 'items'. ` +
+    `If a dish is a single assembled item (burger, sandwich, burrito, salad, stir-fry, pasta, bowl), list its MAIN edible components separately — ` +
+    `e.g. a cheeseburger → {bun}, {beef patty}, {cheese}, {sauce}; a chicken salad → {greens}, {grilled chicken}, {dressing}, {croutons}. ` +
+    `If the plate has several separate foods, list each of those. Each item: short name, a rough portion, AND its own calories + macros for the ` +
+    `portion shown (e.g. {name:"Beef patty", portion:"~150g", calories:280, protein_g:24, carbs_g:0, fat_g:20}). ` +
+    `Only list components that meaningfully affect macros — skip trivial things (water, spices, a pinch of salt). Aim for the 2–6 main contributors; ` +
+    `a genuinely simple single food (an apple, black coffee) stays ONE item. ` +
+    `The top-level calories/protein_g/carbs_g/fat_g MUST equal the SUM of the items. Name the whole meal naturally (e.g. "Cheeseburger", "Chicken salad"). ` +
+    `Be realistic, not rounded to marketing numbers. Set confidence by how clearly you can judge it. Put any key assumption in 'note'. ` +
     `Numbers only — do not refuse; give your best estimate.`;
   const prompt = payload.mode === "label" ? labelPrompt : mealPrompt;
 

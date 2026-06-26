@@ -172,22 +172,26 @@ struct FoodCaptureFlow: View {
     enum Phase { case camera, scan }
 
     var body: some View {
-        switch phase {
-        case .camera:
-            FoodCameraView(
-                onCapture: { image, m in
-                    img = image
-                    b64 = (image.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
-                    scanMode = (m == .foodLabel) ? "label" : "meal"
-                    preset = nil
-                    withAnimation { phase = .scan }
-                },
-                onBarcode: { code in Task { await resolveBarcode(code) } })
-            .overlay { if resolving { overlay("Looking up barcode…") } }
-            .overlay(alignment: .top) { if notFound { notFoundBanner } }
-        case .scan:
-            MealScanView(image: img ?? UIImage(), dataB64: b64, mealType: mealType.rawValue,
-                         scanMode: scanMode, onLogged: { onLogged(); dismiss() }, preset: preset)
+        ZStack {
+            switch phase {
+            case .camera:
+                FoodCameraView(
+                    onCapture: { image, m in
+                        img = image
+                        b64 = (image.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
+                        scanMode = (m == .foodLabel) ? "label" : "meal"
+                        preset = nil
+                        phase = .scan
+                    },
+                    onBarcode: { code in Task { await resolveBarcode(code) } })
+                .overlay { if resolving { overlay("Looking up barcode…") } }
+                .overlay(alignment: .top) { if notFound { notFoundBanner } }
+            case .scan:
+                // Stable id so MealScanView mounts fresh and its .task drives the loader.
+                MealScanView(image: img ?? UIImage(), dataB64: b64, mealType: mealType.rawValue,
+                             scanMode: scanMode, onLogged: { onLogged(); dismiss() }, preset: preset)
+                    .id(preset == nil ? b64 : "preset")
+            }
         }
     }
 
@@ -196,7 +200,7 @@ struct FoodCaptureFlow: View {
         let hit = try? await ScanAPI.shared.searchBarcode(code)
         await MainActor.run {
             resolving = false
-            if let hit { preset = hit.asMeal; withAnimation { phase = .scan } }
+            if let hit { preset = hit.asMeal; phase = .scan }
             else {
                 withAnimation { notFound = true }
                 Task { try? await Task.sleep(nanoseconds: 2_500_000_000); await MainActor.run { withAnimation { notFound = false } } }
