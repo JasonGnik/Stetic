@@ -434,6 +434,27 @@ actor ScanAPI {
         return w.meal
     }
 
+    // "I'm craving X" → an intensity-tuned version that still fits the day's macros.
+    func craving(_ text: String, intensity: String, goal: String,
+                 remaining: (cals: Double, p: Double, c: Double, f: Double)) async throws -> CravingResult {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        var req = URLRequest(url: Config.baseURL.appending(path: "functions/v1/craving"))
+        req.httpMethod = "POST"; req.timeoutInterval = 45
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "craving": text, "intensity": intensity, "goal": goal,
+            "remaining": ["calories": remaining.cals, "protein_g": remaining.p, "carbs_g": remaining.c, "fat_g": remaining.f],
+        ])
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard code(resp) == 200 else { throw APIError.http(code(resp), String(data: data, encoding: .utf8) ?? "") }
+        struct Wrap: Decodable { let craving: CravingResult }
+        guard let w = try? JSONDecoder().decode(Wrap.self, from: data) else { throw APIError.decode }
+        return w.craving
+    }
+
     // Barcode → product via OpenFoodFacts (through food-search).
     func searchBarcode(_ barcode: String) async throws -> FoodHit? {
         try await ensureSession()

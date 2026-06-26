@@ -153,6 +153,24 @@ struct MealEstimate: Codable, Identifiable {
     enum CodingKeys: String, CodingKey { case name, items, calories, protein_g, carbs_g, fat_g, confidence, note }
 }
 
+// An AI "craving fix" result tuned to how badly they want it.
+struct CravingResult: Codable, Identifiable {
+    var id = UUID()
+    var name: String
+    var version: String = ""
+    var portion: String = ""
+    var calories: Double = 0
+    var protein_g: Double = 0
+    var carbs_g: Double = 0
+    var fat_g: Double = 0
+    var fit_tip: String = ""
+    var adjustments: [String] = []
+    enum CodingKeys: String, CodingKey { case name, version, portion, calories, protein_g, carbs_g, fat_g, fit_tip, adjustments }
+    var asMeal: MealEstimate {
+        MealEstimate(name: name, calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, confidence: "craving")
+    }
+}
+
 // A saved meal — a named combo of foods the user can re-log in one tap.
 struct SavedMeal: Codable, Identifiable {
     var id: String?

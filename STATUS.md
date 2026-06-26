@@ -153,5 +153,14 @@ USDA via DEMO_KEY = ~30 req/hr (rate-limits at volume). Get a free `FDC_API_KEY`
 - `supabase db push` (saved_meals migration).
 - `FDC_API_KEY`: production → `supabase secrets set FDC_API_KEY=...`; local → `supabase/functions/.env` + `functions serve --env-file`.
 
+## AI craving feature (part 9)
+- **"Craving something?"** on the Food tab → `CravingView`: craving input + quick chips + an **intensity slider** (Lightly / Mildly / Badly). Badly = the real thing (In-N-Out-style), Mildly = lighter homemade, Lightly = macro-friendly remake. 80/20 framing.
+- **`craving` edge function** (Gemini 2.5 Flash): given craving + intensity + remaining macros + goal → returns the food + realistic macros + a fit tip + 1-3 "make room" adjustments to other meals. Result card → "Log it" / "Try again".
+- ScanAPI.craving(); CravingResult model. Dev: STETIC_CRAVING=1.
+- **Deploy needed:** `supabase functions deploy craving` (uses existing GEMINI_API_KEY).
+
+## NEXT: Full MyFitnessPal food model (chosen, not yet built)
+User chose the full model. To build: a user **Food catalog** (create manually or by label scan; foods are reusable), a staging **Cart** (add foods + portions), then **assign to a meal/time** and optionally **save the combo as a Meal**. Big data-model change — own focused build. Also: consider upping protein ratio / trimming carbs in `plan.ts` (current split is carb-heavy, ~414g).
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.
