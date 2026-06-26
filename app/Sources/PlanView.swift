@@ -117,6 +117,7 @@ struct PlanView: View {
 
     // MARK: content
     private func content(_ p: PlanContent, scan: ScoreCard) -> some View {
+        GeometryReader { geo in
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 HStack(alignment: .top) {
@@ -171,8 +172,10 @@ struct PlanView: View {
                     .padding(.top, 10)
             }
             .padding(.horizontal, 22).padding(.top, 14).padding(.bottom, 36)
+            .frame(width: geo.size.width, alignment: .leading)   // clamp to viewport — kills horizontal drag
         }
         .scrollIndicators(.hidden)
+        }
     }
 
     private var planMenu: some View {
