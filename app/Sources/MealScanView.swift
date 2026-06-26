@@ -19,6 +19,7 @@ struct MealScanView: View {
     @State private var editTarget: EditTarget?
     @State private var showSearch = false
     @State private var startedAt = Date()
+    @State private var pickedType: MealType = .current()   // which meal to add to
     private let scanDuration: TimeInterval = 2.8   // shared with run() so the bar lands as results appear
     enum Phase { case scanning, results }
     struct EditTarget: Identifiable { let id = UUID(); var index: Int? }   // nil = new item
@@ -28,7 +29,7 @@ struct MealScanView: View {
             Theme.bg.ignoresSafeArea()
             if phase == .scanning { scanningView } else { resultsView }
         }
-        .onAppear { startedAt = Date() }
+        .onAppear { startedAt = Date(); pickedType = MealType(rawValue: mealType) ?? .current() }
         .task { await run() }
         .sheet(item: $editTarget) { target in itemEditor(target) }
         .sheet(isPresented: $showSearch) {
@@ -187,6 +188,14 @@ struct MealScanView: View {
                 .padding(.horizontal, 18).padding(.top, 6).padding(.bottom, 20)
             }
             .scrollIndicators(.hidden)
+            VStack(spacing: 6) {
+                Text("ADD TO").font(.system(size: 10, weight: .bold)).tracking(0.8).foregroundStyle(Theme.mut)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Picker("Meal", selection: $pickedType) {
+                    ForEach(MealType.allCases) { Text($0.label).tag($0) }
+                }.pickerStyle(.segmented)
+            }
+            .padding(.horizontal, 18).padding(.top, 6)
             controls
         }
     }
@@ -338,7 +347,7 @@ struct MealScanView: View {
 
     private func add() async {
         saving = true
-        try? await ScanAPI.shared.logMeal(est, mealType: mealType)
+        try? await ScanAPI.shared.logMeal(est, mealType: pickedType.rawValue)
         await MainActor.run { saving = false; onLogged(); dismiss() }
     }
 
