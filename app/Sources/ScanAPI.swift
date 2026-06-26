@@ -435,7 +435,7 @@ actor ScanAPI {
     }
 
     // "I'm craving X" → an intensity-tuned version that still fits the day's macros.
-    func craving(_ text: String, intensity: String, goal: String,
+    func craving(_ text: String, intensity: String, goal: String, dailyCalories: Double,
                  remaining: (cals: Double, p: Double, c: Double, f: Double)) async throws -> CravingResult {
         try await ensureSession()
         guard let token = accessToken else { throw APIError.noSession }
@@ -446,6 +446,7 @@ actor ScanAPI {
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         req.httpBody = try JSONSerialization.data(withJSONObject: [
             "craving": text, "intensity": intensity, "goal": goal,
+            "target": ["calories": dailyCalories],
             "remaining": ["calories": remaining.cals, "protein_g": remaining.p, "carbs_g": remaining.c, "fat_g": remaining.f],
         ])
         let (data, resp) = try await URLSession.shared.data(for: req)

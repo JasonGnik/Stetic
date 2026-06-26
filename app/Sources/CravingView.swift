@@ -81,20 +81,21 @@ struct CravingView: View {
                     .padding(14)
                     .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1)))
 
-                    Button { Task { await fetch() } } label: {
-                        HStack(spacing: 8) {
-                            if loading { ProgressView().tint(Color(hex: 0x0E0E10)) }
-                            Image(systemName: "wand.and.stars").font(.system(size: 15, weight: .bold))
-                            Text(loading ? "Cooking it up…" : "Get my fix").font(.system(size: 15, weight: .bold))
+                    if !loading {
+                        Button { Task { await fetch() } } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "wand.and.stars").font(.system(size: 15, weight: .bold))
+                                Text(result == nil ? "Get my fix" : "New idea").font(.system(size: 15, weight: .bold))
+                            }
+                            .frame(maxWidth: .infinity).padding(14)
+                            .background(RoundedRectangle(cornerRadius: 13).fill(canFetch ? Theme.acc : Theme.line))
+                            .foregroundStyle(canFetch ? Color(hex: 0x0E0E10) : Theme.mut)
                         }
-                        .frame(maxWidth: .infinity).padding(14)
-                        .background(RoundedRectangle(cornerRadius: 13).fill(canFetch ? Theme.acc : Theme.line))
-                        .foregroundStyle(canFetch ? Color(hex: 0x0E0E10) : Theme.mut)
-                    }
-                    .disabled(!canFetch || loading)
+                        .disabled(!canFetch)
+                    } else { cookingLoader }
 
                     if let error { Text(error).font(.system(size: 12)).foregroundStyle(Theme.red) }
-                    if let result { resultCard(result) }
+                    if let result, !loading { resultCard(result) }
                 }
                 .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
             }
@@ -104,6 +105,32 @@ struct CravingView: View {
     }
 
     private var canFetch: Bool { text.trimmingCharacters(in: .whitespaces).count >= 2 }
+
+    private var cookingLoader: some View {
+        let msgs = ["Reading your macros…", "Finding your fix…", "Making it fit…", "Plating it up…"]
+        return TimelineView(.animation) { tl in
+            let t = tl.date.timeIntervalSinceReferenceDate
+            let i = Int(t / 0.9) % msgs.count
+            let pulse: CGFloat = CGFloat(sin(t * 3) * 0.5 + 0.5)
+            VStack(spacing: 14) {
+                ZStack {
+                    ForEach(0..<3, id: \.self) { k in
+                        let d: CGFloat = 46 + CGFloat(k) * 20 + pulse * 10
+                        Circle().stroke(Theme.acc.opacity(0.35 - Double(k) * 0.1), lineWidth: 2)
+                            .frame(width: d, height: d)
+                            .opacity(1 - Double(pulse) * 0.3)
+                    }
+                    Image(systemName: "wand.and.stars").font(.system(size: 26)).foregroundStyle(Theme.acc)
+                        .rotationEffect(.degrees(Double(pulse) * 14 - 7))
+                }
+                .frame(height: 110)
+                Text(msgs[i]).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+                    .contentTransition(.opacity).animation(.easeInOut, value: i)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 18)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+        }
+    }
 
     private func resultCard(_ r: CravingResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -123,36 +150,55 @@ struct CravingView: View {
                 macro("Cals", "\(Int(r.calories))"); macro("P", "\(Int(r.protein_g))g")
                 macro("C", "\(Int(r.carbs_g))g"); macro("F", "\(Int(r.fat_g))g")
             }
-            if !r.fit_tip.isEmpty {
+            // honest verdict for today
+            if !r.verdict.isEmpty {
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Theme.acc).padding(.top, 1)
-                    Text(r.fit_tip).font(.system(size: 12.5)).foregroundStyle(Color(hex: 0xD2D2D8)).lineSpacing(2)
+                    Image(systemName: r.fits_today ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                        .font(.system(size: 13)).foregroundStyle(r.fits_today ? Theme.acc : Theme.amber).padding(.top, 1)
+                    Text(r.verdict).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(r.fits_today ? Color(hex: 0xD2D2D8) : Color(hex: 0xE6E0CF)).lineSpacing(2)
                 }
             }
-            if !r.adjustments.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("TO MAKE ROOM").font(.system(size: 9.5, weight: .bold)).tracking(0.5).foregroundStyle(Theme.mut)
-                    ForEach(r.adjustments, id: \.self) { a in
+            // what's in it / how to make it
+            if !r.ingredients.isEmpty {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("WHAT'S IN IT").font(.system(size: 9.5, weight: .bold)).tracking(0.5).foregroundStyle(Theme.mut)
+                    ForEach(r.ingredients, id: \.self) { ing in
                         HStack(alignment: .top, spacing: 7) {
-                            Image(systemName: "arrow.right").font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.acc).padding(.top, 3)
-                            Text(a).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                            Circle().fill(Theme.acc).frame(width: 4, height: 4).padding(.top, 6)
+                            Text(ing).font(.system(size: 12)).foregroundStyle(Color(hex: 0xC9C9CF))
                         }
                     }
                 }
             }
-            HStack(spacing: 10) {
-                Button { Task { await fetch() } } label: {
-                    Text("Try again").font(.system(size: 14, weight: .bold)).frame(maxWidth: .infinity).padding(12)
-                        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card)).foregroundStyle(Theme.txt)
-                }
-                Button { onLog(r.asMeal); dismiss() } label: {
-                    Text("Log it").font(.system(size: 14, weight: .bold)).frame(maxWidth: .infinity).padding(12)
-                        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
-                }
+            if r.fits_today && !r.adjustments.isEmpty {
+                planBlock("TO MAKE ROOM TODAY", r.adjustments)
+            }
+            if !r.fits_today && !r.tomorrow_plan.isEmpty {
+                planBlock("FIT IT IN TOMORROW", r.tomorrow_plan)
+            }
+            if !r.fit_tip.isEmpty {
+                Text(r.fit_tip).font(.system(size: 11.5)).foregroundStyle(Theme.mut).italic()
+            }
+            Button { onLog(r.asMeal); dismiss() } label: {
+                Text(r.fits_today ? "Log it" : "Log it anyway").font(.system(size: 15, weight: .bold))
+                    .frame(maxWidth: .infinity).padding(13)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.acc.opacity(0.25), lineWidth: 1)))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 16).stroke((r.fits_today ? Theme.acc : Theme.amber).opacity(0.3), lineWidth: 1)))
+    }
+
+    private func planBlock(_ title: String, _ lines: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.system(size: 9.5, weight: .bold)).tracking(0.5).foregroundStyle(Theme.mut)
+            ForEach(lines, id: \.self) { l in
+                HStack(alignment: .top, spacing: 7) {
+                    Image(systemName: "arrow.right").font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.acc).padding(.top, 3)
+                    Text(l).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                }
+            }
+        }
     }
 
     private func macro(_ k: String, _ v: String) -> some View {
@@ -167,7 +213,8 @@ struct CravingView: View {
     private func fetch() async {
         error = nil; loading = true
         do {
-            let r = try await ScanAPI.shared.craving(text, intensity: levels[Int(intensity)], goal: goal, remaining: remaining)
+            let r = try await ScanAPI.shared.craving(text, intensity: levels[Int(intensity)], goal: goal,
+                                                     dailyCalories: target?.calories ?? 0, remaining: remaining)
             await MainActor.run { result = r; loading = false }
         } catch {
             await MainActor.run { self.error = "Couldn't get a suggestion — try again."; loading = false }

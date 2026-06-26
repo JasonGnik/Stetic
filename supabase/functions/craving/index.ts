@@ -25,10 +25,14 @@ const SCHEMA = {
     protein_g: { type: "number" },
     carbs_g: { type: "number" },
     fat_g: { type: "number" },
-    fit_tip: { type: "string" },       // one line, 80/20 framing
-    adjustments: { type: "array", items: { type: "string" } }, // 1-3 short tweaks to other meals
+    ingredients: { type: "array", items: { type: "string" } },  // what's in it / how to make it
+    fits_today: { type: "boolean" },   // does it realistically fit the remaining calories?
+    verdict: { type: "string" },       // honest one-liner about today
+    adjustments: { type: "array", items: { type: "string" } }, // if it fits: tweaks to other meals to make room
+    tomorrow_plan: { type: "array", items: { type: "string" } }, // if it doesn't: how to budget for it tomorrow, per meal
+    fit_tip: { type: "string" },       // 80/20 framing
   },
-  required: ["name", "version", "calories", "protein_g", "carbs_g", "fat_g", "fit_tip"],
+  required: ["name", "version", "calories", "protein_g", "carbs_g", "fat_g", "ingredients", "fits_today", "verdict", "fit_tip"],
 } as const;
 
 const INTENSITY: Record<string, string> = {
@@ -57,13 +61,20 @@ Deno.serve(async (req) => {
   const remaining = body.remaining ?? {};
   const goal = String(body.goal ?? "stay on track");
 
+  const remCal = Math.round(remaining.calories ?? 0);
+  const dayTarget = Math.round(body.target?.calories ?? 0);
   const prompt =
     `The user is craving "${craving}". Goal: ${goal}. ${intensity} ` +
-    `They have roughly ${Math.round(remaining.calories ?? 0)} kcal, ${Math.round(remaining.protein_g ?? 0)}g protein, ` +
-    `${Math.round(remaining.carbs_g ?? 0)}g carbs, ${Math.round(remaining.fat_g ?? 0)}g fat left today. ` +
-    `Name the specific food, give a 'version' label, a realistic portion, and realistic macros for one serving. ` +
-    `Write a one-line 'fit_tip' using the 80/20 principle (enjoy it, stay on track). Give 1-3 short 'adjustments' ` +
-    `to other meals today to make room (e.g. "Swap rice for greens at dinner"). Numbers only — never refuse or lecture.`;
+    `They have ~${remCal} kcal left TODAY (out of a ${dayTarget || "?"} kcal daily target), with ` +
+    `~${Math.round(remaining.protein_g ?? 0)}g protein, ~${Math.round(remaining.carbs_g ?? 0)}g carbs, ~${Math.round(remaining.fat_g ?? 0)}g fat left. ` +
+    `Name the specific food, a 'version' label, a realistic portion, and realistic macros for one serving. ` +
+    `List 'ingredients' (3-7 items, how it's actually made — e.g. "5oz lean ground beef", "1 brioche bun", "lettuce, tomato, onion"). ` +
+    `Decide 'fits_today': true only if its calories realistically fit what's left today without wrecking the plan. ` +
+    `Write an honest one-line 'verdict' about today. ` +
+    `IF it fits: give 1-3 'adjustments' to other meals today to make room and leave 'tomorrow_plan' empty. ` +
+    `IF it does NOT fit: be honest that today's too tight, leave 'adjustments' empty, and give a 'tomorrow_plan' of 3-4 lines ` +
+    `budgeting it into TOMORROW across meals using their daily target (e.g. "Breakfast: ~400 kcal — eggs & oats", "Lunch: ~500 kcal — chicken & rice", "Dinner: save ~900 kcal for the ${craving}"). ` +
+    `Always give a short 80/20 'fit_tip'. Numbers only — never refuse or lecture.`;
 
   const reqBody = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -89,8 +100,12 @@ Deno.serve(async (req) => {
         protein_g: Math.round(result.protein_g ?? 0),
         carbs_g: Math.round(result.carbs_g ?? 0),
         fat_g: Math.round(result.fat_g ?? 0),
-        fit_tip: String(result.fit_tip ?? ""),
+        ingredients: Array.isArray(result.ingredients) ? result.ingredients.map(String).slice(0, 8) : [],
+        fits_today: result.fits_today !== false,
+        verdict: String(result.verdict ?? ""),
         adjustments: Array.isArray(result.adjustments) ? result.adjustments.map(String).slice(0, 3) : [],
+        tomorrow_plan: Array.isArray(result.tomorrow_plan) ? result.tomorrow_plan.map(String).slice(0, 4) : [],
+        fit_tip: String(result.fit_tip ?? ""),
       },
     });
   } catch (err) {

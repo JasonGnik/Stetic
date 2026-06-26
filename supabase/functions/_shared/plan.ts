@@ -61,7 +61,7 @@ OUTPUT REQUIREMENTS:
 - goal_label: a short human label for the goal driving this plan (e.g. "Build muscle — lean bulk", "Lose fat — get lean", "Recomp").
 - summary: 2-3 punchy sentences naming their weak points and the strategy. Never name a coach, brand, or program.
 - macros: compute in this order:
-  1) PROTEIN FIRST: ~1.0 g per lb of BODYWEIGHT (use weight if known, else estimate from height/build). Protein is 4 kcal/g.
+  1) PROTEIN FIRST: ~1.1 g per lb of BODYWEIGHT (use weight if known, else estimate from height/build). Protein is 4 kcal/g.
   2) TDEE: Mifflin-St Jeor BMR [men: 10·kg + 6.25·cm − 5·age + 5; women: same but −161 instead of +5] × activity factor matching their OUTSIDE-GYM activity, then training on top: sedentary ≈ 1.4, light ≈ 1.55, active ≈ 1.725, very_active ≈ 1.9 (add ~0.1 since they also train).
   3) Adjust TDEE for goal AND pace: lose_fat = deficit, gain_muscle/both = surplus. Scale the size by pace — slow ≈ ±250 kcal, recommended ≈ −450/+300, aggressive ≈ −650/+450.
   4) Remaining calories after protein are split 65% to CARBS / 35% to FAT (carbs 4 kcal/g, fat 9 kcal/g). Constraints: fat ≥ 0.3 g/lb of LEAN mass; carbs ≥ ~120 g.

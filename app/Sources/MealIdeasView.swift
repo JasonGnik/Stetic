@@ -38,12 +38,13 @@ enum SampleMeals {
 
 struct MealIdeasView: View {
     var onLog: (SampleMeal) -> Void
+    var onCraving: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Meal ideas").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text("Ideas & cravings").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
@@ -54,6 +55,21 @@ struct MealIdeasView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    Button { onCraving() } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "wand.and.stars").font(.system(size: 16, weight: .bold))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Craving something?").font(.system(size: 15, weight: .heavy))
+                                Text("Get an AI fix that still fits your day").font(.system(size: 11.5)).foregroundStyle(Theme.mut)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+                        }
+                        .foregroundStyle(Theme.acc)
+                        .padding(14).frame(maxWidth: .infinity)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.acc.opacity(0.10)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.acc.opacity(0.4), lineWidth: 1)))
+                    }
+                    Text("MEAL IDEAS").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
                     ForEach(MealType.allCases) { type in
                         let meals = SampleMeals.all.filter { $0.type == type }
                         VStack(alignment: .leading, spacing: 8) {

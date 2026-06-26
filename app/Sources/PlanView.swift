@@ -301,6 +301,14 @@ struct PlanView: View {
             }
             Text(m.rationale).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineSpacing(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: "info.circle.fill").font(.system(size: 11)).foregroundStyle(Theme.acc).padding(.top, 1)
+                Text("Hit your calories every day — that's what matters most. Protein is the priority; carbs and fat can flex day to day (a little over on fat is fine). Treat these as daily averages.")
+                    .font(.system(size: 11.5)).foregroundStyle(Color(hex: 0xC9C9CF)).lineSpacing(3)
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card))
         }
     }
     private func macroTile(_ k: String, _ v: String, _ c: Color) -> some View {

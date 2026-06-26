@@ -163,9 +163,13 @@ struct CravingResult: Codable, Identifiable {
     var protein_g: Double = 0
     var carbs_g: Double = 0
     var fat_g: Double = 0
+    var ingredients: [String] = []
+    var fits_today: Bool = true
+    var verdict: String = ""
     var fit_tip: String = ""
     var adjustments: [String] = []
-    enum CodingKeys: String, CodingKey { case name, version, portion, calories, protein_g, carbs_g, fat_g, fit_tip, adjustments }
+    var tomorrow_plan: [String] = []
+    enum CodingKeys: String, CodingKey { case name, version, portion, calories, protein_g, carbs_g, fat_g, ingredients, fits_today, verdict, fit_tip, adjustments, tomorrow_plan }
     var asMeal: MealEstimate {
         MealEstimate(name: name, calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, confidence: "craving")
     }

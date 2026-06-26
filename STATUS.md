@@ -162,5 +162,16 @@ USDA via DEMO_KEY = ~30 req/hr (rate-limits at volume). Get a free `FDC_API_KEY`
 ## NEXT: Full MyFitnessPal food model (chosen, not yet built)
 User chose the full model. To build: a user **Food catalog** (create manually or by label scan; foods are reusable), a staging **Cart** (add foods + portions), then **assign to a meal/time** and optionally **save the combo as a Meal**. Big data-model change — own focused build. Also: consider upping protein ratio / trimming carbs in `plan.ts` (current split is carb-heavy, ~414g).
 
+## Craving v2 + protein 1.1 + step animation + daily quotes (part 10)
+- **Protein → 1.1 g/lb** in `plan.ts`. Static macro guidance added to PlanView: "hit calories daily; protein is the priority; carbs/fat flex; treat as averages." (Consistent w/ JP: calories master lever, protein priority, carbs/fat flexible.)
+- **Craving v2:** function now reasons about REMAINING calories — `fits_today` verdict, `ingredients` (how to make it), `adjustments` (fit today) OR `tomorrow_plan` (per-meal budget for tomorrow when it doesn't fit). Cooler animated "cooking" loader (pulsing rings + cycling steps). Result card shows verdict (lime/amber), ingredients, and the right plan block.
+- **Ideas & cravings:** renamed Ideas button; craving lives inside that sheet now (removed standalone button).
+- **Step goal animation:** steps card shows a progress ring toward the goal; hitting it flips to a checkmark + "Goal hit — streak safe" and flares the streak flame (steps kept the streak alive).
+- **Daily quote** card on Today (stoics / disciplined figures; rotates daily). `Quotes.swift`.
+- **Deploy:** `supabase functions deploy craving` (updated). Re-generate a plan to get the 1.1 protein split.
+
+## NEXT (proposed): daily mood / readiness check-in
+How they feel about their goal + mood + workout-readiness that day → motivate, build consistency (pool stats: "you showed up on low days before and felt better after"; "today's the day that rewires the mind"). Design pending — see chat.
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

@@ -49,7 +49,6 @@ struct NutritionView: View {
                 }
                 summaryCard
                 HStack(spacing: 10) { scanButton; ideasButton }
-                cravingButton
                 if let errorMsg { Text(errorMsg).font(.system(size: 12)).foregroundStyle(Theme.red) }
                 ForEach(MealType.allCases) { mealSection($0) }
             }
@@ -67,7 +66,8 @@ struct NutritionView: View {
         }
         .sheet(isPresented: $showManual) { manualSheet }
         .sheet(isPresented: $showIdeas) {
-            MealIdeasView { meal in Task { addingType = meal.type; await save(meal.asMeal) } }
+            MealIdeasView(onLog: { meal in Task { addingType = meal.type; await save(meal.asMeal) } },
+                          onCraving: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showCraving = true } })
         }
         .sheet(isPresented: $showSaved) {
             SavedMealsView { sm in Task { await save(sm.asEstimate) } }
@@ -160,25 +160,11 @@ struct NutritionView: View {
         }
     }
 
-    private var cravingButton: some View {
-        Button { showCraving = true } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "wand.and.stars").font(.system(size: 15, weight: .bold))
-                Text("Craving something? Make it fit").font(.system(size: 14, weight: .bold))
-                Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
-            }
-            .foregroundStyle(Theme.acc)
-            .padding(14).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc.opacity(0.10)).overlay(RoundedRectangle(cornerRadius: 13).stroke(Theme.acc.opacity(0.4), lineWidth: 1)))
-        }
-    }
-
     private var ideasButton: some View {
         Button { showIdeas = true } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "lightbulb.fill").font(.system(size: 15, weight: .bold))
-                Text("Ideas").font(.system(size: 15, weight: .bold))
+            HStack(spacing: 6) {
+                Image(systemName: "lightbulb.fill").font(.system(size: 14, weight: .bold))
+                Text("Ideas & cravings").font(.system(size: 14, weight: .bold))
             }
             .frame(maxWidth: .infinity).padding(14)
             .background(RoundedRectangle(cornerRadius: 13).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 13).stroke(Theme.line, lineWidth: 1)))

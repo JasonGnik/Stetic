@@ -105,6 +105,7 @@ struct HomeView: View {
                 HStack(spacing: 12) { streakCard; stepsCard }
                 upNextCard
                 fuelCard
+                DailyQuoteCard()
             }
             .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 32)
         }
@@ -270,16 +271,28 @@ struct HomeView: View {
             else { Task { await HealthKitManager.shared.requestAuth(); healthConnected = true
                 steps = await HealthKitManager.shared.todaySteps(); recordStepDay() } }
         } label: {
+            let progress = (stepStreakOn && stepGoal > 0) ? min(1, Double(steps) / Double(stepGoal)) : 0
+            let met = stepStreakOn && stepGoal > 0 && steps >= stepGoal
             VStack(alignment: .leading, spacing: 10) {
                 ZStack {
-                    Circle().fill(Theme.acc.opacity(0.14)).frame(width: 50, height: 50)
-                    Image(systemName: "figure.walk").font(.system(size: 22)).foregroundStyle(Theme.acc)
+                    if stepStreakOn && stepGoal > 0 {
+                        Circle().stroke(Theme.line, lineWidth: 4).frame(width: 50, height: 50)
+                        Circle().trim(from: 0, to: progress)
+                            .stroke(Theme.acc, style: .init(lineWidth: 4, lineCap: .round))
+                            .rotationEffect(.degrees(-90)).frame(width: 50, height: 50)
+                            .animation(.easeOut(duration: 0.5), value: progress)
+                    } else {
+                        Circle().fill(Theme.acc.opacity(0.14)).frame(width: 50, height: 50)
+                    }
+                    Image(systemName: met ? "checkmark" : "figure.walk")
+                        .font(.system(size: met ? 20 : 22, weight: met ? .heavy : .regular)).foregroundStyle(Theme.acc)
                 }
+                .scaleEffect(met && streakFlare ? 1.15 : 1)
                 VStack(alignment: .leading, spacing: 2) {
                     if healthConnected {
                         Text(steps.formatted()).font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
-                        Text(stepStreakOn ? "of \(stepGoal.formatted()) steps" : "Steps today")
-                            .font(.system(size: 11)).foregroundStyle(stepStreakOn && steps >= stepGoal ? Theme.acc : Theme.mut)
+                        Text(met ? "Goal hit — streak safe" : (stepStreakOn ? "of \(stepGoal.formatted()) steps" : "Steps today"))
+                            .font(.system(size: 11, weight: met ? .bold : .regular)).foregroundStyle(met ? Theme.acc : Theme.mut)
                     } else {
                         Text("Steps").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
                         Text("Connect Health").font(.system(size: 11)).foregroundStyle(Theme.acc)
@@ -295,7 +308,14 @@ struct HomeView: View {
     private func recordStepDay() {
         guard stepStreakOn, stepGoal > 0, steps >= stepGoal else { return }
         var days = activityDates
-        if !days.contains(LogDate.today) { days.append(LogDate.today); activityCSV = days.joined(separator: ",") }
+        guard !days.contains(LogDate.today) else { return }
+        days.append(LogDate.today); activityCSV = days.joined(separator: ",")
+        // Steps just kept the streak alive today — flare the flame to show it.
+        Task { @MainActor in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) { streakFlare = true }
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            withAnimation(.easeOut(duration: 0.4)) { streakFlare = false }
+        }
     }
 
     @ViewBuilder private var upNextCard: some View {
