@@ -417,7 +417,7 @@ actor ScanAPI {
         return (try? JSONDecoder().decode(Wrap.self, from: data))?.foods ?? []
     }
 
-    func scanMeal(_ image: ImageInput) async throws -> MealEstimate {
+    func scanMeal(_ image: ImageInput, mode: String = "meal") async throws -> MealEstimate {
         try await ensureSession()
         guard let token = accessToken else { throw APIError.noSession }
         var req = URLRequest(url: Config.baseURL.appending(path: "functions/v1/meal-scan"))
@@ -425,13 +425,29 @@ actor ScanAPI {
         req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
-        struct Body: Encodable { let image: Img; struct Img: Encodable { let mimeType: String; let dataB64: String } }
-        req.httpBody = try JSONEncoder().encode(Body(image: .init(mimeType: image.mimeType, dataB64: image.dataB64)))
+        struct Body: Encodable { let image: Img; let mode: String; struct Img: Encodable { let mimeType: String; let dataB64: String } }
+        req.httpBody = try JSONEncoder().encode(Body(image: .init(mimeType: image.mimeType, dataB64: image.dataB64), mode: mode))
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard code(resp) == 200 else { throw APIError.http(code(resp), String(data: data, encoding: .utf8) ?? "") }
         struct Wrap: Decodable { let meal: MealEstimate }
         guard let w = try? JSONDecoder().decode(Wrap.self, from: data) else { throw APIError.decode }
         return w.meal
+    }
+
+    // Barcode → product via OpenFoodFacts (through food-search).
+    func searchBarcode(_ barcode: String) async throws -> FoodHit? {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        var req = URLRequest(url: Config.baseURL.appending(path: "functions/v1/food-search"))
+        req.httpMethod = "POST"; req.timeoutInterval = 30
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["barcode": barcode])
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard code(resp) == 200 else { return nil }
+        struct Wrap: Decodable { let foods: [FoodHit] }
+        return (try? JSONDecoder().decode(Wrap.self, from: data))?.foods.first
     }
 
     func logMeal(_ m: MealEstimate, mealType: String = "other") async throws {

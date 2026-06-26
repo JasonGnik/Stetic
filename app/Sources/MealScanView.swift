@@ -7,6 +7,7 @@ struct MealScanView: View {
     let image: UIImage
     let dataB64: String
     var mealType: String = MealType.current().rawValue
+    var scanMode: String = "meal"   // "meal" (plate) or "label" (nutrition facts)
     var onLogged: () -> Void
     var preset: MealEstimate? = nil   // DEBUG: skip the network and show a sample result
     @Environment(\.dismiss) private var dismiss
@@ -320,7 +321,7 @@ struct MealScanView: View {
     }
 
     private func scanOnce() async throws -> MealEstimate {
-        try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: dataB64))
+        try await ScanAPI.shared.scanMeal(.init(mimeType: "image/jpeg", dataB64: dataB64), mode: scanMode)
     }
     private func isEmpty(_ e: MealEstimate?) -> Bool {
         guard let e else { return true }

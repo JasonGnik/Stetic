@@ -130,5 +130,17 @@ Covered: programming, nutrition+scan, progress, weak points, accountability (str
 - Supabase Auth: enable **Email** provider; enable **Google** provider (OAuth client) and add redirect URL `stetic://auth-callback` to allowed URLs.
 - Optional: set `FDC_API_KEY` secret for USDA (else DEMO_KEY, rate-limited).
 
+## Cal AI capture + barcode/label + sample meals (part 7)
+- **FoodCameraView:** custom AVFoundation camera, Cal AI-style — live preview, modes **Scan Food / Barcode / Food Label**, STETIC branding, "?" accuracy disclaimer, flash, capture button, photo-library shortcut. Barcode auto-detects (AVCaptureMetadataOutput). Graceful no-camera fallback (simulator) keeps the library button usable. Needs **device QA** (no camera in sim).
+- **Modes wired:** Scan Food → meal-scan (`mode:"meal"`); Food Label → meal-scan (`mode:"label"`, reads the nutrition panel per-serving); Barcode → `searchBarcode` (OpenFoodFacts) → results with servings stepper. meal-scan function now branches prompt on `mode`.
+- **Sample meals:** `MealIdeasView` — 16 curated high-protein meals by type, one tap logs to today. "Ideas" button next to "Scan a meal".
+- **Dev:** STETIC_FOODCAM=1 previews the capture overlay.
+
+### FDC key (answered)
+USDA via DEMO_KEY = ~30 req/hr (rate-limits at volume). Get a free `FDC_API_KEY` (api.data.gov) for 1,000/hr; OpenFoodFacts has no key (fair-use). Recommend setting `FDC_API_KEY`.
+
+### Still open
+- **Light mode** — deferred (whole app themes off `Theme` dark constants; real effort). Confirm before building.
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

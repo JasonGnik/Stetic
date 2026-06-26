@@ -49,6 +49,8 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_FOODCAM"] == "1" {
+            FoodCameraView(onCapture: { _, _ in }, onBarcode: { _ in })   // DEV: preview the capture overlay
         } else if env["STETIC_MEALSCAN"] == "3" {
             MealCoverProbe()   // DEV: present MealScanView in a fullScreenCover like the Food tab
         } else if env["STETIC_MEALSCAN"] == "2" {

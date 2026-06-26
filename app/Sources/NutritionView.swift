@@ -18,6 +18,10 @@ struct NutritionView: View {
     @State private var editing: MealLog?
     @State private var errorMsg: String?
     @State private var addingType: MealType = .current()
+    @State private var scanMode = "meal"
+    @State private var presetMeal: MealEstimate?
+    @State private var pendingBarcode: String?
+    @State private var showIdeas = false
 
     // manual / edit fields
     @State private var mName = ""
@@ -36,7 +40,7 @@ struct NutritionView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Food").font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                 summaryCard
-                scanButton
+                HStack(spacing: 10) { scanButton; ideasButton }
                 if let errorMsg { Text(errorMsg).font(.system(size: 12)).foregroundStyle(Theme.red) }
                 ForEach(MealType.allCases) { mealSection($0) }
             }
@@ -47,22 +51,50 @@ struct NutritionView: View {
         .task { await reload() }
         .onChange(of: pickerItem) { _, v in Task { await loadPhoto(v) } }
         .onChange(of: showCamera) { _, shown in
-            if !shown && pendingPresent { pendingPresent = false; showScan = true }
+            if !shown && pendingPresent {
+                pendingPresent = false
+                if let code = pendingBarcode { pendingBarcode = nil; Task { await resolveBarcode(code) } }
+                else { showScan = true }
+            }
         }
         .sheet(isPresented: $showManual) { manualSheet }
+        .sheet(isPresented: $showIdeas) {
+            MealIdeasView { meal in Task { addingType = meal.type; await save(meal.asMeal) } }
+        }
         .sheet(item: $editing) { editSheet($0) }
         .sheet(isPresented: $showSearch) {
             FoodSearchView(onPick: { hit in Task { await save(hit.asMeal) } },
                            onManual: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { startManual() } })
         }
         .fullScreenCover(isPresented: $showCamera) {
-            CameraPicker { img in present(img) }.ignoresSafeArea()
+            FoodCameraView(
+                onCapture: { img, m in
+                    scanImage = img
+                    scanB64 = (img.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
+                    scanMode = (m == .foodLabel) ? "label" : "meal"
+                    presetMeal = nil; pendingBarcode = nil
+                    pendingPresent = true; showCamera = false
+                },
+                onBarcode: { code in
+                    pendingBarcode = code; pendingPresent = true; showCamera = false
+                })
         }
         .fullScreenCover(isPresented: $showScan) {
-            if let img = scanImage, let b64 = scanB64 {
-                MealScanView(image: img, dataB64: b64, mealType: addingType.rawValue,
+            if let preset = presetMeal {
+                MealScanView(image: UIImage(), dataB64: "", mealType: addingType.rawValue,
+                             onLogged: { Task { await reload() } }, preset: preset)
+            } else if let img = scanImage, let b64 = scanB64 {
+                MealScanView(image: img, dataB64: b64, mealType: addingType.rawValue, scanMode: scanMode,
                              onLogged: { Task { await reload() } })
             }
+        }
+    }
+
+    private func resolveBarcode(_ code: String) async {
+        let hit = try? await ScanAPI.shared.searchBarcode(code)
+        await MainActor.run {
+            if let hit { presetMeal = hit.asMeal; showScan = true }
+            else { errorMsg = "Couldn't find that barcode — try Scan Food instead." }
         }
     }
 
@@ -108,6 +140,18 @@ struct NutritionView: View {
             .frame(maxWidth: .infinity).padding(14)
             .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
             .foregroundStyle(Color(hex: 0x0E0E10))
+        }
+    }
+
+    private var ideasButton: some View {
+        Button { showIdeas = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "lightbulb.fill").font(.system(size: 15, weight: .bold))
+                Text("Ideas").font(.system(size: 15, weight: .bold))
+            }
+            .frame(maxWidth: .infinity).padding(14)
+            .background(RoundedRectangle(cornerRadius: 13).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 13).stroke(Theme.line, lineWidth: 1)))
+            .foregroundStyle(Theme.txt)
         }
     }
 
@@ -255,13 +299,6 @@ struct NutritionView: View {
         scanB64 = jpeg.base64EncodedString()
         try? await Task.sleep(nanoseconds: 450_000_000)   // let the picker finish dismissing
         showScan = true
-    }
-
-    private func present(_ ui: UIImage) {
-        scanImage = ui
-        scanB64 = (ui.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
-        pendingPresent = true
-        showCamera = false
     }
 
     private func save(_ est: MealEstimate) async {

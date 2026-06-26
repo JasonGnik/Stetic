@@ -74,12 +74,18 @@ Deno.serve(async (req) => {
     if (!active) return json({ error: "subscription required" }, 402);
   }
 
-  let payload: { image?: { mimeType: string; dataB64: string } };
+  let payload: { image?: { mimeType: string; dataB64: string }; mode?: string };
   try { payload = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
   const image = payload.image;
   if (!image?.dataB64 || !image?.mimeType) return json({ error: "no image" }, 400);
 
-  const prompt =
+  const labelPrompt =
+    `This is a photo of a nutrition facts label (and possibly the product). Read the label EXACTLY ` +
+    `as printed. Return ONE item named after the product (or "Packaged food" if unknown) with portion ` +
+    `set to the stated serving size (e.g. "1 serving (40g)"). Use the PER-SERVING calories and macros ` +
+    `from the label. The top-level totals must equal that single item. confidence "high" if the label ` +
+    `is legible. Numbers only — do not refuse.`;
+  const mealPrompt =
     `You are a nutrition estimator. Identify the food/meal in this photo. List EACH distinct food ` +
     `in 'items' with a short name, a rough portion, AND its own calories + macros for the portion ` +
     `shown (e.g. {name:"Chicken breast", portion:"~200g", calories:330, protein_g:62, carbs_g:0, fat_g:7}). ` +
@@ -87,6 +93,7 @@ Deno.serve(async (req) => {
     `meal naturally (e.g. "Chicken, rice & broccoli"). Be realistic, not rounded to marketing numbers. ` +
     `Set confidence by how clearly you can judge the portions. Put any key assumption in 'note'. ` +
     `Numbers only — do not refuse; give your best estimate.`;
+  const prompt = payload.mode === "label" ? labelPrompt : mealPrompt;
 
   const body = {
     contents: [{
