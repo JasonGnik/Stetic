@@ -17,6 +17,8 @@ struct NutritionView: View {
     @State private var showSaved = false
     @State private var showReminders = false
     @State private var showCraving = false
+    @State private var showCalCelebration = false
+    @AppStorage("calGoalHitDate") private var calGoalHitDate = ""   // last day we celebrated hitting calories
 
     // manual / edit fields
     @State private var mName = ""
@@ -29,6 +31,41 @@ struct NutritionView: View {
     private var protein: Double { meals.reduce(0) { $0 + $1.protein_g } }
     private var carbs: Double { meals.reduce(0) { $0 + $1.carbs_g } }
     private var fat: Double { meals.reduce(0) { $0 + $1.fat_g } }
+
+    // Celebrate the first time today's calories reach the target (great for bulking; fires for any goal).
+    private func checkCalGoal(_ newCals: Double) {
+        guard let t = target, t.calories > 0, newCals >= t.calories,
+              calGoalHitDate != LogDate.today else { return }
+        calGoalHitDate = LogDate.today
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { showCalCelebration = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            await MainActor.run { withAnimation { showCalCelebration = false } }
+        }
+    }
+
+    private var calCelebration: some View {
+        ZStack {
+            Color.black.opacity(0.5).ignoresSafeArea()
+            VStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(Theme.acc.opacity(0.16)).frame(width: 86, height: 86)
+                    Image(systemName: "checkmark.seal.fill").font(.system(size: 44)).foregroundStyle(Theme.acc)
+                }
+                Text("Calories hit 🎯").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text("You fueled today's target. Consistency is what builds the physique.")
+                    .font(.system(size: 13)).foregroundStyle(Theme.mut).multilineTextAlignment(.center)
+                    .lineSpacing(2).padding(.horizontal, 28)
+            }
+            .padding(26)
+            .background(RoundedRectangle(cornerRadius: 22).fill(Theme.bg)
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.acc.opacity(0.3), lineWidth: 1)))
+            .padding(.horizontal, 40)
+        }
+        .transition(.opacity)
+        .sensoryFeedback(.success, trigger: showCalCelebration)
+        .onTapGesture { withAnimation { showCalCelebration = false } }
+    }
 
     var body: some View {
         ScrollView {
@@ -50,6 +87,8 @@ struct NutritionView: View {
         }
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
+        .overlay { if showCalCelebration { calCelebration } }
+        .onChange(of: cals) { _, newCals in checkCalGoal(newCals) }
         .task { await reload() }
         .sheet(isPresented: $showManual) { manualSheet.keyboardDone() }
         .sheet(isPresented: $showIdeas) {
