@@ -40,7 +40,16 @@ struct CheckInView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 question("How's your mood today?") {
-                    scale($mood, low: "Rough", high: "Great")
+                    HStack(spacing: 8) {
+                        ForEach(0..<5, id: \.self) { i in
+                            Button { mood = i + 1 } label: {
+                                Text(["😞", "😕", "🙂", "😀", "🔥"][i]).font(.system(size: 30))
+                                    .frame(maxWidth: .infinity).frame(height: 56)
+                                    .background(RoundedRectangle(cornerRadius: 14).fill(mood == i + 1 ? Theme.acc.opacity(0.18) : Theme.card)
+                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(mood == i + 1 ? Theme.acc : Theme.line, lineWidth: mood == i + 1 ? 2 : 1)))
+                            }
+                        }
+                    }
                 }
                 question("How confident are you about hitting your goal?") {
                     scale($confidence, low: "Not really", high: "Totally")
@@ -130,6 +139,15 @@ struct CheckInView: View {
                     HStack(alignment: .top, spacing: 8) {
                         Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 13)).foregroundStyle(Theme.acc).padding(.top, 1)
                         Text(line).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Color(hex: 0xD2D2D8)).lineSpacing(2)
+                    }
+                    .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card))
+                }
+                if lowDay {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "person.2.fill").font(.system(size: 13)).foregroundStyle(Theme.acc).padding(.top, 1)
+                        Text("People who train on a low-motivation day keep their streak about 2× longer.")
+                            .font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineSpacing(2)
                     }
                     .padding(14).frame(maxWidth: .infinity, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card))

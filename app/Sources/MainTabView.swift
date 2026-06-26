@@ -61,6 +61,7 @@ struct HomeView: View {
     @State private var meals: [MealLog] = []
     @State private var showCheckIn = false
     @State private var checkIns: [CheckIn] = []
+    @State private var showStreakInfo = false
     @AppStorage("healthConnected") private var healthConnected = false
     @State private var steps = 0
     @State private var showSchedule = false
@@ -81,6 +82,20 @@ struct HomeView: View {
         }
     }
     private var checkedInToday: Bool { checkIns.contains { $0.log_date == LogDate.today } }
+    private var todayCheckIn: CheckIn? { checkIns.first { $0.log_date == LogDate.today } }
+    private var checkInSummaryCard: some View {
+        let quote = Quotes.forReadiness(todayCheckIn?.readiness ?? 3)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.seal.fill").font(.system(size: 12)).foregroundStyle(Theme.acc)
+                Text("CHECKED IN TODAY").font(.system(size: 10.5, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+            }
+            Text(quote.text).font(.system(size: 14, weight: .semibold)).foregroundStyle(Color(hex: 0xD2D2D8)).lineSpacing(3)
+            Text("— \(quote.who)").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+    }
     private var isTrainingDay: Bool {
         let wd = Calendar.current.component(.weekday, from: Date())
         return trainingDays.contains(wd)
@@ -131,7 +146,7 @@ struct HomeView: View {
                 HStack(spacing: 12) { streakCard; stepsCard }
                 upNextCard
                 fuelCard
-                DailyQuoteCard()
+                if checkedInToday { checkInSummaryCard }
             }
             .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 32)
         }
@@ -143,6 +158,7 @@ struct HomeView: View {
             if healthConnected { steps = await HealthKitManager.shared.todaySteps(); recordStepDay() }
         }
         .sheet(isPresented: $showStepGoal) { StepGoalSheet() }
+        .sheet(isPresented: $showStreakInfo) { StreakInfoSheet(streak: streak, graceActive: graceActive) }
         .sheet(isPresented: $showCheckIn, onDismiss: { Task { checkIns = (try? await ScanAPI.shared.recentCheckIns()) ?? [] } }) {
             CheckInView(trainingDay: isTrainingDay, history: checkIns, workoutDates: workoutDates,
                         onStartSession: { if let d = upNext { session = d } }, onDone: {})
@@ -280,20 +296,27 @@ struct HomeView: View {
         return name.isEmpty ? part : "\(part), \(name)"
     }
 
+    private var graceActive: Bool { Streak.graceActive(from: workoutDates + (stepStreakOn ? activityDates : [])) }
     private var streakCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack {
-                Circle().fill(Color(hex: 0xFF7A1A).opacity(streakFlare ? 0.28 : 0.14)).frame(width: 50, height: 50)
-                FireFlame(size: 24, flare: streakFlare)
+        Button { showStreakInfo = true } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                ZStack {
+                    Circle().fill(Color(hex: 0xFF7A1A).opacity(streakFlare ? 0.28 : 0.14)).frame(width: 50, height: 50)
+                    FireFlame(size: 24, flare: streakFlare)
+                }
+                .scaleEffect(streakFlare ? 1.15 : 1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(streak) day\(streak == 1 ? "" : "s")").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text(streak == 0 ? "Start your streak" : (graceActive ? "Grace day — act to keep it" : "Day streak"))
+                        .font(.system(size: 11, weight: graceActive ? .bold : .regular))
+                        .foregroundStyle(graceActive ? Theme.amber : Theme.mut)
+                }
             }
-            .scaleEffect(streakFlare ? 1.15 : 1)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(streak) day\(streak == 1 ? "" : "s")").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
-                Text(streak == 0 ? "Start your streak" : "Day streak").font(.system(size: 11)).foregroundStyle(Theme.mut)
-            }
+            .padding(16).frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(graceActive ? Theme.amber.opacity(0.4) : .clear, lineWidth: 1)))
         }
-        .padding(16).frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+        .buttonStyle(.plain)
     }
 
     private var stepsCard: some View {
@@ -488,6 +511,53 @@ struct ScheduleSheet: View {
     }
 }
 
+// Explains how the streak works: one grace day, never miss twice, no compensating.
+struct StreakInfoSheet: View {
+    let streak: Int
+    let graceActive: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
+            ZStack {
+                Circle().fill(Color(hex: 0xFF7A1A).opacity(0.16)).frame(width: 72, height: 72)
+                FireFlame(size: 36, flare: true)
+            }
+            Text("\(streak)-day streak").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+            if graceActive {
+                Text("You missed yesterday — that's your one grace day. Train (or hit your steps) today to keep it.")
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.amber)
+                    .multilineTextAlignment(.center).padding(.horizontal, 10)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                rule("calendar", "One missed day is fine.", "Miss once and your streak lives. Miss twice in a row and it resets — \u{201C}never miss twice\u{201D} (James Clear).")
+                rule("scalemass", "Don't compensate.", "Overate yesterday? Don't crash-diet today. Under-ate? Don't binge. Just hit today's plan — consistency beats correction.")
+                rule("flame.fill", "Steps can save a rest day.", "Turn on the step goal and hitting it keeps the streak alive on days you don't train.")
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+            Button { dismiss() } label: {
+                Text("Got it").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .background(Theme.bg.ignoresSafeArea())
+        .presentationDetents([.height(480)])
+    }
+    private func rule(_ icon: String, _ title: String, _ body: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon).font(.system(size: 15)).foregroundStyle(Theme.acc).frame(width: 22).padding(.top, 1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
+                Text(body).font(.system(size: 12)).foregroundStyle(Theme.mut).lineSpacing(2)
+            }
+        }
+    }
+}
+
 // Set a daily step goal and opt in to step-goal days keeping the streak alive.
 struct StepGoalSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -498,7 +568,7 @@ struct StepGoalSheet: View {
         VStack(spacing: 16) {
             Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
             Text("Daily steps").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
-            Text("Set a step goal. On rest days, hitting it can keep your streak alive.")
+            Text("Set a step goal to keep your streak alive on rest days.")
                 .font(.system(size: 12)).foregroundStyle(Theme.mut).multilineTextAlignment(.center).padding(.horizontal, 20)
             HStack(spacing: 22) {
                 stepButton("minus") { goal = max(2000, goal - 500) }
@@ -508,9 +578,16 @@ struct StepGoalSheet: View {
                 }.frame(minWidth: 120)
                 stepButton("plus") { goal = min(25000, goal + 500) }
             }
-            Toggle(isOn: $streakOn) {
-                Text("Count step-goal days toward my streak").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
-            }.tint(Theme.acc).padding(.horizontal, 4)
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle(isOn: $streakOn) {
+                    Text("Hold me to my steps on rest days").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
+                }.tint(Theme.acc)
+                Text(streakOn
+                     ? "Tougher mode: on a non-training day you MUST hit your steps or your streak is at risk. (You still get one grace day — never miss twice.)"
+                     : "Off: rest days never put your streak at risk.")
+                    .font(.system(size: 11)).foregroundStyle(streakOn ? Theme.amber : Theme.mut).lineSpacing(2)
+            }
+            .padding(.horizontal, 4)
             Button { dismiss() } label: {
                 Text("Done").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))

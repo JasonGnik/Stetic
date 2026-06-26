@@ -177,5 +177,21 @@ User chose the full model. To build: a user **Food catalog** (create manually or
 - ScanAPI.saveCheckIn/recentCheckIns. Dev: STETIC_CHECKIN=1.
 - **Deploy:** `supabase db push` (check_ins migration).
 
+## Ingredient-based meals + streak grace + check-in polish (part 12)
+- **Ingredient-based meals (MFP-style):** `meal_logs.items` jsonb (migration 20260626160000). Logging stores the component foods (scaled by servings); a single food synthesizes one item. New **`MealDetailView`**: tap a logged meal → see its foods, edit/remove/add per-food, change meal type, **bookmark to save the combo** as a saved meal, or delete. Totals = sum of foods. Replaces the old opaque edit sheet. `updateMeal`/`logMeal` carry items with a pre-migration fallback.
+- **Streak grace (James Clear "never miss twice"):** one missed day forgiven; two in a row resets. `Streak.count` rewritten; `graceActive` drives an amber "Grace day — act to keep it" state. Tappable streak card → `StreakInfoSheet` (grace, never-miss-twice, **don't compensate — just hit today's plan**).
+- **Step goal copy** reframed as the harder commitment (on rest days you must hit steps or risk the streak; one grace day).
+- **Check-in:** emoji mood scale (renders on device), low-day adds the "train on a low day → streak ~2× longer" social-proof line (placeholder stat, update with real data later).
+- **Quote moved:** off the bottom of Today; now the completed check-in summary card (with the day's quote) sits at the bottom, and the check-in prompt is at the top until done.
+
+### Deploy (new this round)
+- `supabase db push` for: `check_ins`, `saved_meals`, `meal_type`, `plan_status`, `meal_items` migrations.
+- `supabase functions deploy craving food-search meal-scan`.
+
+### Still open / next
+- Aggregate social-proof real stats pipeline (`checkin-stats` fn) to back the 2× claim.
+- Optional: "build a combo across separately-logged foods" (cart/multi-select) — current path is build-the-combo-in-one-meal-then-save.
+- Light mode (deferred).
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

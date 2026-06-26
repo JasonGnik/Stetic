@@ -78,7 +78,7 @@ struct NutritionView: View {
                 Task { addingType = .current(); await save(est) }
             }
         }
-        .sheet(item: $editing) { editSheet($0) }
+        .sheet(item: $editing) { MealDetailView(log: $0, onChange: { Task { await reload() } }) }
         .sheet(isPresented: $showSearch) {
             FoodSearchView(onPick: { hit in Task { await save(hit.asMeal) } },
                            onManual: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { startManual() } })
@@ -206,11 +206,12 @@ struct NutritionView: View {
     }
 
     private func mealRow(_ m: MealLog) -> some View {
-        Button { startEdit(m) } label: {
+        let count = m.foods.count
+        return Button { editing = m } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(m.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    Text("P \(Int(m.protein_g)) · C \(Int(m.carbs_g)) · F \(Int(m.fat_g))")
+                    Text((count > 1 ? "\(count) foods · " : "") + "P \(Int(m.protein_g)) · C \(Int(m.carbs_g)) · F \(Int(m.fat_g))")
                         .font(.system(size: 11)).foregroundStyle(Theme.mut)
                 }
                 Spacer()
@@ -227,12 +228,6 @@ struct NutritionView: View {
     private func startManual() {
         mName = ""; mCals = ""; mProtein = ""; mCarbs = ""; mFat = ""; showManual = true
     }
-    private func startEdit(_ m: MealLog) {
-        mName = m.name; mCals = "\(Int(m.calories))"; mProtein = "\(Int(m.protein_g))"
-        mCarbs = "\(Int(m.carbs_g))"; mFat = "\(Int(m.fat_g))"
-        addingType = MealType.bucket(m.meal_type); editing = m
-    }
-
     private var manualSheet: some View {
         mealForm(title: "Add a meal", showDelete: false, onSave: {
             let est = MealEstimate(name: mName.isEmpty ? "Meal" : mName,
@@ -240,22 +235,6 @@ struct NutritionView: View {
                 carbs_g: Double(mCarbs) ?? 0, fat_g: Double(mFat) ?? 0, confidence: "manual")
             Task { showManual = false; await save(est); }
         }, onDelete: {})
-    }
-
-    private func editSheet(_ m: MealLog) -> some View {
-        mealForm(title: "Edit meal", showDelete: true, onSave: {
-            Task {
-                editing = nil
-                if let id = m.id {
-                    try? await ScanAPI.shared.updateMeal(id: id, name: mName.isEmpty ? "Meal" : mName,
-                        calories: Double(mCals) ?? 0, protein_g: Double(mProtein) ?? 0,
-                        carbs_g: Double(mCarbs) ?? 0, fat_g: Double(mFat) ?? 0, mealType: addingType.rawValue)
-                }
-                await reload()
-            }
-        }, onDelete: {
-            Task { editing = nil; await delete(m) }
-        })
     }
 
     private func mealForm(title: String, showDelete: Bool, onSave: @escaping () -> Void, onDelete: @escaping () -> Void) -> some View {

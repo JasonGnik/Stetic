@@ -59,7 +59,7 @@ struct WorkoutLog: Codable, Identifiable {
     var exercises: [LoggedExercise]
 }
 
-// A logged meal — only derived numbers, never the photo.
+// A logged meal — the foods that make it up + derived totals, never the photo.
 struct MealLog: Codable, Identifiable {
     var id: String?
     var log_date: String?
@@ -69,6 +69,13 @@ struct MealLog: Codable, Identifiable {
     var carbs_g: Double
     var fat_g: Double
     var meal_type: String?
+    var items: [MealEstimate.Item]?     // the component foods (optional: older rows lack it)
+    var foods: [MealEstimate.Item] { items ?? [] }
+    // An editable estimate built from this logged meal.
+    var asEstimate: MealEstimate {
+        var m = MealEstimate(name: name, items: foods, calories: calories, protein_g: protein_g, carbs_g: carbs_g, fat_g: fat_g, confidence: "logged")
+        return m
+    }
 }
 
 // Breakfast / lunch / dinner / snacks — how the day's food is grouped.
@@ -269,24 +276,34 @@ enum LogDate {
     static var today: String { string(Date()) }
 }
 
-// Consecutive-day training streak ending today or yesterday.
+// Training streak with a one-day grace — James Clear's "never miss twice." A single
+// missed day is forgiven; two missed days in a row breaks it. Today-in-progress is
+// never counted as a miss.
 enum Streak {
     static func count(from dateStrings: [String]) -> Int {
         let cal = Calendar.current
         let days = Set(dateStrings.compactMap { LogDate.fmt.date(from: $0) }.map { cal.startOfDay(for: $0) })
         guard !days.isEmpty else { return 0 }
-        var cursor = cal.startOfDay(for: Date())
-        // Allow the streak to be "alive" if they trained today OR yesterday.
-        if !days.contains(cursor) {
-            guard let y = cal.date(byAdding: .day, value: -1, to: cursor), days.contains(y) else { return 0 }
-            cursor = y
-        }
-        var n = 0
-        while days.contains(cursor) {
-            n += 1
+        let today = cal.startOfDay(for: Date())
+        var cursor = days.contains(today) ? today : cal.date(byAdding: .day, value: -1, to: today)!
+        var count = 0, misses = 0
+        while true {
+            if days.contains(cursor) { count += 1; misses = 0 }
+            else { misses += 1; if misses >= 2 { break } }
             guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }
             cursor = prev
         }
-        return n
+        return count
+    }
+
+    // True when yesterday was missed but the streak is still alive — today is the
+    // grace day to keep it going.
+    static func graceActive(from dateStrings: [String]) -> Bool {
+        let cal = Calendar.current
+        let days = Set(dateStrings.compactMap { LogDate.fmt.date(from: $0) }.map { cal.startOfDay(for: $0) })
+        let today = cal.startOfDay(for: Date())
+        guard !days.contains(today),
+              let y = cal.date(byAdding: .day, value: -1, to: today), !days.contains(y) else { return false }
+        return count(from: dateStrings) > 0
     }
 }

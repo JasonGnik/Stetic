@@ -472,25 +472,40 @@ actor ScanAPI {
         return (try? JSONDecoder().decode(Wrap.self, from: data))?.foods.first
     }
 
+    // The component foods at the logged amount (scaled by servings), or a single
+    // food synthesized from the totals when there are no items.
+    private func scaledItems(_ m: MealEstimate) -> [MealEstimate.Item] {
+        if m.items.isEmpty {
+            return [.init(name: m.name, portion: nil, calories: m.shownCalories,
+                          protein_g: m.shownProtein, carbs_g: m.shownCarbs, fat_g: m.shownFat)]
+        }
+        return m.items.map { it in
+            .init(name: it.name, portion: it.portion,
+                  calories: (it.calories * m.servings).rounded(), protein_g: (it.protein_g * m.servings).rounded(),
+                  carbs_g: (it.carbs_g * m.servings).rounded(), fat_g: (it.fat_g * m.servings).rounded())
+        }
+    }
+
     func logMeal(_ m: MealEstimate, mealType: String = "other") async throws {
         try await ensureSession()
         guard let uid = userId else { throw APIError.noSession }
+        let items = scaledItems(m)
         struct Row: Encodable {
             let user_id: String; let log_date: String; let name: String
             let calories: Double; let protein_g: Double; let carbs_g: Double; let fat_g: Double
-            var meal_type: String?
+            var meal_type: String?; var items: [MealEstimate.Item]?
         }
-        func post(includeType: Bool) async throws -> Int {
+        func post(full: Bool) async throws -> Int {
             let row = Row(user_id: uid, log_date: LogDate.today, name: m.name,
                           calories: m.shownCalories, protein_g: m.shownProtein, carbs_g: m.shownCarbs,
-                          fat_g: m.shownFat, meal_type: includeType ? mealType : nil)
+                          fat_g: m.shownFat, meal_type: full ? mealType : nil, items: full ? items : nil)
             let body = try JSONEncoder().encode(row)
             let (data, s) = try await authed(restURL("meal_logs"), method: "POST", body: body, prefer: "return=minimal")
-            if s != 201 && s != 204 && !(includeType) { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+            if s != 201 && s != 204 && !full { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
             return s
         }
-        let s = try await post(includeType: true)
-        if s == 400 { _ = try await post(includeType: false) }   // meal_type column not deployed yet
+        let s = try await post(full: true)
+        if s == 400 { _ = try await post(full: false) }   // items/meal_type columns not deployed yet
     }
 
     // MARK: daily check-in
@@ -542,21 +557,21 @@ actor ScanAPI {
 
     // Update an already-logged meal in place (edit flow).
     func updateMeal(id: String, name: String, calories: Double, protein_g: Double,
-                    carbs_g: Double, fat_g: Double, mealType: String?) async throws {
+                    carbs_g: Double, fat_g: Double, mealType: String?, items: [MealEstimate.Item]? = nil) async throws {
         struct Patch: Encodable {
             let name: String; let calories: Double; let protein_g: Double
-            let carbs_g: Double; let fat_g: Double; var meal_type: String?
+            let carbs_g: Double; let fat_g: Double; var meal_type: String?; var items: [MealEstimate.Item]?
         }
-        func patch(includeType: Bool) async throws -> Int {
+        func patch(full: Bool) async throws -> Int {
             let body = try JSONEncoder().encode(Patch(name: name, calories: calories, protein_g: protein_g,
-                carbs_g: carbs_g, fat_g: fat_g, meal_type: includeType ? mealType : nil))
+                carbs_g: carbs_g, fat_g: fat_g, meal_type: full ? mealType : nil, items: full ? items : nil))
             let (data, s) = try await authed(restURL("meal_logs", query: [.init(name: "id", value: "eq.\(id)")]),
                                              method: "PATCH", body: body, prefer: "return=minimal")
-            if s != 204 && s != 200 && !includeType { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+            if s != 204 && s != 200 && !full { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
             return s
         }
-        let s = try await patch(includeType: true)
-        if s == 400 { _ = try await patch(includeType: false) }
+        let s = try await patch(full: true)
+        if s == 400 { _ = try await patch(full: false) }
     }
 
     func meals(on date: String) async throws -> [MealLog] {

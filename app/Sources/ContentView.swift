@@ -49,6 +49,12 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_MEALDETAIL"] == "1" {
+            MealDetailView(log: .init(id: "x", log_date: LogDate.today, name: "Pasta with Tuna Tartare & Pizza",
+                calories: 1370, protein_g: 70, carbs_g: 160, fat_g: 51, meal_type: "dinner",
+                items: [.init(name: "Green Pasta with Tuna Tartare", portion: "~400g", calories: 570, protein_g: 40, carbs_g: 60, fat_g: 22),
+                        .init(name: "Margherita Pizza", portion: "~350g (whole)", calories: 800, protein_g: 30, carbs_g: 100, fat_g: 29)]),
+                onChange: {})
         } else if env["STETIC_CHECKIN"] == "1" {
             CheckInView(trainingDay: true, history: [], workoutDates: [], onStartSession: {}, onDone: {})
         } else if env["STETIC_CRAVING"] == "1" {
