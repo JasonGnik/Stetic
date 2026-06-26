@@ -93,7 +93,8 @@ Deno.serve(async (req) => {
     `portion shown (e.g. {name:"Beef patty", portion:"~150g", calories:280, protein_g:24, carbs_g:0, fat_g:20}). ` +
     `Only list components that meaningfully affect macros — skip trivial things (water, spices, a pinch of salt). Aim for the 2–6 main contributors; ` +
     `a genuinely simple single food (an apple, black coffee) stays ONE item. ` +
-    `The top-level calories/protein_g/carbs_g/fat_g MUST equal the SUM of the items. Name the whole meal naturally (e.g. "Cheeseburger", "Chicken salad"). ` +
+    `The top-level calories/protein_g/carbs_g/fat_g MUST equal the SUM of the items, and MUST be realistic NON-ZERO numbers for any real food (never return all zeros). ` +
+    `If you cannot confidently break it into components, still return ONE item for the whole dish with its full macros. Name the whole meal naturally (e.g. "Cheeseburger", "Chicken salad"). ` +
     `Be realistic, not rounded to marketing numbers. Set confidence by how clearly you can judge it. Put any key assumption in 'note'. ` +
     `Numbers only — do not refuse; give your best estimate.`;
   const prompt = payload.mode === "label" ? labelPrompt : mealPrompt;

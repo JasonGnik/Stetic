@@ -20,6 +20,7 @@ struct MealScanView: View {
     @State private var showSearch = false
     @State private var startedAt = Date()
     @State private var pickedType: MealType = .current()   // which meal to add to
+    @State private var scanFailed = false
     private let scanDuration: TimeInterval = 2.8   // shared with run() so the bar lands as results appear
     enum Phase { case scanning, results }
     struct EditTarget: Identifiable { let id = UUID(); var index: Int? }   // nil = new item
@@ -177,8 +178,14 @@ struct MealScanView: View {
 
                     if est.items.isEmpty {
                         Text(est.note ?? "No ingredients yet — add your foods.")
-                            .font(.system(size: 13)).foregroundStyle(Theme.mut)
+                            .font(.system(size: 13)).foregroundStyle(scanFailed ? Theme.amber : Theme.mut)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                        Button { retry() } label: {
+                            HStack(spacing: 6) { Image(systemName: "arrow.clockwise"); Text("Try scanning again") }
+                                .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.acc)
+                                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line, lineWidth: 1)))
+                        }
                     } else {
                         ForEach(Array(est.items.enumerated()), id: \.element.id) { idx, item in
                             ingredientRow(item, idx)
@@ -315,12 +322,14 @@ struct MealScanView: View {
     private func run() async {
         if let preset { est = preset; withAnimation { phase = .results }; return }
         let start = Date()
-        await MainActor.run { startedAt = start }
+        await MainActor.run { startedAt = start; scanFailed = false }
         let minScanTime = scanDuration   // always let the scan animation play through
 
-        var result = try? await scanOnce()
+        var result: MealEstimate?
+        var threw = false
+        do { result = try await scanOnce() } catch { threw = true }
         // The same plate occasionally comes back empty — retry once before falling back.
-        if isEmpty(result) { result = try? await scanOnce() }
+        if !threw, isEmpty(result) { do { result = try await scanOnce() } catch { threw = true } }
 
         // Keep the animation on screen for at least minScanTime so it never just flashes.
         let elapsed = Date().timeIntervalSince(start)
@@ -330,11 +339,21 @@ struct MealScanView: View {
         await MainActor.run {
             if let result, !isEmpty(result) {
                 est = result
+            } else if threw {
+                est.note = "Couldn't reach the scanner — check your connection and try again."
+                scanFailed = true
             } else {
-                est.note = "Add your foods below to log this meal."
+                est.note = "Couldn't read the food — add it below, or try again."
             }
             withAnimation(.easeOut(duration: 0.3)) { phase = .results }
         }
+    }
+
+    private func retry() {
+        est = MealEstimate(name: "Meal", calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, confidence: "")
+        scanFailed = false
+        withAnimation { phase = .scanning }
+        Task { await run() }
     }
 
     private func scanOnce() async throws -> MealEstimate {
