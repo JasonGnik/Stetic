@@ -212,6 +212,17 @@ struct FoodHit: Codable, Identifiable, Hashable {
     }
 }
 
+// A daily readiness check-in.
+struct CheckIn: Codable, Identifiable {
+    var id: String?
+    var log_date: String?
+    var mood: Int = 3
+    var confidence: Int = 3
+    var readiness: Int = 3
+    var training_day: Bool = false
+    enum CodingKeys: String, CodingKey { case id, log_date, mood, confidence, readiness, training_day }
+}
+
 // A single scan reduced to its plottable numbers (for the progress chart).
 struct ScanPoint: Codable, Identifiable {
     var id = UUID()

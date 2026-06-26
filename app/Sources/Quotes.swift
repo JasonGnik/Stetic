@@ -20,10 +20,27 @@ enum Quotes {
         .init(text: "No man has the right to be an amateur in the matter of physical training.", who: "Socrates"),
     ]
 
+    // Lines for the hard days — showing up when you don't feel like it.
+    static let lowDay: [Quote] = [
+        .init(text: "Never miss twice. Missing once is an accident; missing twice is the start of a new habit.", who: "James Clear"),
+        .init(text: "You can't go back and change the beginning, but you can start where you are and change the ending.", who: "C.S. Lewis"),
+        .init(text: "The two most powerful warriors are patience and time.", who: "Leo Tolstoy"),
+        .init(text: "Never give up on a dream because of the time it'll take. The time will pass anyway.", who: "Earl Nightingale"),
+        .init(text: "You have power over your mind — not outside events. Realize this, and you will find strength.", who: "Marcus Aurelius"),
+        .init(text: "The impediment to action advances action. What stands in the way becomes the way.", who: "Marcus Aurelius"),
+        .init(text: "It does not matter how slowly you go as long as you do not stop.", who: "Confucius"),
+    ]
+
     // Same quote all day; rotates daily.
     static var today: Quote {
         let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
         return all[day % all.count]
+    }
+
+    // A line tuned to how they're feeling — low readiness pulls from the hard-day set.
+    static func forReadiness(_ r: Int) -> Quote {
+        let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
+        return r <= 2 ? lowDay[day % lowDay.count] : all[day % all.count]
     }
 }
 

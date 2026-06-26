@@ -59,6 +59,8 @@ struct HomeView: View {
 
     @State private var session: PlanContent.Day?
     @State private var meals: [MealLog] = []
+    @State private var showCheckIn = false
+    @State private var checkIns: [CheckIn] = []
     @AppStorage("healthConnected") private var healthConnected = false
     @State private var steps = 0
     @State private var showSchedule = false
@@ -78,6 +80,29 @@ struct HomeView: View {
             return !s.contains("rest") && !s.contains("recovery") && !$0.exercises.isEmpty
         }
     }
+    private var checkedInToday: Bool { checkIns.contains { $0.log_date == LogDate.today } }
+    private var isTrainingDay: Bool {
+        let wd = Calendar.current.component(.weekday, from: Date())
+        return trainingDays.contains(wd)
+    }
+    private var checkInCard: some View {
+        Button { showCheckIn = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles").font(.system(size: 18)).foregroundStyle(Theme.acc)
+                    .frame(width: 42, height: 42).background(Circle().fill(Theme.acc.opacity(0.14)))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("How are you feeling today?").font(.system(size: 15, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text("10-second check-in — we'll tailor your day").font(.system(size: 11.5)).foregroundStyle(Theme.mut)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+            }
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.acc.opacity(0.3), lineWidth: 1)))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var activityDates: [String] { activityCSV.split(separator: ",").map(String.init) }
     // Streak counts training days, plus step-goal days when the user opts in.
     private var streak: Int { Streak.count(from: workoutDates + (stepStreakOn ? activityDates : [])) }
@@ -100,6 +125,7 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text(greeting).font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+                if !checkedInToday { checkInCard }
                 weekStrip
                 if deloadDue { deloadBanner }
                 HStack(spacing: 12) { streakCard; stepsCard }
@@ -113,9 +139,14 @@ struct HomeView: View {
         .scrollIndicators(.hidden)
         .task {
             meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? []
+            checkIns = (try? await ScanAPI.shared.recentCheckIns()) ?? []
             if healthConnected { steps = await HealthKitManager.shared.todaySteps(); recordStepDay() }
         }
         .sheet(isPresented: $showStepGoal) { StepGoalSheet() }
+        .sheet(isPresented: $showCheckIn, onDismiss: { Task { checkIns = (try? await ScanAPI.shared.recentCheckIns()) ?? [] } }) {
+            CheckInView(trainingDay: isTrainingDay, history: checkIns, workoutDates: workoutDates,
+                        onStartSession: { if let d = upNext { session = d } }, onDone: {})
+        }
         .sheet(item: $session) { day in
             SessionLogView(day: day) {
                 Task {

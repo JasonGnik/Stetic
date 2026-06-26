@@ -170,8 +170,12 @@ User chose the full model. To build: a user **Food catalog** (create manually or
 - **Daily quote** card on Today (stoics / disciplined figures; rotates daily). `Quotes.swift`.
 - **Deploy:** `supabase functions deploy craving` (updated). Re-generate a plan to get the 1.1 protein split.
 
-## NEXT (proposed): daily mood / readiness check-in
-How they feel about their goal + mood + workout-readiness that day → motivate, build consistency (pool stats: "you showed up on low days before and felt better after"; "today's the day that rewires the mind"). Design pending — see chat.
+## Daily readiness check-in (part 11)
+- **3-tap check-in** (`CheckInView`): mood, confidence in the goal, readiness ("Feel like training today?" on training days → "…sticking to your plan?" on off days). Stored in `check_ins` (migration 20260626140000, one row/day upsert). Card on Today when not done today.
+- **Motivation engine:** low-day nudge ("this is the day that counts — motivation comes after you start" + one-tap Start session); **your own history** ("the last N times you felt like this you showed up X×"); **mood-tailored quote** (`Quotes.forReadiness` — hard-day set: James Clear "never miss twice", C.S. Lewis, Tolstoy, Earl Nightingale, Marcus Aurelius).
+- **Aggregate social proof: NOT shipped** — needs a real stats pass over all `check_ins` (no invented numbers per the no-fake-stats rule). TODO: a `checkin-stats` edge function returning real "trained-on-low-day kept streak longer" aggregates.
+- ScanAPI.saveCheckIn/recentCheckIns. Dev: STETIC_CHECKIN=1.
+- **Deploy:** `supabase db push` (check_ins migration).
 
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

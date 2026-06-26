@@ -493,6 +493,26 @@ actor ScanAPI {
         if s == 400 { _ = try await post(includeType: false) }   // meal_type column not deployed yet
     }
 
+    // MARK: daily check-in
+    func saveCheckIn(mood: Int, confidence: Int, readiness: Int, trainingDay: Bool) async throws {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        struct Row: Encodable { let user_id: String; let log_date: String; let mood: Int; let confidence: Int; let readiness: Int; let training_day: Bool }
+        let body = try JSONEncoder().encode(Row(user_id: uid, log_date: LogDate.today, mood: mood, confidence: confidence, readiness: readiness, training_day: trainingDay))
+        // Upsert one row per day.
+        let (data, s) = try await authed(restURL("check_ins", query: [.init(name: "on_conflict", value: "user_id,log_date")]),
+                                         method: "POST", body: body, prefer: "resolution=merge-duplicates,return=minimal")
+        guard s == 201 || s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
+    func recentCheckIns(limit: Int = 60) async throws -> [CheckIn] {
+        let (data, s) = try await authed(restURL("check_ins", query: [
+            .init(name: "select", value: "*"), .init(name: "order", value: "log_date.desc"),
+            .init(name: "limit", value: "\(limit)")]), method: "GET")
+        guard s == 200 else { return [] }
+        return (try? JSONDecoder().decode([CheckIn].self, from: data)) ?? []
+    }
+
     // MARK: saved meals (named combos)
     func saveMeal(_ m: MealEstimate) async throws {
         try await ensureSession()

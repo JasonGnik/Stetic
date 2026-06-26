@@ -49,6 +49,8 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_CHECKIN"] == "1" {
+            CheckInView(trainingDay: true, history: [], workoutDates: [], onStartSession: {}, onDone: {})
         } else if env["STETIC_CRAVING"] == "1" {
             CravingView(target: .init(calories: 2600, protein_g: 190, carbs_g: 300, fat_g: 70, rationale: ""),
                         consumed: (1200, 90, 140, 30)) { _ in }
