@@ -1,8 +1,8 @@
 # Stetic — project status & handoff
 
-> Read this first. Single source of truth for where the build is. Last updated end of the
-> deploy/monetization session (2026-06-25). For positioning/scoring philosophy see CONTEXT.md;
-> for the conversion funnel see ONBOARDING.md; for dashboard setup see SETUP.md.
+> Read this first. Single source of truth for where the build is. Last updated 2026-06-26
+> (food-tracking + check-in + progressive-overload session). For positioning/scoring philosophy
+> see CONTEXT.md; for the conversion funnel see ONBOARDING.md; for dashboard setup see SETUP.md.
 
 Stetic = native iOS (SwiftUI) AI physique scanner + aesthetics coach. Loop: scan a photo →
 **Stetic Score** (1–10) + rank (Bronze→Greek God) + Core-6 muscle breakdown → unlock a
@@ -10,9 +10,24 @@ workout + nutrition plan (Jordan-Peters doctrine, never named) → train/eat/tra
 Distributed via faceless TikTok. Hard paywall, 3-day trial.
 
 ## Current phase
-**Feature-complete MVP; backend deployed live; monetization wired.** Remaining before launch is
-mostly verification (device test), the production entitlement webhook, legal pages, and the App
-Store listing. Next session = **app polish** (Jason has YouTube onboarding transcripts to break down).
+**Feature-complete MVP; deep daily-use loop built & device-tested by Jason (meal tracking confirmed working).**
+Remaining before launch is mostly verification, backend deploys of the latest functions/migrations, the
+production entitlement webhook, legal pages, and the App Store listing.
+
+## ⭐ HANDOFF — what's left (start here next session)
+**Deploy / config (Jason's step — some of this turn's work is client-only and live, but these are server-side):**
+- `supabase db push` — newer migrations: `plan_status`, `meal_type`, `meal_items`, `saved_meals`, `check_ins`, plus the profile ones if not already applied.
+- `supabase functions deploy meal-scan plan food-search craving` — meal-scan (ingredient breakdown + non-zero totals), plan (protein 1.1, abs 2-3 sets), food-search (new), craving (new).
+- Set `FDC_API_KEY` secret (USDA; else DEMO_KEY rate-limits). Enable **Google** + **Email** auth providers + add `stetic://auth-callback` redirect.
+
+**Features still to build:**
+- **Aggregate-stats pipeline** (`checkin-stats` cron/fn) — real "trained-on-low-day → streak N× longer" number; gated until enough users. Post-launch.
+- **Form check** (record a set → Gemini vision → cues) — postponed; strong V2/viral.
+- **AI coach chat** — Gemini chat seeded with plan + scan (proposed, not started).
+- **Time-based logic verification** (couldn't fast-forward days): streak grace across a real missed day, week-8 deload trigger, "Up Next" advancing, plan 8-week block finish→next. Needs a multi-day device check.
+- **Exercise demos** (link-out now; evaluate free GIF set later). **Barcode/label** live device QA. **App icon** (non-marble direction). Female-rubric calibration. Real social proof. **Marketing** (MARKETING.md playbook).
+
+**Launch blockers:** device test pass · RC→Supabase entitlement webhook (then flip `STETIC_DEV_BYPASS_ENTITLEMENT=false`) · Privacy/Terms pages · App Store listing.
 
 ## Architecture
 - **App:** `app/` SwiftUI, iOS 17+, XcodeGen (`project.yml` → `Stetic.xcodeproj`; run `xcodegen generate` after adding files). Bundle `com.stetic.app`. Theme in `Theme.swift` (stealth lime).
