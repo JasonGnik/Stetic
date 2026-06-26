@@ -211,5 +211,14 @@ Investigated with 3 parallel Opus agents, then fixed:
 - **MealScanView (scan results):** ingredient rows are **view-only** (with remove + add) — no tap-to-edit; portions are edited after logging via the meal section.
 - Combine flow rewritten to operate on the category's flattened foods (replaces the meal-row multiselect).
 
+## Meal = the category (Option B) + scan meal picker (part 16)
+- **The meal IS the category.** Food tab sections now show foods INLINE (flattened across entries, display-only) with an **"Open ›"** on the header. Tapping individual foods does nothing; "Open" drills in.
+- **`MealCategoryView`** — titled just "Breakfast" (etc.), lists all the category's foods, tap a food → edit (typed measure + auto-calc), remove, "Add food", and **"Save breakfast as a meal"** → CombineFoodsSheet. Edits map back to the underlying meal_log entries (edit/remove rewrites that entry; add creates a single-food entry).
+- **Scan meal-type picker:** the scan results screen now has a Breakfast/Lunch/Dinner/Snacks segmented picker above "Add to today."
+- MealDetailView retired from the flow (FoodItemEditor still shared).
+
+## Aggregate-stats pipeline (proposed, post-launch)
+`checkin-stats` edge fn / nightly cron over all users' check_ins + workout_logs → anonymized aggregate (e.g. real "trained-on-low-day → streak N× longer"), gated until enough data. Replaces the hardcoded 2× placeholder. Build after there are users. (Light mode: dropped per user.)
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

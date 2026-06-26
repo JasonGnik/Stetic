@@ -9,7 +9,7 @@ struct NutritionView: View {
     @State private var showCapture = false
     @State private var showSearch = false
     @State private var showManual = false
-    @State private var editing: MealLog?
+    @State private var openCategory: MealType?
     @State private var errorMsg: String?
     @State private var addingType: MealType = .current()
     @State private var combineType: MealType?       // category whose foods we're saving as a meal
@@ -65,9 +65,9 @@ struct NutritionView: View {
                 Task { addingType = .current(); await save(est) }
             }
         }
-        .sheet(item: $editing) { meal in
-            MealDetailView(log: meal, onChange: { Task { await reload() } },
-                           onSaveAsMeal: { type in DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { combineType = type } })
+        .sheet(item: $openCategory) { type in
+            MealCategoryView(type: type, onChange: { Task { await reload() } },
+                             onSaveAsMeal: { t in DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { combineType = t } })
         }
         .sheet(item: $combineType) { type in
             CombineFoodsSheet(type: type, foods: foodsIn(type)) { name, items in
@@ -140,23 +140,29 @@ struct NutritionView: View {
         }
     }
 
-    // MARK: meal sections
+    // MARK: meal sections — the meal IS the category; foods show inline, "Open" drills in
     private func mealSection(_ t: MealType) -> some View {
-        let items = meals.filter { MealType.bucket($0.meal_type) == t }
-        let sectionCals = items.reduce(0) { $0 + $1.calories }
+        let foods = foodsIn(t)
+        let sectionCals = foods.reduce(0) { $0 + $1.calories }
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: t.icon).font(.system(size: 13)).foregroundStyle(Theme.acc)
                 Text(t.label).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                Spacer()
                 if sectionCals > 0 {
-                    Text("\(Int(sectionCals)) cal").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                    Text("· \(Int(sectionCals)) cal").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                }
+                Spacer()
+                if !foods.isEmpty {
+                    Button { openCategory = t } label: {
+                        HStack(spacing: 2) { Text("Open").font(.system(size: 12, weight: .bold)); Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)) }
+                            .foregroundStyle(Theme.acc)
+                    }
                 }
                 Menu {
                     Button { addingType = t; showCapture = true } label: { Label("Scan a photo", systemImage: "camera.fill") }
                     Button { addingType = t; showSearch = true } label: { Label("Search or add food", systemImage: "magnifyingglass") }
                     Button { addingType = t; showSaved = true } label: { Label("Saved meals", systemImage: "bookmark.fill") }
-                    if !foodsIn(t).isEmpty {
+                    if !foods.isEmpty {
                         Divider()
                         Button { combineType = t } label: { Label("Save \(t.label) as a meal", systemImage: "bookmark") }
                     }
@@ -164,11 +170,11 @@ struct NutritionView: View {
                     Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Theme.acc)
                 }
             }
-            if items.isEmpty {
+            if foods.isEmpty {
                 Text("Nothing logged").font(.system(size: 12)).foregroundStyle(Theme.mut)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                ForEach(items) { mealRow($0) }
+                ForEach(Array(foods.enumerated()), id: \.offset) { _, f in foodRow(f) }
             }
         }
         .padding(14)
@@ -177,23 +183,18 @@ struct NutritionView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1)))
     }
 
-    private func mealRow(_ m: MealLog) -> some View {
-        let count = m.foods.count
-        return Button { editing = m } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(m.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    Text((count > 1 ? "\(count) foods · " : "") + "P \(Int(m.protein_g)) · C \(Int(m.carbs_g)) · F \(Int(m.fat_g))")
-                        .font(.system(size: 11)).foregroundStyle(Theme.mut)
-                }
-                Spacer()
-                Text("\(Int(m.calories)) cal").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+    // Inline, display-only food row (tap "Open" to edit foods).
+    private func foodRow(_ f: MealEstimate.Item) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(f.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+                if let p = f.portion, !p.isEmpty { Text(p).font(.system(size: 11)).foregroundStyle(Theme.mut) }
             }
-            .padding(.vertical, 11).padding(.horizontal, 13)
-            .background(RoundedRectangle(cornerRadius: 11).fill(Theme.bg))
+            Spacer()
+            Text("\(Int(f.calories)) cal").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 10).padding(.horizontal, 13)
+        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.bg))
     }
 
     // All foods logged in a meal-type today (flattened across entries).
