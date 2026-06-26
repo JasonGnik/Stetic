@@ -64,6 +64,8 @@ Real iPhone required — the simulator can't do Apple sign-in or sandbox purchas
 ## ⭐ DEVICE-TEST FEEDBACK — punch list (2026-06-26, Jason's on-device pass). NOTHING HERE GETS LOST.
 **Sandbox purchase WORKED ✅** (full A-path: Apple sign-in → onboarding → paywall → sandbox buy → unlock). Lean physique scored **Mythic** — Jason is OK with it (aspirational for the target audience).
 
+**Progress (commit f28290a):** ✅ DONE = #2 craving, #4 onboarding weight→Progress, #5 rest day, #6 Progress refresh, #9 copy, #11 weight slider (step+range; full type-field deferred to onboarding redesign), #12 scanner brackets, #13 paywall Terms/Privacy links, #14 plan disclaimer, #20 Top/Back-off labels. ⏳ REMAINING = #1 plan horizontal drag (needs live repro — root is vertical-only ScrollView, culprit not found in code), #3 keyboard dismiss (do a pass across all text-entry views), #7 scoring ceiling-compression, #8 weak-point card/plan mismatch, #10 projection tier language (folds into onboarding redesign), #15 calorie-hit animation, #16–19 onboarding redesign (drafting flow doc next).
+
 ### Bugs confirmed on device
 1. **Plan view scrolls horizontally** — "Your plan" can be dragged side-to-side; should be vertical-only. Constrain the scroll.
 2. **Craving button dead on first press** — tapping "Craving?" inside the Ideas sheet does nothing; it only appears AFTER you exit Ideas. Sheet-over-sheet presentation race (same family as the old meal-scan double-cover). Fix.
