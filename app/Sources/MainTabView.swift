@@ -62,10 +62,14 @@ struct HomeView: View {
     @AppStorage("healthConnected") private var healthConnected = false
     @State private var steps = 0
     @State private var showSchedule = false
+    @State private var showStepGoal = false
     @State private var streakFlare = false
     @AppStorage("trainWeekdays") private var trainWeekdaysRaw = ""   // e.g. "2,4,6"
     @AppStorage("trainHour") private var trainHour = 17
     @AppStorage("deloadAnchor") private var deloadAnchor = ""        // yyyy-MM-dd
+    @AppStorage("stepGoal") private var stepGoal = 8000
+    @AppStorage("stepStreakOn") private var stepStreakOn = false     // step goal keeps streak alive on rest days
+    @AppStorage("activityDates") private var activityCSV = ""        // days the step goal was met
 
     // Only real training days are in the rotation — never "rest"/"recovery" entries.
     private var split: [PlanContent.Day] {
@@ -74,7 +78,9 @@ struct HomeView: View {
             return !s.contains("rest") && !s.contains("recovery") && !$0.exercises.isEmpty
         }
     }
-    private var streak: Int { Streak.count(from: workoutDates) }
+    private var activityDates: [String] { activityCSV.split(separator: ",").map(String.init) }
+    // Streak counts training days, plus step-goal days when the user opts in.
+    private var streak: Int { Streak.count(from: workoutDates + (stepStreakOn ? activityDates : [])) }
     private var loggedToday: Bool { workoutDates.contains(LogDate.today) }
     // Real users get one session per day; dev builds can re-log to test.
     private var canRelogToday: Bool {
@@ -96,8 +102,7 @@ struct HomeView: View {
                 Text(greeting).font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
                 weekStrip
                 if deloadDue { deloadBanner }
-                streakCard
-                healthCard
+                HStack(spacing: 12) { streakCard; stepsCard }
                 upNextCard
                 fuelCard
             }
@@ -107,8 +112,9 @@ struct HomeView: View {
         .scrollIndicators(.hidden)
         .task {
             meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? []
-            if healthConnected { steps = await HealthKitManager.shared.todaySteps() }
+            if healthConnected { steps = await HealthKitManager.shared.todaySteps(); recordStepDay() }
         }
+        .sheet(isPresented: $showStepGoal) { StepGoalSheet() }
         .sheet(item: $session) { day in
             SessionLogView(day: day) {
                 Task {
@@ -242,58 +248,54 @@ struct HomeView: View {
         return name.isEmpty ? part : "\(part), \(name)"
     }
 
-    @ViewBuilder private var healthCard: some View {
-        if healthConnected {
-            HStack(spacing: 14) {
-                Image(systemName: "figure.walk").font(.system(size: 20)).foregroundStyle(Theme.acc)
-                    .frame(width: 44, height: 44).background(Circle().fill(Theme.acc.opacity(0.14)))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(steps.formatted()) steps").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
-                    Text("Today · from Apple Health").font(.system(size: 11)).foregroundStyle(Theme.mut)
-                }
-                Spacer()
+    private var streakCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                Circle().fill(Color(hex: 0xFF7A1A).opacity(streakFlare ? 0.28 : 0.14)).frame(width: 50, height: 50)
+                FireFlame(size: 24, flare: streakFlare)
             }
-            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
-        } else {
-            Button {
-                Task {
-                    await HealthKitManager.shared.requestAuth()
-                    healthConnected = true
-                    steps = await HealthKitManager.shared.todaySteps()
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "heart.fill").font(.system(size: 16)).foregroundStyle(Color(hex: 0xFF6B6B))
-                    Text("Connect Apple Health").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
-                }
-                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card)
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1)))
+            .scaleEffect(streakFlare ? 1.15 : 1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(streak) day\(streak == 1 ? "" : "s")").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text(streak == 0 ? "Start your streak" : "Day streak").font(.system(size: 11)).foregroundStyle(Theme.mut)
             }
-            .buttonStyle(.plain)
         }
+        .padding(16).frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
     }
 
-    private var streakCard: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle().fill(Color(hex: 0xFF7A1A).opacity(streakFlare ? 0.28 : 0.14)).frame(width: 64, height: 64)
-                FireFlame(size: 30, flare: streakFlare)
+    private var stepsCard: some View {
+        Button {
+            if healthConnected { showStepGoal = true }
+            else { Task { await HealthKitManager.shared.requestAuth(); healthConnected = true
+                steps = await HealthKitManager.shared.todaySteps(); recordStepDay() } }
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                ZStack {
+                    Circle().fill(Theme.acc.opacity(0.14)).frame(width: 50, height: 50)
+                    Image(systemName: "figure.walk").font(.system(size: 22)).foregroundStyle(Theme.acc)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    if healthConnected {
+                        Text(steps.formatted()).font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+                        Text(stepStreakOn ? "of \(stepGoal.formatted()) steps" : "Steps today")
+                            .font(.system(size: 11)).foregroundStyle(stepStreakOn && steps >= stepGoal ? Theme.acc : Theme.mut)
+                    } else {
+                        Text("Steps").font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+                        Text("Connect Health").font(.system(size: 11)).foregroundStyle(Theme.acc)
+                    }
+                }
             }
-            .scaleEffect(streakFlare ? 1.18 : 1)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(streak) day\(streak == 1 ? "" : "s")").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
-                Text(streak == 0 ? "Log a session to start your streak" : "Training streak — keep it alive")
-                    .font(.system(size: 12)).foregroundStyle(Theme.mut)
-            }
-            Spacer()
+            .padding(16).frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
+        .buttonStyle(.plain)
+    }
+
+    private func recordStepDay() {
+        guard stepStreakOn, stepGoal > 0, steps >= stepGoal else { return }
+        var days = activityDates
+        if !days.contains(LogDate.today) { days.append(LogDate.today); activityCSV = days.joined(separator: ",") }
     }
 
     @ViewBuilder private var upNextCard: some View {
@@ -432,6 +434,47 @@ struct ScheduleSheet: View {
         .padding(.horizontal, 22)
         .background(Theme.bg.ignoresSafeArea())
         .presentationDetents([.height(330)])
+    }
+}
+
+// Set a daily step goal and opt in to step-goal days keeping the streak alive.
+struct StepGoalSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("stepGoal") private var goal = 8000
+    @AppStorage("stepStreakOn") private var streakOn = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
+            Text("Daily steps").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+            Text("Set a step goal. On rest days, hitting it can keep your streak alive.")
+                .font(.system(size: 12)).foregroundStyle(Theme.mut).multilineTextAlignment(.center).padding(.horizontal, 20)
+            HStack(spacing: 22) {
+                stepButton("minus") { goal = max(2000, goal - 500) }
+                VStack(spacing: 0) {
+                    Text(goal.formatted()).font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text("steps / day").font(.system(size: 11)).foregroundStyle(Theme.mut)
+                }.frame(minWidth: 120)
+                stepButton("plus") { goal = min(25000, goal + 500) }
+            }
+            Toggle(isOn: $streakOn) {
+                Text("Count step-goal days toward my streak").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+            }.tint(Theme.acc).padding(.horizontal, 4)
+            Button { dismiss() } label: {
+                Text("Done").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .background(Theme.bg.ignoresSafeArea())
+        .presentationDetents([.height(330)])
+    }
+    private func stepButton(_ icon: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+                .frame(width: 44, height: 44).background(Circle().fill(Theme.card).overlay(Circle().stroke(Theme.line, lineWidth: 1)))
+        }
     }
 }
 
