@@ -15,10 +15,10 @@ Remaining before launch is mostly verification, backend deploys of the latest fu
 production entitlement webhook, legal pages, and the App Store listing.
 
 ## ⭐ HANDOFF — what's left (start here next session)
-**Deploy / config (Jason's step — some of this turn's work is client-only and live, but these are server-side):**
-- `supabase db push` — newer migrations: `plan_status`, `meal_type`, `meal_items`, `saved_meals`, `check_ins`, plus the profile ones if not already applied.
-- `supabase functions deploy meal-scan plan food-search craving` — meal-scan (ingredient breakdown + non-zero totals), plan (protein 1.1, abs 2-3 sets), food-search (new), craving (new).
-- Set `FDC_API_KEY` secret (USDA; else DEMO_KEY rate-limits). Enable **Google** + **Email** auth providers + add `stetic://auth-callback` redirect.
+**Deploy / config (Jason's step — ✅ DONE 2026-06-26):**
+- ✅ `supabase db push` — newer migrations: `plan_status`, `meal_type`, `meal_items`, `saved_meals`, `check_ins`, plus profile ones.
+- ✅ `supabase functions deploy meal-scan plan food-search craving`.
+- ✅ `FDC_API_KEY` secret set. **Google** + **Email** auth providers enabled + `stetic://auth-callback` redirect added.
 
 **Features still to build:**
 - **Aggregate-stats pipeline** (`checkin-stats` cron/fn) — real "trained-on-low-day → streak N× longer" number; gated until enough users. Post-launch.
@@ -27,7 +27,39 @@ production entitlement webhook, legal pages, and the App Store listing.
 - **Time-based logic verification** (couldn't fast-forward days): streak grace across a real missed day, week-8 deload trigger, "Up Next" advancing, plan 8-week block finish→next. Needs a multi-day device check.
 - **Exercise demos** (link-out now; evaluate free GIF set later). **Barcode/label** live device QA. **App icon** (non-marble direction). Female-rubric calibration. Real social proof. **Marketing** (MARKETING.md playbook).
 
-**Launch blockers:** device test pass · RC→Supabase entitlement webhook (then flip `STETIC_DEV_BYPASS_ENTITLEMENT=false`) · Privacy/Terms pages · App Store listing.
+**Launch blockers:** device test pass · ~~RC→Supabase entitlement webhook~~ (BUILT: `functions/rc-webhook` — deploy `--no-verify-jwt`, set `RC_WEBHOOK_SECRET`, add the webhook in RC dashboard, then flip `STETIC_DEV_BYPASS_ENTITLEMENT=false`) · ~~Privacy/Terms pages~~ (DRAFTED: `legal/privacy.html` + `legal/terms.html` — fill `CONTACT_EMAIL` + `GOVERNING_LAW_JURISDICTION`, host, update Settings links) · App Store listing.
+- **Stat fix:** check-in low-day line now cites a real study (plan/implementation-intention 91% vs 39%, Milne/Orbell/Sheeran 2002) instead of the invented "2× longer".
+
+## 📱 DEVICE TEST CHECKLIST (the remaining launch blocker)
+Real iPhone required — the simulator can't do Apple sign-in or sandbox purchases.
+
+**Prep (one-time):**
+- [ ] Sandbox tester exists (ASC → Users and Access → Sandbox → Testers). Reusable across apps; make a fresh one if it acts already-subscribed.
+- [ ] On the iPhone: Settings → App Store → **Sandbox Account** → sign in with the tester (NOT a real Apple ID).
+- [ ] `rc-webhook` redeployed (`--no-verify-jwt`); RC "re-send test event" returns **200**.
+- [ ] Keep `STETIC_DEV_BYPASS_ENTITLEMENT=true` for now (so a failed purchase doesn't lock you out).
+- [ ] Delete any existing Stetic from the phone, then build+run from Xcode for a clean first-run.
+
+**Flow:**
+- [ ] **Apple Sign In** completes → lands in onboarding (verifies the in-funnel placement, never device-tested).
+- [ ] Onboarding runs end to end (watch for the sim-only duplicate-CTA artifact — confirm it's ABSENT on device).
+- [ ] **Scan** a real physique photo → score card renders.
+- [ ] **Paywall** → buy **annual (trial path)**; separately test **weekly** (buys directly).
+- [ ] Sandbox sheet → confirm → **Pro unlocks**.
+
+**Verify the webhook end-to-end:**
+- [ ] RC → Customers → sandbox user shows **"Stetic Pro" active**.
+- [ ] Supabase `subscriptions` table → **row for that user_id**, status `active`/`trialing`. ✅ = webhook works.
+
+**Turn the firewall on:**
+- [ ] `supabase secrets set STETIC_DEV_BYPASS_ENTITLEMENT=false`
+- [ ] One more scan as the subscribed user → still works (firewall now real).
+
+**Also test on device:**
+- [ ] Google sign-in · email sign-up/sign-in.
+- [ ] **Restore purchases** (delete app → reinstall → restore → Pro returns).
+- [ ] Camera meal scan + **barcode** + food-label modes (no camera in sim).
+- [ ] HealthKit steps + bodyweight prompt.
 
 ## Architecture
 - **App:** `app/` SwiftUI, iOS 17+, XcodeGen (`project.yml` → `Stetic.xcodeproj`; run `xcodegen generate` after adding files). Bundle `com.stetic.app`. Theme in `Theme.swift` (stealth lime).

@@ -146,7 +146,7 @@ struct CheckInView: View {
                 if lowDay {
                     HStack(alignment: .top, spacing: 8) {
                         Image(systemName: "person.2.fill").font(.system(size: 13)).foregroundStyle(Theme.acc).padding(.top, 1)
-                        Text("People who train on a low-motivation day keep their streak about 2× longer.")
+                        Text("People who act on a set plan train 91% of the time vs 39% on motivation alone — showing up doesn't wait on how you feel.")
                             .font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineSpacing(2)
                     }
                     .padding(14).frame(maxWidth: .infinity, alignment: .leading)

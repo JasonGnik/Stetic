@@ -35,8 +35,8 @@ struct SettingsView: View {
                         Button { showRestoreNote = true } label: { row("Restore purchases", "arrow.clockwise") }
                     }
                     group("ABOUT") {
-                        linkRow("Privacy Policy", "https://stetic.app/privacy")
-                        linkRow("Terms of Use", "https://stetic.app/terms")
+                        linkRow("Privacy Policy", "https://jasongnik.github.io/stetic-legal/privacy.html")
+                        linkRow("Terms of Use", "https://jasongnik.github.io/stetic-legal/terms.html")
                         HStack { Text("Version").foregroundStyle(Theme.txt); Spacer(); Text(appVersion).foregroundStyle(Theme.mut) }
                             .font(.system(size: 14)).rowStyle()
                     }
