@@ -136,8 +136,9 @@ struct FoodCameraView: View {
 
     // MARK: wiring
     private func setup() async {
-        cam.onPhoto = { img in onCapture(img, mode); dismiss() }
-        cam.onBarcode = { code in onBarcode(code); dismiss() }
+        cam.stop()   // ensure a clean restart if reused
+        cam.onPhoto = { img in onCapture(img, mode) }      // parent advances the flow
+        cam.onBarcode = { code in onBarcode(code) }
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         if status == .notDetermined {
             let granted = await AVCaptureDevice.requestAccess(for: .video)
@@ -150,8 +151,66 @@ struct FoodCameraView: View {
 
     private func loadLibrary(_ item: PhotosPickerItem?) async {
         guard let item, let data = try? await item.loadTransferable(type: Data.self), let img = UIImage(data: data) else { return }
-        onCapture(img, mode == .barcode ? .scanFood : mode)
-        dismiss()
+        onCapture(img, mode == .barcode ? .scanFood : mode)   // parent advances the flow
+    }
+}
+
+// One presented flow: camera → scan, switched internally so there's no second
+// fullScreenCover racing the first (which was skipping the scan loader).
+struct FoodCaptureFlow: View {
+    var mealType: MealType
+    var onLogged: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var phase: Phase = .camera
+    @State private var img: UIImage?
+    @State private var b64 = ""
+    @State private var scanMode = "meal"
+    @State private var preset: MealEstimate?
+    @State private var resolving = false
+    @State private var notFound = false
+    enum Phase { case camera, scan }
+
+    var body: some View {
+        switch phase {
+        case .camera:
+            FoodCameraView(
+                onCapture: { image, m in
+                    img = image
+                    b64 = (image.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
+                    scanMode = (m == .foodLabel) ? "label" : "meal"
+                    preset = nil
+                    withAnimation { phase = .scan }
+                },
+                onBarcode: { code in Task { await resolveBarcode(code) } })
+            .overlay { if resolving { overlay("Looking up barcode…") } }
+            .overlay(alignment: .top) { if notFound { notFoundBanner } }
+        case .scan:
+            MealScanView(image: img ?? UIImage(), dataB64: b64, mealType: mealType.rawValue,
+                         scanMode: scanMode, onLogged: { onLogged(); dismiss() }, preset: preset)
+        }
+    }
+
+    private func resolveBarcode(_ code: String) async {
+        resolving = true; notFound = false
+        let hit = try? await ScanAPI.shared.searchBarcode(code)
+        await MainActor.run {
+            resolving = false
+            if let hit { preset = hit.asMeal; withAnimation { phase = .scan } }
+            else {
+                withAnimation { notFound = true }
+                Task { try? await Task.sleep(nanoseconds: 2_500_000_000); await MainActor.run { withAnimation { notFound = false } } }
+            }
+        }
+    }
+    private func overlay(_ text: String) -> some View {
+        ZStack { Color.black.opacity(0.5).ignoresSafeArea()
+            VStack(spacing: 10) { ProgressView().tint(.white); Text(text).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white) } }
+    }
+    private var notFoundBanner: some View {
+        Text("No product found — try Scan Food").font(.system(size: 12.5, weight: .bold)).foregroundStyle(.white)
+            .padding(.horizontal, 14).padding(.vertical, 10).background(Capsule().fill(Color.black.opacity(0.7)))
+            .padding(.top, 70).transition(.move(edge: .top).combined(with: .opacity))
     }
 }
 

@@ -6,19 +6,16 @@ struct NutritionView: View {
     let target: PlanContent.Macros?
 
     @State private var meals: [MealLog] = []
-    @State private var scanImage: UIImage?
-    @State private var scanB64: String?
-    @State private var showScan = false
-    @State private var showCamera = false
-    @State private var pendingPresent = false
+    @State private var showCapture = false
     @State private var showSearch = false
     @State private var showManual = false
     @State private var editing: MealLog?
     @State private var errorMsg: String?
     @State private var addingType: MealType = .current()
-    @State private var scanMode = "meal"
-    @State private var presetMeal: MealEstimate?
-    @State private var pendingBarcode: String?
+    @State private var selecting: MealType?         // section in multi-select mode
+    @State private var selected: Set<String> = []   // chosen meal ids to combine
+    @State private var showCombineNamer = false
+    @State private var combineName = ""
     @State private var showIdeas = false
     @State private var showSaved = false
     @State private var showReminders = false
@@ -57,13 +54,6 @@ struct NutritionView: View {
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .task { await reload() }
-        .onChange(of: showCamera) { _, shown in
-            if !shown && pendingPresent {
-                pendingPresent = false
-                if let code = pendingBarcode { pendingBarcode = nil; Task { await resolveBarcode(code) } }
-                else { showScan = true }
-            }
-        }
         .sheet(isPresented: $showManual) { manualSheet }
         .sheet(isPresented: $showIdeas) {
             MealIdeasView(onLog: { meal in Task { addingType = meal.type; await save(meal.asMeal) } },
@@ -83,35 +73,25 @@ struct NutritionView: View {
             FoodSearchView(onPick: { hit in Task { await save(hit.asMeal) } },
                            onManual: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { startManual() } })
         }
-        .fullScreenCover(isPresented: $showCamera) {
-            FoodCameraView(
-                onCapture: { img, m in
-                    scanImage = img
-                    scanB64 = (img.jpegData(compressionQuality: 0.8) ?? Data()).base64EncodedString()
-                    scanMode = (m == .foodLabel) ? "label" : "meal"
-                    presetMeal = nil; pendingBarcode = nil
-                    pendingPresent = true; showCamera = false
-                },
-                onBarcode: { code in
-                    pendingBarcode = code; pendingPresent = true; showCamera = false
-                })
+        .fullScreenCover(isPresented: $showCapture) {
+            FoodCaptureFlow(mealType: addingType, onLogged: { Task { await reload() } })
         }
-        .fullScreenCover(isPresented: $showScan) {
-            if let preset = presetMeal {
-                MealScanView(image: UIImage(), dataB64: "", mealType: addingType.rawValue,
-                             onLogged: { Task { await reload() } }, preset: preset)
-            } else if let img = scanImage, let b64 = scanB64 {
-                MealScanView(image: img, dataB64: b64, mealType: addingType.rawValue, scanMode: scanMode,
-                             onLogged: { Task { await reload() } })
+        .sheet(isPresented: $showCombineNamer) {
+            VStack(spacing: 14) {
+                Capsule().fill(Theme.line).frame(width: 38, height: 5).padding(.top, 10)
+                Text("Save as a meal").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text("\(selected.count) item\(selected.count == 1 ? "" : "s") combined — name it to reuse later.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                TextField("", text: $combineName, prompt: Text("Meal name (e.g. My breakfast)").foregroundStyle(Theme.mut))
+                    .font(.system(size: 16)).foregroundStyle(Theme.txt).padding(13)
+                    .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
+                Button { showCombineNamer = false; Task { await combineSelected() } } label: {
+                    Text("Save meal").font(.system(size: 15, weight: .bold)).frame(maxWidth: .infinity).padding(14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+                }
+                Spacer()
             }
-        }
-    }
-
-    private func resolveBarcode(_ code: String) async {
-        let hit = try? await ScanAPI.shared.searchBarcode(code)
-        await MainActor.run {
-            if let hit { presetMeal = hit.asMeal; showScan = true }
-            else { errorMsg = "Couldn't find that barcode — try Scan Food instead." }
+            .padding(.horizontal, 20).background(Theme.bg.ignoresSafeArea()).presentationDetents([.height(280)])
         }
     }
 
@@ -149,7 +129,7 @@ struct NutritionView: View {
     }
 
     private var scanButton: some View {
-        Button { addingType = .current(); showCamera = true } label: {
+        Button { addingType = .current(); showCapture = true } label: {
             HStack(spacing: 8) {
                 Image(systemName: "camera.fill").font(.system(size: 15, weight: .bold))
                 Text("Scan a meal").font(.system(size: 15, weight: .bold))
@@ -176,27 +156,47 @@ struct NutritionView: View {
     private func mealSection(_ t: MealType) -> some View {
         let items = meals.filter { MealType.bucket($0.meal_type) == t }
         let sectionCals = items.reduce(0) { $0 + $1.calories }
+        let inSelect = selecting == t
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: t.icon).font(.system(size: 13)).foregroundStyle(Theme.acc)
                 Text(t.label).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
                 Spacer()
-                if sectionCals > 0 {
-                    Text("\(Int(sectionCals)) cal").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
-                }
-                Menu {
-                    Button { addingType = t; showCamera = true } label: { Label("Scan a photo", systemImage: "camera.fill") }
-                    Button { addingType = t; showSearch = true } label: { Label("Search or add food", systemImage: "magnifyingglass") }
-                    Button { addingType = t; showSaved = true } label: { Label("Saved meals", systemImage: "bookmark.fill") }
-                } label: {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Theme.acc)
+                if inSelect {
+                    Button { selecting = nil; selected = [] } label: {
+                        Text("Cancel").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+                    }
+                } else {
+                    if sectionCals > 0 {
+                        Text("\(Int(sectionCals)) cal").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                    }
+                    Menu {
+                        Button { addingType = t; showCapture = true } label: { Label("Scan a photo", systemImage: "camera.fill") }
+                        Button { addingType = t; showSearch = true } label: { Label("Search or add food", systemImage: "magnifyingglass") }
+                        Button { addingType = t; showSaved = true } label: { Label("Saved meals", systemImage: "bookmark.fill") }
+                        if items.count >= 2 {
+                            Divider()
+                            Button { selecting = t; selected = [] } label: { Label("Select & save as a meal", systemImage: "checklist") }
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Theme.acc)
+                    }
                 }
             }
             if items.isEmpty {
                 Text("Nothing logged").font(.system(size: 12)).foregroundStyle(Theme.mut)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                ForEach(items) { mealRow($0) }
+                ForEach(items) { mealRow($0, selecting: inSelect) }
+            }
+            if inSelect {
+                Button { combineName = ""; showCombineNamer = true } label: {
+                    Text(selected.isEmpty ? "Select foods to combine" : "Save \(selected.count) as a meal")
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(selected.isEmpty ? Theme.line : Theme.acc))
+                        .foregroundStyle(selected.isEmpty ? Theme.mut : Color(hex: 0x0E0E10))
+                }.disabled(selected.isEmpty)
             }
         }
         .padding(14)
@@ -205,10 +205,18 @@ struct NutritionView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1)))
     }
 
-    private func mealRow(_ m: MealLog) -> some View {
+    private func mealRow(_ m: MealLog, selecting: Bool = false) -> some View {
         let count = m.foods.count
-        return Button { editing = m } label: {
+        let isSel = selected.contains(m.id ?? "")
+        return Button {
+            if selecting { if let id = m.id { if isSel { selected.remove(id) } else { selected.insert(id) } } }
+            else { editing = m }
+        } label: {
             HStack(spacing: 12) {
+                if selecting {
+                    Image(systemName: isSel ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 20)).foregroundStyle(isSel ? Theme.acc : Theme.line)
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(m.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
                     Text((count > 1 ? "\(count) foods · " : "") + "P \(Int(m.protein_g)) · C \(Int(m.carbs_g)) · F \(Int(m.fat_g))")
@@ -216,12 +224,27 @@ struct NutritionView: View {
                 }
                 Spacer()
                 Text("\(Int(m.calories)) cal").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+                if !selecting { Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut) }
             }
             .padding(.vertical, 11).padding(.horizontal, 13)
-            .background(RoundedRectangle(cornerRadius: 11).fill(Theme.bg))
+            .background(RoundedRectangle(cornerRadius: 11).fill(Theme.bg)
+                .overlay(RoundedRectangle(cornerRadius: 11).stroke(isSel ? Theme.acc.opacity(0.5) : .clear, lineWidth: 1)))
         }
         .buttonStyle(.plain)
+    }
+
+    // Combine the selected logged meals' foods into one saved meal.
+    private func combineSelected() async {
+        let chosen = meals.filter { selected.contains($0.id ?? "") }
+        let items: [MealEstimate.Item] = chosen.flatMap { m -> [MealEstimate.Item] in
+            m.foods.isEmpty ? [.init(name: m.name, calories: m.calories, protein_g: m.protein_g, carbs_g: m.carbs_g, fat_g: m.fat_g)] : m.foods
+        }
+        var est = MealEstimate(name: combineName.isEmpty ? "My meal" : combineName, items: items,
+                               calories: items.reduce(0) { $0 + $1.calories }, protein_g: items.reduce(0) { $0 + $1.protein_g },
+                               carbs_g: items.reduce(0) { $0 + $1.carbs_g }, fat_g: items.reduce(0) { $0 + $1.fat_g }, confidence: "combo")
+        est.servings = 1
+        try? await ScanAPI.shared.saveMeal(est)
+        await MainActor.run { selecting = nil; selected = [] }
     }
 
     // MARK: manual + edit sheets

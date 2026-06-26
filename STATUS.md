@@ -193,5 +193,11 @@ User chose the full model. To build: a user **Food catalog** (create manually or
 - Optional: "build a combo across separately-logged foods" (cart/multi-select) — current path is build-the-combo-in-one-meal-then-save.
 - Light mode (deferred).
 
+## Bug fixes + combine-to-meal + JP sets (part 13)
+- **Snacks bug fixed:** logMeal/updateMeal bundled items+meal_type, so when the (undeployed) items column 400'd it dropped meal_type too → defaulted to 'other' → Snacks. Now tiers down independently (items+type → type → minimal) so meal_type always saves.
+- **Upload loader fixed (root cause found):** two `fullScreenCover`s on one view (camera dismiss → scan present via onChange) stalled the second presentation, skipping the loader. Reproduced on the simulator. Replaced with **`FoodCaptureFlow`** — one cover that switches camera→scan internally (view-tree swap fires MealScanView's `.task` → loader always shows). FoodCameraView no longer self-dismisses on capture.
+- **Combine to meal:** each meal section "+" → "Select & save as a meal" → multi-select logged items → name → saves the combined foods to saved_meals. MealDetailView's save is now a clear "Save this as a meal" button (not a vague bookmark).
+- **JP abs sets:** plan.ts said "Abs = 4 sets" (contradicted the 2-working-set doctrine). Changed to "2-3 sets of 15-20." Re-generate a plan to apply.
+
 ## Git
 Commit + push directly to `main` (never auto-branch). Recent work all on `main`.

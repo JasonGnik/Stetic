@@ -34,11 +34,6 @@ struct MealDetailView: View {
             HStack {
                 Text("Meal").font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.txt)
                 Spacer()
-                Button { Task { await saveCombo() } } label: {
-                    Image(systemName: savedCombo ? "bookmark.fill" : "bookmark")
-                        .font(.system(size: 15, weight: .bold)).foregroundStyle(savedCombo ? Theme.acc : Theme.txt)
-                        .padding(8).background(Circle().fill(Theme.card))
-                }.disabled(savedCombo)
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.mut)
                         .padding(8).background(Circle().fill(Theme.card))
@@ -91,6 +86,17 @@ struct MealDetailView: View {
                             .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
                         }.buttonStyle(.plain)
                     }
+
+                    Button { Task { await saveCombo() } } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: savedCombo ? "bookmark.fill" : "bookmark")
+                            Text(savedCombo ? "Saved to your meals" : "Save this as a meal")
+                        }
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.acc)
+                        .frame(maxWidth: .infinity).padding(.vertical, 11)
+                        .background(RoundedRectangle(cornerRadius: 11).fill(Theme.card).overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.line, lineWidth: 1)))
+                    }
+                    .disabled(savedCombo).padding(.top, 4)
                 }
                 .padding(.horizontal, 18).padding(.top, 6).padding(.bottom, 20)
             }

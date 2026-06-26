@@ -49,6 +49,8 @@ struct ContentView: View {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
             ZStack { Theme.bg.ignoresSafeArea(); ShareCardView(card: .sample, name: "Jason") }
+        } else if env["STETIC_MEALUPLOAD"] == "1" {
+            MealUploadProbe()
         } else if env["STETIC_MEALDETAIL"] == "1" {
             MealDetailView(log: .init(id: "x", log_date: LogDate.today, name: "Pasta with Tuna Tartare & Pizza",
                 calories: 1370, protein_g: 70, carbs_g: 160, fat_g: 51, meal_type: "dinner",
@@ -123,6 +125,39 @@ struct ContentView: View {
 
 #Preview {
     ContentView().preferredColorScheme(.dark)
+}
+
+// DEV: reproduces the upload path — camera cover dismisses, scan cover presents via
+// the onChange dance (the exact two-fullScreenCover sequence the real flow uses).
+struct MealUploadProbe: View {
+    @State private var showCamera = true
+    @State private var showScan = false
+    @State private var pendingPresent = false
+    @State private var img: UIImage?
+    @State private var b64: String?
+    private var sample: (UIImage, String) {
+        let url = Bundle.main.url(forResource: "sample", withExtension: "jpg")
+        let data = (url.flatMap { try? Data(contentsOf: $0) }) ?? Data()
+        return (UIImage(data: data) ?? UIImage(), data.base64EncodedString())
+    }
+    var body: some View {
+        ZStack { Theme.bg.ignoresSafeArea() }
+            .fullScreenCover(isPresented: $showCamera) {
+                ZStack { Color.black.ignoresSafeArea(); ProgressView().tint(.white) }
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                            let s = sample; img = s.0; b64 = s.1
+                            pendingPresent = true; showCamera = false
+                        }
+                    }
+            }
+            .onChange(of: showCamera) { _, shown in
+                if !shown && pendingPresent { pendingPresent = false; showScan = true }
+            }
+            .fullScreenCover(isPresented: $showScan) {
+                if let img, let b64 { MealScanView(image: img, dataB64: b64, onLogged: {}) }
+            }
+    }
 }
 
 // DEV: reproduces the Food-tab presentation (MealScanView in a fullScreenCover).

@@ -495,17 +495,21 @@ actor ScanAPI {
             let calories: Double; let protein_g: Double; let carbs_g: Double; let fat_g: Double
             var meal_type: String?; var items: [MealEstimate.Item]?
         }
-        func post(full: Bool) async throws -> Int {
+        // Tier down independently so meal_type still saves even if `items` isn't deployed.
+        func post(type: Bool, items withItems: Bool, throwOnFail: Bool) async throws -> Int {
             let row = Row(user_id: uid, log_date: LogDate.today, name: m.name,
                           calories: m.shownCalories, protein_g: m.shownProtein, carbs_g: m.shownCarbs,
-                          fat_g: m.shownFat, meal_type: full ? mealType : nil, items: full ? items : nil)
+                          fat_g: m.shownFat, meal_type: type ? mealType : nil, items: withItems ? items : nil)
             let body = try JSONEncoder().encode(row)
             let (data, s) = try await authed(restURL("meal_logs"), method: "POST", body: body, prefer: "return=minimal")
-            if s != 201 && s != 204 && !full { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+            if s != 201 && s != 204 && throwOnFail { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
             return s
         }
-        let s = try await post(full: true)
-        if s == 400 { _ = try await post(full: false) }   // items/meal_type columns not deployed yet
+        if try await post(type: true, items: true, throwOnFail: false) == 400 {           // items column missing?
+            if try await post(type: true, items: false, throwOnFail: false) == 400 {       // meal_type missing too?
+                _ = try await post(type: false, items: false, throwOnFail: true)
+            }
+        }
     }
 
     // MARK: daily check-in
@@ -562,16 +566,19 @@ actor ScanAPI {
             let name: String; let calories: Double; let protein_g: Double
             let carbs_g: Double; let fat_g: Double; var meal_type: String?; var items: [MealEstimate.Item]?
         }
-        func patch(full: Bool) async throws -> Int {
+        func patch(type: Bool, items withItems: Bool, throwOnFail: Bool) async throws -> Int {
             let body = try JSONEncoder().encode(Patch(name: name, calories: calories, protein_g: protein_g,
-                carbs_g: carbs_g, fat_g: fat_g, meal_type: full ? mealType : nil, items: full ? items : nil))
+                carbs_g: carbs_g, fat_g: fat_g, meal_type: type ? mealType : nil, items: withItems ? items : nil))
             let (data, s) = try await authed(restURL("meal_logs", query: [.init(name: "id", value: "eq.\(id)")]),
                                              method: "PATCH", body: body, prefer: "return=minimal")
-            if s != 204 && s != 200 && !full { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+            if s != 204 && s != 200 && throwOnFail { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
             return s
         }
-        let s = try await patch(full: true)
-        if s == 400 { _ = try await patch(full: false) }
+        if try await patch(type: true, items: true, throwOnFail: false) == 400 {
+            if try await patch(type: true, items: false, throwOnFail: false) == 400 {
+                _ = try await patch(type: false, items: false, throwOnFail: true)
+            }
+        }
     }
 
     func meals(on date: String) async throws -> [MealLog] {

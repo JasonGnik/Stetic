@@ -70,7 +70,7 @@ OUTPUT REQUIREMENTS:
   • Most exercises = **2 working sets**: a heavy TOP set (5-9 or 6-9 reps) then a BACK-OFF set ~10% lighter on compounds / ~5% on isolation in the 10-12 range. Write reps as "5-9, 10-12" (top, back-off).
   • Isolation / finisher movements = 2 sets of "15-20".
   • Biceps/arm movements may use 3 sets "6-9, 10-12, 15-20".
-  • Abs = 4 sets of "15-20".
+  • Abs = 2-3 sets of "15-20" (keep it low-volume like everything else — never 4+ straight sets).
   • Occasionally on the LAST movement of a muscle, use a JP intensity technique: rest-pause reps "12, 6, 3" or "15, 8, 5" (sets=1), a triple drop set (sets=1), or a 6×4 cluster (sets=6, reps="4").
   • Set the 'sets' number to match (2 normally; 3 for the three-range arm work; 4 for abs; 1 for rest-pause/drop/cluster).
   • ALL working sets to failure, tempo 3010, ~2 min rest. Compounds/mechanical-tension FIRST while fresh; isolation + stretch work LAST. Each exercise 'note' = a cue or technique (e.g. "Top set then ~10% back-off, both to failure", "Rest-pause", "Stretch 60-90s after").
