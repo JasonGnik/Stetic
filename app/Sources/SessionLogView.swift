@@ -72,13 +72,14 @@ struct SessionLogView: View {
             deloadActive = deload
             for i in exercises.indices {
                 guard let last = map[exercises[i].name] else { continue }
-                let range = RepRange(exercises[i].repRange)
+                let ranges = RepRange.perSet(exercises[i].repRange, count: exercises[i].sets.count)
                 for j in exercises[i].sets.indices where j < last.count {
                     let w = last[j].weight
                     guard w > 0 else { continue }
-                    if deload {
-                        exercises[i].sets[j].weight = Deload.round5(w * 0.6)
-                    } else if let range, last[j].reps >= range.high, last[j].reps > 0 {
+                    // Deload (JP): KEEP the weight — you just stop short of failure. No auto-add.
+                    // Because deload reps land below the top of the range, the week after
+                    // naturally rebuilds to your numbers before pushing past them.
+                    if !deload, let range = ranges[j], last[j].reps >= range.high, last[j].reps > 0 {
                         exercises[i].sets[j].weight = w + Deload.increment(for: w)
                         bumped.insert(exercises[i].name)
                     } else {
@@ -108,7 +109,7 @@ struct SessionLogView: View {
                 Image(systemName: deloadActive ? "wind" : "bolt.fill").font(.system(size: 10))
                     .foregroundStyle(deloadActive ? Theme.amber : Theme.acc)
                 Text(deloadActive
-                     ? "Deload week — we dropped your weights to ~60%. Stay smooth, no failure."
+                     ? "Deload week — same weights, but leave 2 reps in the tank (3–4 on the 15–20 sets). No failure. Recover, then go again."
                      : "Beat last session — every set to failure. Top of the rep range? Add a little weight.")
                     .font(.system(size: 11)).foregroundStyle(deloadActive ? Color(hex: 0xE6E0CF) : Theme.mut)
             }
@@ -119,15 +120,19 @@ struct SessionLogView: View {
     }
 
     private func exerciseCard(_ i: Int) -> some View {
-        let range = RepRange(exercises[i].repRange)
+        let ranges = RepRange.perSet(exercises[i].repRange, count: exercises[i].sets.count)
+        let rangeLabels = ranges.compactMap { $0?.label }.reduce(into: [String]()) { acc, l in
+            if !acc.contains(l) { acc.append(l) }
+        }
+        let note = i < day.exercises.count ? day.exercises[i].note : nil
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Text(exercises[i].name).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
                 Spacer()
-                if let range {
+                if !rangeLabels.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "target").font(.system(size: 9, weight: .bold))
-                        Text("\(range.label) reps").font(.system(size: 10, weight: .bold))
+                        Text("\(rangeLabels.joined(separator: " · ")) reps").font(.system(size: 10, weight: .bold))
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(Theme.acc.opacity(0.16))).foregroundStyle(Theme.acc)
@@ -144,6 +149,12 @@ struct SessionLogView: View {
                     .background(Capsule().fill(Theme.acc.opacity(0.16))).foregroundStyle(Theme.acc)
                 }
             }
+            if let note, !note.isEmpty {
+                HStack(alignment: .top, spacing: 5) {
+                    Image(systemName: "info.circle").font(.system(size: 9)).foregroundStyle(Theme.acc.opacity(0.8)).padding(.top, 1)
+                    Text(note).font(.system(size: 10.5)).foregroundStyle(Color(hex: 0xC8C8CE)).lineSpacing(2)
+                }
+            }
             if let last = lastByExercise[exercises[i].name], !last.isEmpty {
                 HStack(spacing: 5) {
                     Image(systemName: "clock.arrow.circlepath").font(.system(size: 9)).foregroundStyle(Theme.mut)
@@ -151,7 +162,7 @@ struct SessionLogView: View {
                         .font(.system(size: 10.5)).foregroundStyle(Theme.mut)
                 }
             }
-            ForEach(exercises[i].sets.indices, id: \.self) { j in setRow(i, j, range: range) }
+            ForEach(exercises[i].sets.indices, id: \.self) { j in setRow(i, j, range: ranges[j]) }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -163,7 +174,7 @@ struct SessionLogView: View {
         let last = lastByExercise[exercises[i].name]
         let lastReps = (last != nil && j < last!.count) ? last![j].reps : nil
         let beat = set.done && lastReps != nil && set.reps > lastReps!
-        let topHit = set.done && range != nil && set.reps >= range!.high && set.reps > 0
+        let topHit = !deloadActive && set.done && range != nil && set.reps >= range!.high && set.reps > 0
         let pulsing = pulsedSets.contains(set.id)
         return HStack(spacing: 10) {
             Text("Set \(j + 1)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut).frame(width: 40, alignment: .leading)
@@ -202,7 +213,7 @@ struct SessionLogView: View {
         let last = lastByExercise[exercises[i].name]
         let lastReps = (last != nil && j < last!.count) ? last![j].reps : nil
         let beat = lastReps != nil && set.reps > lastReps!
-        let topHit = range != nil && set.reps >= range!.high && set.reps > 0
+        let topHit = !deloadActive && range != nil && set.reps >= range!.high && set.reps > 0
         if beat || topHit {
             pulsedSets.insert(set.id)
             Task { try? await Task.sleep(nanoseconds: 900_000_000); await MainActor.run { pulsedSets.remove(set.id) } }
@@ -246,11 +257,15 @@ struct SessionLogView: View {
 
     // Which exercises hit the top of their range → add weight next time.
     private func computeProgressions() -> [Progression] {
-        exercises.compactMap { ex in
-            guard let range = RepRange(ex.repRange) else { return nil }
-            let hit = ex.sets.contains { $0.done && $0.reps >= range.high && $0.reps > 0 }
-            guard hit else { return nil }
-            return Progression(name: ex.name, cue: "Hit \(range.high)+ reps — add a little weight")
+        guard !deloadActive else { return [] }   // deload weeks don't earn weight — you held back from failure
+        return exercises.compactMap { ex in
+            let ranges = RepRange.perSet(ex.repRange, count: ex.sets.count)
+            let hit = ex.sets.indices.contains { j in
+                guard let r = ranges[j] else { return false }
+                return ex.sets[j].done && ex.sets[j].reps >= r.high && ex.sets[j].reps > 0
+            }
+            guard hit, let top = ranges.compactMap({ $0 }).first else { return nil }
+            return Progression(name: ex.name, cue: "Hit \(top.high)+ reps — add a little weight")
         }
     }
 

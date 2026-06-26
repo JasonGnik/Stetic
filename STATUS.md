@@ -61,6 +61,24 @@ Real iPhone required — the simulator can't do Apple sign-in or sandbox purchas
 - [ ] Camera meal scan + **barcode** + food-label modes (no camera in sim).
 - [ ] HealthKit steps + bodyweight prompt.
 
+## JP-doctrine audit (5 parallel Opus agents vs the PDF) — 2026-06-26
+The app's **intensity** engine is faithful (low volume, ~2 working sets, every set to failure,
+double-progression beat-the-logbook, compound-first, ~2×/wk, correct macro order + BMR). Misses
+cluster in the **periodization/personalization** half.
+
+**Fixed this session (pre-launch):**
+- **RepRange bug** — `RepRange.perSet()` now parses multi-range reps ("5-9, 10-12, 15-20") into one range PER SET (top set vs back-off vs high-rep). The old single-range parse dropped everything after the first → progression mis-fired on every multi-range lift. Wired through SessionLogView (cards, set rows, progression, celebration).
+- **Render the `note` field** — tempo 3010 / stretch / cues that `plan.ts` already generates were never shown; now rendered in PlanView split + SessionLogView exercise cards.
+- **Deload corrected to doctrine** — was "drop weight to ~60%"; now KEEP the weight, stop 2 reps short of failure (3–4 on 15–20), or take the week off. No auto-add during deload; top-of-range cues suppressed; the week after naturally rebuilds then exceeds. Banner copy (Today + SessionLogView) updated.
+- **Step goal 8000 → 10000** (guide says ~10k/day).
+- Kept protein at 1.1 g/lb and pace-based deficit (deliberate; guide's 1.5 g/lb is high).
+
+**Roadmap (post-launch — real builds, NOT blocking):**
+- **Phase 1/2/3 model + recovery assessment** — the guide's THESIS (Person 1 vs Person 2): split should be gated on experience + recovery (sleep/stress/life-load), not days-available. Beginners stay in Phase 1 Upper/Lower; graduate to Phase 2 PPL on a logbook stall. Onboarding asks none of this today. **#1 roadmap item.**
+- **Stall handling** — single-lift stall (2 sessions no PR) → swap like-for-like, return later; multi-lift stall → that's the real deload trigger (vs the current calendar timer). History data already loaded, unused.
+- **Weigh-daily → weekly-average → ±200 kcal adjust loop** — the guide's ongoing nutrition feedback mechanism; app shows noisy daily weights with no trend/nudge.
+- Surface logbook history (review past sessions / per-exercise progression); record RIR + per-session sleep/stress; warm-up ramp UI; stretches as logged steps; supplements card; gate weak-point specialization to advanced lifters.
+
 ## Architecture
 - **App:** `app/` SwiftUI, iOS 17+, XcodeGen (`project.yml` → `Stetic.xcodeproj`; run `xcodegen generate` after adding files). Bundle `com.stetic.app`. Theme in `Theme.swift` (stealth lime).
 - **Backend:** Supabase (Postgres + RLS + Auth + Edge Functions in Deno/TS). Gemini 2.5 **Flash** (scan, meal-scan, read-split) + 2.5 **Pro** (plan — the only expensive call, ~$0.04; everything else ~$0.001–0.002). Photos NEVER stored; only derived numbers.

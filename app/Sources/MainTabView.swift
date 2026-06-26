@@ -70,7 +70,7 @@ struct HomeView: View {
     @AppStorage("trainWeekdays") private var trainWeekdaysRaw = ""   // e.g. "2,4,6"
     @AppStorage("trainHour") private var trainHour = 17
     @AppStorage("deloadAnchor") private var deloadAnchor = ""        // yyyy-MM-dd
-    @AppStorage("stepGoal") private var stepGoal = 8000
+    @AppStorage("stepGoal") private var stepGoal = 10000      // JP: ~10k/day for health
     @AppStorage("stepStreakOn") private var stepStreakOn = false     // step goal keeps streak alive on rest days
     @AppStorage("activityDates") private var activityCSV = ""        // days the step goal was met
 
@@ -276,7 +276,7 @@ struct HomeView: View {
                 .frame(width: 42, height: 42).background(Circle().fill(Theme.amber.opacity(0.14)))
             VStack(alignment: .leading, spacing: 2) {
                 Text("Deload week").font(.system(size: 15, weight: .heavy)).foregroundStyle(Theme.txt)
-                Text("\(weeksTraining) weeks in — drop to ~60% volume this week so you keep growing.")
+                Text("\(weeksTraining) weeks in — keep your weights, but stop ~2 reps short of failure (3–4 on the 15–20 sets). Or take the whole week off. Recover, then go again.")
                     .font(.system(size: 11.5)).foregroundStyle(Theme.mut).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()

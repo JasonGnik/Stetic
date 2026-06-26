@@ -358,6 +358,9 @@ struct PlanView: View {
                                         Text("weak point").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.red)
                                     }
                                 }
+                                if let note = e.note, !note.isEmpty {
+                                    Text(note).font(.system(size: 10)).foregroundStyle(Theme.mut).lineSpacing(2)
+                                }
                             }
                             Spacer()
                             Text("\(e.sets) × \(e.reps)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)

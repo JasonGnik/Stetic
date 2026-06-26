@@ -49,6 +49,18 @@ struct RepRange {
     }
     var label: String { low == high ? "\(low)" : "\(low)–\(high)" }
     func contains(_ reps: Int) -> Bool { reps >= low && reps <= high }
+
+    // Parse a multi-range reps string ("5-9, 10-12, 15-20") into one range PER SET:
+    // set 0 = the heavy top set, set 1 = the back-off, etc. The last listed range
+    // repeats if there are more sets than ranges. JP prescribes different targets for
+    // the top vs back-off set, so each set must be judged against its own range
+    // (the old single-range parse silently dropped everything after the first).
+    static func perSet(_ raw: String?, count: Int) -> [RepRange?] {
+        guard count > 0 else { return [] }
+        let ranges = (raw ?? "").split(separator: ",").compactMap { RepRange(String($0)) }
+        guard let last = ranges.last else { return Array(repeating: nil, count: count) }
+        return (0..<count).map { ranges.indices.contains($0) ? ranges[$0] : last }
+    }
 }
 
 // A completed (or in-progress) training session.
