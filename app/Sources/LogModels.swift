@@ -28,7 +28,7 @@ enum Deload {
     static func weeks(anchor: String, earliest: String?) -> Int {
         let start = anchor.isEmpty ? (earliest ?? "") : anchor
         guard let d = LogDate.fmt.date(from: start) else { return 0 }
-        return (Calendar.current.dateComponents([.day], from: d, to: Date()).day ?? 0) / 7
+        return (Calendar.current.dateComponents([.day], from: d, to: AppClock.now).day ?? 0) / 7
     }
     static func isDue(_ weeks: Int) -> Bool { weeks >= cycleWeeks }
     // The smallest sensible jump when you earn a weight increase.
@@ -291,7 +291,7 @@ enum LogDate {
         return f
     }()
     static func string(_ d: Date) -> String { fmt.string(from: d) }
-    static var today: String { string(Date()) }
+    static var today: String { string(AppClock.now) }
 }
 
 // Training streak with a one-day grace — James Clear's "never miss twice." A single
@@ -302,7 +302,7 @@ enum Streak {
         let cal = Calendar.current
         let days = Set(dateStrings.compactMap { LogDate.fmt.date(from: $0) }.map { cal.startOfDay(for: $0) })
         guard !days.isEmpty else { return 0 }
-        let today = cal.startOfDay(for: Date())
+        let today = cal.startOfDay(for: AppClock.now)
         var cursor = days.contains(today) ? today : cal.date(byAdding: .day, value: -1, to: today)!
         var count = 0, misses = 0
         while true {
@@ -319,7 +319,7 @@ enum Streak {
     static func graceActive(from dateStrings: [String]) -> Bool {
         let cal = Calendar.current
         let days = Set(dateStrings.compactMap { LogDate.fmt.date(from: $0) }.map { cal.startOfDay(for: $0) })
-        let today = cal.startOfDay(for: Date())
+        let today = cal.startOfDay(for: AppClock.now)
         guard !days.contains(today),
               let y = cal.date(byAdding: .day, value: -1, to: today), !days.contains(y) else { return false }
         return count(from: dateStrings) > 0

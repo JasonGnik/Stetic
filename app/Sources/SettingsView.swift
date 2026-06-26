@@ -5,6 +5,7 @@ struct SettingsView: View {
     @AppStorage("remindersOn") private var remindersOn = true
     @AppStorage("steticDays") private var steticDays = 4
     @AppStorage("healthConnected") private var healthConnected = false
+    @AppStorage(AppClock.offsetKey) private var debugDayOffset = 0
     @State private var showRestoreNote = false
 
     var body: some View {
@@ -40,6 +41,26 @@ struct SettingsView: View {
                         HStack { Text("Version").foregroundStyle(Theme.txt); Spacer(); Text(appVersion).foregroundStyle(Theme.mut) }
                             .font(.system(size: 14)).rowStyle()
                     }
+                    #if DEBUG
+                    group("DEBUG — TIME TRAVEL") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "clock.arrow.2.circlepath").foregroundStyle(Theme.acc).frame(width: 20)
+                                Text("Day offset").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+                                Spacer()
+                                Text("\(debugDayOffset >= 0 ? "+" : "")\(debugDayOffset)d")
+                                    .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.acc)
+                                Stepper("", value: $debugDayOffset, in: -7...180).labelsHidden().tint(Theme.acc)
+                            }
+                            Text("Simulating \(simulatedDateString). Streak, grace & deload read this — log a workout to record it on that day.")
+                                .font(.system(size: 11)).foregroundStyle(Theme.mut).lineSpacing(2)
+                            if debugDayOffset != 0 {
+                                Button("Reset to today") { debugDayOffset = 0 }
+                                    .font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.acc)
+                            }
+                        }.rowStyle()
+                    }
+                    #endif
                     Text("Stetic gives AI estimates to help you train — it is not medical, nutritional, or fitness advice. Talk to a qualified professional before changing your training or diet.")
                         .font(.system(size: 11)).foregroundStyle(Theme.mut).lineSpacing(3)
                         .padding(.top, 4)
@@ -61,6 +82,12 @@ struct SettingsView: View {
 
     private var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.1.0"
+    }
+
+    private var simulatedDateString: String {
+        let d = Calendar.current.date(byAdding: .day, value: debugDayOffset, to: Date()) ?? Date()
+        let f = DateFormatter(); f.dateFormat = "EEE, MMM d"
+        return f.string(from: d)
     }
 
     @ViewBuilder private func group<C: View>(_ title: String, @ViewBuilder _ c: () -> C) -> some View {

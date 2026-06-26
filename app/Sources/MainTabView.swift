@@ -97,7 +97,7 @@ struct HomeView: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card))
     }
     private var isTrainingDay: Bool {
-        let wd = Calendar.current.component(.weekday, from: Date())
+        let wd = Calendar.current.component(.weekday, from: AppClock.now)
         return trainingDays.contains(wd)
     }
     private var checkInCard: some View {
@@ -199,7 +199,7 @@ struct HomeView: View {
     }
     private var weekDates: [Date] {
         let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
+        let today = cal.startOfDay(for: AppClock.now)
         guard let start = cal.dateInterval(of: .weekOfYear, for: today)?.start else { return [] }
         return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: start) }
     }
@@ -228,8 +228,8 @@ struct HomeView: View {
     private func dayChip(_ date: Date) -> some View {
         let cal = Calendar.current
         let wd = cal.component(.weekday, from: date)
-        let isToday = cal.isDateInToday(date)
-        let isPast = date < cal.startOfDay(for: Date())
+        let isToday = cal.isDate(date, inSameDayAs: AppClock.now)
+        let isPast = date < cal.startOfDay(for: AppClock.now)
         let logged = workoutDates.contains(LogDate.string(date))
         let train = trainingDays.contains(wd)
         let letters = ["", "S", "M", "T", "W", "T", "F", "S"]
@@ -267,7 +267,7 @@ struct HomeView: View {
         let cal = Calendar.current
         let anchorStr = deloadAnchor.isEmpty ? (workoutDates.last ?? "") : deloadAnchor
         guard let start = LogDate.fmt.date(from: anchorStr) else { return 0 }
-        return (cal.dateComponents([.day], from: start, to: Date()).day ?? 0) / 7
+        return (cal.dateComponents([.day], from: start, to: AppClock.now).day ?? 0) / 7
     }
     private var deloadDue: Bool { weeksTraining >= 8 }
     private var deloadBanner: some View {
