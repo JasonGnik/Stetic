@@ -166,6 +166,9 @@ struct PlanView: View {
                     }
                     .padding(.top, 6)
                 }
+                Text("General training guidance based on how muscle grows — not medical, nutritional, or fitness advice. Talk to a qualified professional before changing your training or diet.")
+                    .font(.system(size: 10.5)).foregroundStyle(Theme.mut).lineSpacing(3)
+                    .padding(.top, 10)
             }
             .padding(.horizontal, 22).padding(.top, 14).padding(.bottom, 36)
         }

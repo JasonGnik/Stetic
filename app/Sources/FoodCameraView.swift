@@ -65,11 +65,44 @@ struct FoodCameraView: View {
         .padding(.horizontal, 18).padding(.top, 14)
     }
 
+    // Rounded L-shaped brackets at each corner (camera-viewfinder look) instead of a full square.
+    private struct CornerBrackets: Shape {
+        var len: CGFloat = 36
+        var radius: CGFloat = 24
+        func path(in rect: CGRect) -> Path {
+            var p = Path()
+            let r = radius
+            // top-left
+            p.move(to: CGPoint(x: rect.minX, y: rect.minY + r + len))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+            p.addQuadCurve(to: CGPoint(x: rect.minX + r, y: rect.minY), control: CGPoint(x: rect.minX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.minX + r + len, y: rect.minY))
+            // top-right
+            p.move(to: CGPoint(x: rect.maxX - r - len, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+            p.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.minY + r), control: CGPoint(x: rect.maxX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + r + len))
+            // bottom-right
+            p.move(to: CGPoint(x: rect.maxX, y: rect.maxY - r - len))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r))
+            p.addQuadCurve(to: CGPoint(x: rect.maxX - r, y: rect.maxY), control: CGPoint(x: rect.maxX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.maxX - r - len, y: rect.maxY))
+            // bottom-left
+            p.move(to: CGPoint(x: rect.minX + r + len, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.minX + r, y: rect.maxY))
+            p.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - r), control: CGPoint(x: rect.minX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - r - len))
+            return p
+        }
+    }
+
     @ViewBuilder private var reticle: some View {
-        let w: CGFloat = mode == .barcode ? 260 : 290
-        let h: CGFloat = mode == .barcode ? 150 : 290
+        let w: CGFloat = mode == .barcode ? 300 : 330
+        let h: CGFloat = mode == .barcode ? 175 : 330
         ZStack {
-            RoundedRectangle(cornerRadius: 26).stroke(.white.opacity(0.85), lineWidth: 2).frame(width: w, height: h)
+            CornerBrackets()
+                .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                .frame(width: w, height: h)
             if !cam.available {
                 VStack(spacing: 8) {
                     Image(systemName: "camera.fill").font(.system(size: 26)).foregroundStyle(.white.opacity(0.8))

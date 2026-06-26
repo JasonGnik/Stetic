@@ -187,8 +187,8 @@ struct OnboardingView: View {
         case .equipment:  singleSelect(OnbOptions.equipment, data.equipment) { data.equipment = $0 }
         case .equipmentDetail: multiSelect(OnbOptions.equipmentItems, data.equipmentItems) { toggle(&data.equipmentItems, $0) }
         case .height:     measure(value: $data.heightCm, range: 140...215, units: ["ft", "cm"], format: heightLabel)
-        case .weight:     measure(value: $data.weightKg, range: 40...180, units: ["lb", "kg"], format: weightLabel)
-        case .goalWeight: measure(value: $data.goalWeightKg, range: 40...180, units: ["lb", "kg"], format: weightLabel)
+        case .weight:     measure(value: $data.weightKg, range: 40...160, units: ["lb", "kg"], format: weightLabel, step: 0.5)
+        case .goalWeight: measure(value: $data.goalWeightKg, range: 40...160, units: ["lb", "kg"], format: weightLabel, step: 0.5)
         case .age:        ageStep
         case .attribution: singleSelect(OnbOptions.attribution, data.attribution) { data.attribution = $0 }
         case .reminders:  remindersStep
@@ -253,12 +253,12 @@ struct OnboardingView: View {
 
     // MARK: measure (height/weight) — big readout + slider + unit toggle
     @State private var unit = 0
-    private func measure(value: Binding<Double>, range: ClosedRange<Double>, units: [String], format: @escaping (Double, Int) -> String) -> some View {
+    private func measure(value: Binding<Double>, range: ClosedRange<Double>, units: [String], format: @escaping (Double, Int) -> String, step: Double = 1) -> some View {
         VStack(spacing: 22) {
             Text(format(value.wrappedValue, unit))
                 .font(.system(size: 44, weight: .heavy)).foregroundStyle(Theme.txt)
                 .frame(maxWidth: .infinity)
-            Slider(value: value, in: range, step: 1).tint(Theme.acc)
+            Slider(value: value, in: range, step: step).tint(Theme.acc)
                 .sensoryFeedback(.selection, trigger: value.wrappedValue)
             HStack(spacing: 8) {
                 ForEach(units.indices, id: \.self) { i in

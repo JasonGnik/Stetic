@@ -61,6 +61,45 @@ Real iPhone required — the simulator can't do Apple sign-in or sandbox purchas
 - [ ] Camera meal scan + **barcode** + food-label modes (no camera in sim).
 - [ ] HealthKit steps + bodyweight prompt.
 
+## ⭐ DEVICE-TEST FEEDBACK — punch list (2026-06-26, Jason's on-device pass). NOTHING HERE GETS LOST.
+**Sandbox purchase WORKED ✅** (full A-path: Apple sign-in → onboarding → paywall → sandbox buy → unlock). Lean physique scored **Mythic** — Jason is OK with it (aspirational for the target audience).
+
+### Bugs confirmed on device
+1. **Plan view scrolls horizontally** — "Your plan" can be dragged side-to-side; should be vertical-only. Constrain the scroll.
+2. **Craving button dead on first press** — tapping "Craving?" inside the Ideas sheet does nothing; it only appears AFTER you exit Ideas. Sheet-over-sheet presentation race (same family as the old meal-scan double-cover). Fix.
+3. **Keyboard won't dismiss after typing** — persists over the UI. Add tap-to-dismiss / Done handling everywhere there's text entry (weight, craving, food, manual add).
+4. **Onboarding bodyweight not saved to Progress** — weight entered in onboarding doesn't seed `weight_logs`; Progress shows nothing until you log again. Persist the onboarding weight as the first entry.
+5. **Rest days show a workout** — Today/Up-Next shows a session on a rest day; should say "Rest day" when nothing is scheduled. (Logging on a rest day still worked + streak persisted.)
+6. **Progress doesn't refresh after a scan** — a new scan didn't update Progress until switching tabs and back. Refresh on scan completion / onAppear.
+
+### Scoring (investigate)
+7. **Score barely moved (+0.2) for a clearly better physique** on rescan. Hypothesis: ceiling compression — if a lean-but-not-huge body already hits Mythic (near the top), a "way better" body has no room to climb. Look at the high-end of the scale / tier spacing. (Calibration is "locked v1" — change carefully.)
+8. **Weak-point inconsistency** — Plan flagged **chest as a weak point** but the scan score card did NOT show chest as weak. Card (Core-6) and plan weak-point derivation must agree.
+
+### Copy / wording
+9. **Onboarding screen 4 "walk in with confidence" → "walk with confidence"** (doesn't parse). Do a wording pass on the intro screens.
+10. **12-week projection tier names (Gold/Elite/Mythic) mean nothing to the target user** — rework into visceral/visual language they understand, not invented tiers. (We flagged this before.)
+
+### UX tweaks
+11. **Weight pickers** — slider doesn't stop on every pound. Add a TYPE option, and/or rescale so the slider midpoint is ~200 (not 243); 400 goal weights are rare. (Both current-weight and goal-weight screens.)
+12. **Meal scanner crosshairs** — make bigger + not a perfect square; show the rounded corners (aesthetic).
+
+### Legal / paywall (LAUNCH-RELEVANT)
+13. Privacy/Terms ARE linked in Settings → About (wired this session — corrects "not linked anywhere"). BUT **Apple requires the PAYWALL itself to display Terms (EULA) + Privacy links AND the subscription price/length/auto-renew terms** — currently missing on the paywall → likely review rejection. ADD to paywall.
+14. Add a visible **"not medical advice — general training guidance"** disclaimer near the plan (it's in Settings + Terms today; should sit on/near the plan screen).
+
+### Features to add
+15. **Calorie-goal-hit animation** — celebrate when daily calories are hit (esp. bulking; likely any time the target is met). New.
+16. **Show the app in onboarding — the AHA MOMENT.** Today nothing captures the user pre-paywall; the offering (rank ladder, sample plan, food scanner, ideas/cravings) is all behind the wall → "we are not capturing people with anything." Add a value showcase. WHERE = open (discuss): not the first 4 screens; mid/late onboarding and/or right before the paywall.
+
+### Onboarding redesign (bigger — Jason wants an overhaul)
+17. **"Picture 6 months from now" answer options are weak** — overhaul.
+18. Consider moving **"what's holding you back" earlier** (unsure vs the onboarding philosophy — discuss).
+19. General overhaul of several onboarding screens; ties into #10 (projection language) + #16 (aha moment).
+
+### Doctrine question Jason raised (answered — for reference)
+20. **Different rep ranges on subsequent sets / "back-off every 2nd set" = INTENDED** (the per-set fix this session). Set 1 = heavy **TOP set** (e.g. 5-9); set 2 = **BACK-OFF** (~10% lighter, 10-12). JP doctrine, applies to compounds (not just incline DB). **Recommend labeling the sets "Top set" / "Back-off"** so it's self-explanatory — this confusion is exactly why.
+
 ## JP-doctrine audit (5 parallel Opus agents vs the PDF) — 2026-06-26
 The app's **intensity** engine is faithful (low volume, ~2 working sets, every set to failure,
 double-progression beat-the-logbook, compound-first, ~2×/wk, correct macro order + BMR). Misses
@@ -72,6 +111,8 @@ cluster in the **periodization/personalization** half.
 - **Deload corrected to doctrine** — was "drop weight to ~60%"; now KEEP the weight, stop 2 reps short of failure (3–4 on 15–20), or take the week off. No auto-add during deload; top-of-range cues suppressed; the week after naturally rebuilds then exceeds. Banner copy (Today + SessionLogView) updated.
 - **Step goal 8000 → 10000** (guide says ~10k/day).
 - Kept protein at 1.1 g/lb and pace-based deficit (deliberate; guide's 1.5 g/lb is high).
+
+**Funnel idea (Jason, 2026-06-26) — "show what you get" before the paywall:** add a value-showcase right before the paywall (currently the funnel hides scan/score/plan behind the wall). A few swipeable screens previewing the actual offering: the rank ladder (Bronze→Greek God), a sample plan card, the food scanner, ideas/cravings. Give the user something tangible to say yes to. Focused funnel build; do after the device test passes.
 
 **Roadmap (post-launch — real builds, NOT blocking):**
 - **Phase 1/2/3 model + recovery assessment** — the guide's THESIS (Person 1 vs Person 2): split should be gated on experience + recovery (sleep/stress/life-load), not days-available. Beginners stay in Phase 1 Upper/Lower; graduate to Phase 2 PPL on a logbook stall. Onboarding asks none of this today. **#1 roadmap item.**

@@ -315,6 +315,7 @@ struct RevealFunnelView: View {
                 if var p = profile {
                     if !focusSel.isEmpty { p.focus = Array(focusSel) }   // no-photo path focus areas
                     try? await ScanAPI.shared.saveProfile(p)
+                    try? await ScanAPI.shared.logWeight(p.weightKg)        // seed Progress with the onboarding weight
                 }
                 await MainActor.run { withAnimation { phase = .paywall } }
             }
@@ -450,10 +451,18 @@ struct RevealFunnelView: View {
             Text(paywallTerms)
                 .font(.system(size: 10.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
                 .padding(.horizontal, 30).padding(.top, 2).padding(.bottom, 6)
-            Button {
-                Task { if await purchases.restore() { startRealScan() } }
-            } label: {
-                Text("Restore purchases").font(.system(size: 12)).foregroundStyle(Theme.mut)
+            HStack(spacing: 14) {
+                Button {
+                    Task { if await purchases.restore() { startRealScan() } }
+                } label: {
+                    Text("Restore").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                }
+                Text("·").font(.system(size: 12)).foregroundStyle(Theme.line)
+                Link("Terms", destination: URL(string: "https://jasongnik.github.io/stetic-legal/terms.html")!)
+                    .font(.system(size: 12)).tint(Theme.mut)
+                Text("·").font(.system(size: 12)).foregroundStyle(Theme.line)
+                Link("Privacy", destination: URL(string: "https://jasongnik.github.io/stetic-legal/privacy.html")!)
+                    .font(.system(size: 12)).tint(Theme.mut)
             }
             .padding(.bottom, 12)
 

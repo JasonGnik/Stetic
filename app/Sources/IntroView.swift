@@ -139,7 +139,7 @@ struct IntroSlide {
         IntroSlide(title: "Smart programming,\nnot bro science.",
                    sub: "A plan built on how muscle actually grows, aimed at your weak points — so you progress faster and spend less time in the gym."),
         IntroSlide(title: "Ascend.",
-                   sub: "Get lean, build the right muscle, and walk in with confidence. Re-scan and watch your rank climb."),
+                   sub: "Get lean, build the right muscle, and walk with confidence. Re-scan and watch your rank climb."),
     ]
 }
 

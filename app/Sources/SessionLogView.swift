@@ -125,6 +125,7 @@ struct SessionLogView: View {
             if !acc.contains(l) { acc.append(l) }
         }
         let note = i < day.exercises.count ? day.exercises[i].note : nil
+        let hasBackoff = exercises[i].sets.count > 1 && rangeLabels.count > 1   // top set + lighter back-off
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Text(exercises[i].name).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
@@ -162,14 +163,16 @@ struct SessionLogView: View {
                         .font(.system(size: 10.5)).foregroundStyle(Theme.mut)
                 }
             }
-            ForEach(exercises[i].sets.indices, id: \.self) { j in setRow(i, j, range: ranges[j]) }
+            ForEach(exercises[i].sets.indices, id: \.self) { j in
+                setRow(i, j, range: ranges[j], tag: hasBackoff ? (j == 0 ? "Top set" : "Back-off") : nil)
+            }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card))
     }
 
-    private func setRow(_ i: Int, _ j: Int, range: RepRange?) -> some View {
+    private func setRow(_ i: Int, _ j: Int, range: RepRange?, tag: String? = nil) -> some View {
         let set = exercises[i].sets[j]
         let last = lastByExercise[exercises[i].name]
         let lastReps = (last != nil && j < last!.count) ? last![j].reps : nil
@@ -177,7 +180,11 @@ struct SessionLogView: View {
         let topHit = !deloadActive && set.done && range != nil && set.reps >= range!.high && set.reps > 0
         let pulsing = pulsedSets.contains(set.id)
         return HStack(spacing: 10) {
-            Text("Set \(j + 1)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut).frame(width: 40, alignment: .leading)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Set \(j + 1)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                if let tag { Text(tag).font(.system(size: 8.5, weight: .bold)).foregroundStyle(Theme.acc.opacity(0.8)) }
+            }
+            .frame(width: 58, alignment: .leading)
             numField("lb", value: Binding(get: { exercises[i].sets[j].weight }, set: { exercises[i].sets[j].weight = $0 }))
             numField("reps", value: Binding(
                 get: { Double(exercises[i].sets[j].reps) },

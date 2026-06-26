@@ -55,7 +55,7 @@ struct ProgressScreen: View {
         }
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
-        .task {
+        .task(id: scan?.id) {   // reloads when a new scan lands (was once-only → stale after re-scan)
             points = (try? await ScanAPI.shared.scanPoints()) ?? []
             sessions = (try? await ScanAPI.shared.recentWorkouts()) ?? []
             await loadWeights()

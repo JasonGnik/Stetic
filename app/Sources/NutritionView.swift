@@ -54,7 +54,8 @@ struct NutritionView: View {
         .sheet(isPresented: $showManual) { manualSheet }
         .sheet(isPresented: $showIdeas) {
             MealIdeasView(onLog: { meal in Task { addingType = meal.type; await save(meal.asMeal) } },
-                          onCraving: { DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showCraving = true } })
+                          onCraving: { showIdeas = false                       // close Ideas first, then present
+                              DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { showCraving = true } })
         }
         .sheet(isPresented: $showSaved) {
             SavedMealsView { sm in Task { await save(sm.asEstimate) } }

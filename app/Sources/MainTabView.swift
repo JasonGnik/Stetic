@@ -374,20 +374,38 @@ struct HomeView: View {
 
     @ViewBuilder private var upNextCard: some View {
         if let day = upNext {
+            let isRest = !isTrainingDay && !loggedToday
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text(loggedToday ? "DONE TODAY" : "UP NEXT").font(.system(size: 11, weight: .bold)).tracking(1)
-                        .foregroundStyle(loggedToday ? Theme.acc : Theme.mut)
+                    Text(isRest ? "REST DAY" : (loggedToday ? "DONE TODAY" : "UP NEXT")).font(.system(size: 11, weight: .bold)).tracking(1)
+                        .foregroundStyle(loggedToday || isRest ? Theme.acc : Theme.mut)
                     Spacer()
                     if loggedToday { Image(systemName: "checkmark.seal.fill").foregroundStyle(Theme.acc) }
+                    else if isRest { Image(systemName: "moon.zzz.fill").foregroundStyle(Theme.acc) }
                 }
-                Text(day.day).font(.system(size: 20, weight: .heavy)).foregroundStyle(Theme.txt)
-                Text(day.focus).font(.system(size: 13)).foregroundStyle(Theme.mut)
-                HStack(spacing: 6) {
-                    Image(systemName: "dumbbell.fill").font(.system(size: 11)).foregroundStyle(Theme.acc)
-                    Text("\(day.exercises.count) exercises").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                if isRest {
+                    Text("Rest day").font(.system(size: 20, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text("Muscle grows when you recover. Hit your steps — and only train if you feel like it.")
+                        .font(.system(size: 13)).foregroundStyle(Theme.mut).lineSpacing(2)
+                    Text("Next up: \(day.day)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                } else {
+                    Text(day.day).font(.system(size: 20, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text(day.focus).font(.system(size: 13)).foregroundStyle(Theme.mut)
+                    HStack(spacing: 6) {
+                        Image(systemName: "dumbbell.fill").font(.system(size: 11)).foregroundStyle(Theme.acc)
+                        Text("\(day.exercises.count) exercises").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                    }
                 }
-                if loggedToday && !canRelogToday {
+                if isRest {
+                    Button { session = day } label: {
+                        Text("Train anyway").font(.system(size: 14, weight: .semibold))
+                            .frame(maxWidth: .infinity).padding(12)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card)
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 1)))
+                            .foregroundStyle(Theme.txt)
+                    }
+                    .padding(.top, 2)
+                } else if loggedToday && !canRelogToday {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Theme.acc)
                         Text("Trained today — rest up and come back tomorrow")
