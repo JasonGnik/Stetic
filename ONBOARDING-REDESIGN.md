@@ -245,6 +245,31 @@ Target feeling: *"I'm all these things now. So what am I waiting for? What have 
 
 **→ Paywall** — *"Your plan is ready, {name}."* sub: "Built for exactly where you are. You value your time — this is the efficient way to the body you want. Start your 3-day free trial."
 
+## Round-2 feedback (Jason, on-device, 2026-06-26) + options
+**Big theme: SHOW, don't tell.** Too many big paragraphs (AHA, nutrition). Replace with short line +
+a visual of the ACTUAL app (mini score card / weak-point breakdown / meal scan / progress chart).
+
+1. **DOOM copy:** "than float" → "float around and wonder why nothing changes." (just fix)
+2. **AHA "big guy" figure — disliked.** Wants to SHOW what the app actually does (analyze weak points). →
+   becomes part of a "how it works" sequence (see #3).
+3. **AHA + projection → a "HOW IT WORKS" carousel / auto-sequence** (Jason's strongest idea): scan your
+   physique → it finds your weak points → plan built around them → it brings them up over time. Show the
+   real app/progress. Options: (a) auto-advancing sequence with dots, (b) swipeable carousel, (c) one
+   animated build. Uses mini-mockups of real app screens, NOT geometric figures.
+4. **Figures look bad.** Options: (A) mini-mockups of REAL app screens (rec — also satisfies "show what
+   you give"), (B) sourced/real physique illustrations (PNG assets), (C) refine geometric (weakest).
+5. **Mountain — ADD THE ZOOM.** Intent: wide shot shows how BIG/far the goal is → then camera ZOOMS IN to
+   the hiker walking a few steps + lying down to sleep → the Tolstoy quote surfaces ON the zoom-in. Currently never zooms.
+6. **Nutrition:** likes the copy but it's a fat paragraph — SHOW how we help (mini meal-scan / macro ring).
+   Nuance: "no chicken-and-broccoli" = not every meal forever (some is fine). Trim text.
+7. **Transformation trash:** went too fast (couldn't read what's being trashed) — slow it, show the cards.
+   The "fire" looks like dots, not fire — build real flames. Keep "Here's who you are now."
+8. **Projection (two bodies) — disliked.** Revert to the **bar/with-vs-without GRAPH we had before** (looked
+   better), describe the gains/feeling, brand it "Stetic." Drop the two figures.
+9. **Onboarding too long + reorder:** trim it. **DELETE the trial-reminder screen** ("we'll remind you").
+   The identity transformation (not-you-anymore → who-you-are-now) should be the **LAST beat before the
+   paywall/plan** (it already is — keep). Results save and show later.
+
 ## Decisions locked
 - **NEW early question:** "How long have you wanted to change your body?" (slider, years) — the "why haven't I done it yet?" gut-punch; feeds 11b + the identity transformation. (Jason)
 - **11b is forward-looking:** their wasted years are the past; from here, weekly visible progress; just do today (Lao Tzu proverb OK). Shrink the mountain — gym is LESS of an undertaking than they fear. (Jason)
