@@ -123,6 +123,8 @@ Combines the parts he liked (cut "hiding your shirt at the beach" and the "other
 
 ## 9. Screen copy — v1 draft (red-pen this)
 Stat screens (pace/sex/days/equipment/measurements/activity/split) keep their current copy. New/hero below.
+**Guiding principle (Jason): when describing ANY feature, sell the FEELING it gives, not the feature.**
+("Know you're on your way every day" > "your food handled". "See it work every week" > "we tell you when to add weight".)
 
 **1 · Welcome** — *"Look like you actually train."* / sub: "Lean, defined, well-built — the efficient way. Let's see where you're starting."  [Get started]
 
@@ -145,20 +147,34 @@ Get lean & defined · Build muscle in the right places · Look good with my shir
 **8 · What do you want to build?** *(goal — keep options)*
 
 **9 · Which areas feel behind?** (multi) — sub: "Be real — this is what we'll bring up." *(focus options)*
+> DECISION: the AHA no longer claims "you picked X" (they scan later). So screen 9 is now optional —
+> either CUT it (the scan does this job) or keep it light to personalize the AHA's example highlight.
+> Leaning: cut from onboarding, let the scan own weak points. (confirm)
 
 **10 · DOOM (Two Roads)** — *"A year from now."*
 • Do nothing → "Same body in the mirror. Another year gone."
 • Start now → "The best you've ever looked — in 12 weeks."
 sub: "The time passes whether you change or not. Most people waste it. This is for people who'd rather see results than float and complain nothing changes." [I'm ready]
 
-**11 · AHA (weak points)** — *"Your look is capped by 1–2 weak points."*
-mock silhouette highlighting their picked area. "You told us your **{shoulders}** feel behind — that's exactly what breaks a balanced, movie-star frame. Here's the good news: it's fixable, fast, when you train it right."
+**11 · AHA (weak points)** — *"An aesthetic physique is a complete one."*
+NO "you picked X" — they haven't scanned yet, so this is the CONCEPT + an illustrative mock (example
+silhouette, e.g. lagging shoulders being brought up). "The physiques you see in movies are balanced —
+shoulders, chest, back, all in proportion. Most guys are held back by just one or two weak points they
+never notice. They only know they don't look how they want in the mirror. Stetic finds yours — and
+builds your whole plan around fixing it." *(Feeling: the 'ohhh, THAT's why' clarity + it's fixable.)*
 
-**11b · Training fix** — *"We fix what you've been doing wrong."*
-"Most plans bury your weak points under junk volume. We analyze how you train, then build a smarter split around your weak points — science-backed — so you improve **every week** instead of spinning for two years. We even tell you exactly when to add weight."
+**11b · Training fix** — *"Finally see it work — every week."*
+Feeling first: "No more spinning your wheels for years. We fix what you've been doing wrong and build a
+smarter, science-backed split around your weak points — so every week you look in the mirror and see
+real progress. The feeling of actually moving forward, not standing still." *(Sells momentum/it's-working,
+not 'we tell you when to add weight'.)*
 
-**11c · Nutrition made easy** — *"Your food, handled."*
-"Macros set for your goal. Meal ideas ready to go. Even your cravings worked in. No counting headaches, no guessing — just eat and progress."
+**11c · Nutrition made easy** — *"Know you're on your way — every single day."*
+Feeling first: "Eat well, stay on track, and feel yourself getting closer to that physique daily. Your
+macros are set, meal ideas are ready, cravings are worked in — and instead of logging every bite by
+hand, just scan it and keep moving. No headaches, no guessing." *(Benefit = the daily on-track feeling +
+the time saved by scanning, not 'your food handled'.)*
+> Meal ideas need expansion — how users get MORE / varied ideas. Separate discussion (noted, not blocking).
 
 **12–18 · Stats** *(keep current copy — pace, sex, days, equipment, measurements, activity, current split)*
 
@@ -166,6 +182,13 @@ mock silhouette highlighting their picked area. "You told us your **{shoulders}*
 Visual climb. Lead with the LOOK: "Abs starting to show. Fuller shoulders. A leaner, more defined frame in 12 weeks." Tier name secondary. "Will," not "can."
 
 **20 · Social proof** *(keep)* · **21 · Reminders** *(keep)* · **22 · How'd you hear about us** *(keep)*
+
+**23 · EXECUTE / identity** [NEW — the punchy version of the cut commitment screen]
+*"It's not easy. But it's simple."*
+"Getting a movie-star physique isn't complicated — the internet just makes it feel that way. We hand
+you everything: the plan, the food, exactly what to do every session. All that's left is to execute —
+show up, train smart, push hard. No influencer noise, no guessing. **That's the whole game.**"
+Identity close → "Are you someone who executes — or someone who keeps floating and wondering why nothing changes?" [I'm in / Let's go]
 
 **→ Paywall** — *"Your plan is ready, {name}."* sub: "Built for exactly where you are. You value your time — this is the efficient way to the body you want. Start your 3-day free trial."
 
