@@ -67,10 +67,11 @@ enum OnbStep: Int, CaseIterable {
     // NEW ARC: hook (feel the problem) → flip (doom → aha → fix → nutrition) →
     // stats (batched) → payoff → IDENTITY TRANSFORMATION finale. See ONBOARDING-REDESIGN.md.
     case name,
-         motivation, timeWanted, obstacles,
-         doom,                                           // gut-punch right after their pain (replaces the old empathy callback)
-         experience, resultsFeeling, triedPlan, goal,
-         aha, trainingFix,                               // how-it-works carousel + mountain, right after they give their goal
+         motivation, timeWanted,
+         doom,                                           // gut-punch right on the ache — straight after "how long have you wanted this"
+         obstacles,
+         aha, trainingFix,                               // how-it-works carousel + mountain — they've felt the problem, now show the fix
+         experience, resultsFeeling, goal,
          height, weight, goalWeight, pace,               // measurements BEFORE pace (see goal → choose speed)
          sex, days, equipment, equipmentDetail, age, activity, currentSplit,
          reminders, attribution                          // → hands off to the funnel (photo → scan → identity → paywall)
@@ -90,7 +91,6 @@ enum OnbStep: Int, CaseIterable {
         case .obstacles:   return "What's been holding you back?"
         case .experience:  return "How long have you trained?"
         case .resultsFeeling: return "And how do you feel about your results?"
-        case .triedPlan:   return "Ever followed a real plan?"
         case .goal:        return "What do you want to build?"
         case .sex:         return "Which are you?"
         case .pace:        return "How fast do you want results?"
@@ -116,7 +116,6 @@ enum OnbStep: Int, CaseIterable {
         case .obstacles:  return "Pick what's true. We'll target it."
         case .experience: return "Sets your starting intensity."
         case .resultsFeeling: return "Most people aren't where they hoped."
-        case .triedPlan:  return "Most never have. That's usually the problem."
         case .goal:       return "Shapes your plan and your nutrition."
         case .sex:        return "Routes your scoring to the right rubric."
         case .pace:       return "Sets how aggressive your nutrition is."

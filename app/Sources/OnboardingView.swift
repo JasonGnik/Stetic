@@ -19,7 +19,7 @@ struct OnboardingView: View {
     private var needsContinue: Bool {
         switch step {
         case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution, .reminders,
-             .resultsFeeling, .triedPlan: return false   // single-select auto-advances
+             .resultsFeeling: return false   // single-select auto-advances
         default: return true
         }
     }
@@ -241,7 +241,6 @@ struct OnboardingView: View {
         case .motivation: multiSelect(OnbOptions.motivation, data.motivation) { toggle(&data.motivation, $0) }
         case .timeWanted: timeWantedStep
         case .resultsFeeling: singleSelect(OnbOptions.resultsFeeling, data.resultsFeeling) { data.resultsFeeling = $0 }
-        case .triedPlan:  singleSelect(OnbOptions.triedPlan, data.triedPlan) { data.triedPlan = $0 }
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
         case .pace:       singleSelect(OnbOptions.pace, data.pace) { data.pace = $0 }
@@ -469,7 +468,6 @@ struct OnboardingView: View {
         case .motivation: return true   // optional
         case .timeWanted: return true
         case .resultsFeeling: return data.resultsFeeling != nil
-        case .triedPlan: return data.triedPlan != nil
         case .sex: return data.sex != nil
         case .pace: return data.pace != nil
         case .activity: return data.activity != nil

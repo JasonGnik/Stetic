@@ -407,7 +407,7 @@ struct RevealFunnelView: View {
                     VStack(spacing: 8) {
                         Text(name.isEmpty ? "Your plan is ready." : "Your plan is ready, \(name).")
                             .font(.system(size: 25, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-                        Text("Built for people exactly like you.").font(.system(size: 14)).foregroundStyle(Theme.mut)
+                        Text("Built for you.").font(.system(size: 14)).foregroundStyle(Theme.mut)
                     }
                     VStack(alignment: .leading, spacing: 11) {
                         ForEach(perks, id: \.self) { perk in

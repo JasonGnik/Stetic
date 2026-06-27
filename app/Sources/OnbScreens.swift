@@ -301,9 +301,6 @@ struct TransformationScreen: View {
                 .font(.system(size: 16, weight: .semibold)).italic().multilineTextAlignment(.center).lineSpacing(3)
                 .foregroundStyle(Theme.txt)
             Text("— Socrates").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
-            Text(brandLimed("A great physique is the one thing in life that can't be bought. No one can train or eat right for you. So it commands respect anywhere you go — living proof you set a plan and put in the work. Do that, and you can do anything. It changes how you carry every part of your life."))
-                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
-                .padding(.top, 4)
         }
     }
 
