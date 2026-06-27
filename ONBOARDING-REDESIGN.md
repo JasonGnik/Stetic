@@ -73,8 +73,10 @@ Hook block first (emotional), stats batched late, payoff at the end. Tag = [KEPT
 9. **ASK · "Which areas feel behind?"** [MOVED into main flow — `focus`, multi] Shoulders/Chest/Back/Arms/Abs/Legs/Lower body fat. → feeds the aha (screen 11).
 10. **SHOW · DOOM** [CHANGED — replaces the "Picture 6 months" *question*]
     "A year from now: same mirror, or the best you've looked? The time passes either way." Honest, a little uncomfortable, about the LOOK (not morality).
-11. **SHOW · THE AHA** [NEW — the differentiator] personalized from screen 9:
-    "You said your **shoulders** feel behind. That's exactly what breaks the movie-star line. We'll prioritize it with science-based training — so you build a balanced frame, in less gym time." (Pre-scan, this uses their self-reported area; the real scan later confirms it.)
+11. **SHOW · THE AHA** [NEW — the differentiator] personalized from screen 9, with a **MOCK weak-point visual**:
+    a body silhouette highlighting their self-reported weak area + "your focus" — makes it tangible without a real (gated) scan. "You said your **shoulders** feel behind. That's exactly what breaks the movie-star line. We'll prioritize it with science-based training — a balanced frame, in less gym time."
+11b. **SHOW · "Your coach handles the rest"** [NEW — feature-as-proof, ONE screen, NOT a tour]
+    Compress everything-a-coach-does into a single benefit beat: "The plan, your food, when to go heavier, when to back off — all done for you. You just show up." Tiny supporting line lists it as outcomes (trains your weak points · macros + meal ideas · tracks your lifts & tells you when to add weight · deloads you on time). Sells the *effortless/it's-all-here* wedge without explaining features one by one.
 
 ### Block C — Build it for me (stats, batched & fast)
 12. **ASK · pace** [KEPT] · 13. **ASK · sex** [KEPT, needed for scoring/macros] · 14. **ASK · days** [KEPT] ·
@@ -95,13 +97,23 @@ Hook block first (emotional), stats batched late, payoff at the end. Tag = [KEPT
 **Cut candidate (decide):** `commitment` ("how committed are you?") — the front-loaded emotional block may make it redundant. Keep or cut?
 **Kept as-is:** name (or fold into welcome), sex, goal, pace, currentSplit, callback, socialProof.
 
-## 8. Open decisions for Jason
-- **Cut `commitment`?** (leaning cut — the hook block already does the emotional work).
-- **DOOM intensity** — gut-punch ceiling confirmed? (Lean off career/seriousness; keep it about the look + wasted time.)
-- **Scan placement** — still after paywall, or tease the aha with an earlier (free) scan? (Big funnel decision.)
-- Headline feeling words for the hero screens: "look like a movie star," "look like you actually train," "the best you've ever looked."
+## 8. Feature philosophy + DOOM options
+**Features: sell the feeling, don't tour them.** (Jason) No feature-by-feature screens. Features appear
+ONLY as proof, in exactly two beats: (1) the AHA — weak-point → plan with a mock visual; (2) "your coach
+handles the rest" — one screen compressing nutrition/meal-ideas/cravings + lift logging + progressive
+overload (when to push/add weight) + deload into "it's all done for you." Everything else (the actual
+scanner, meal scan, cravings, logbook UI) is discovered IN the app, not explained in onboarding.
+
+**DOOM options — pick the intensity (all about the look + wasted time, off career/morality):**
+- **A — Mirror gut-punch (hardest):** "Another year. Same body in the mirror. Still hiding your shirt at the beach. The time passes whether you change or not — most people waste it."
+- **B — The other guy (vindication angle):** "The guy who started when you did already looks the part. You've put in the time — you just haven't seen it pay off. That stops here."
+- **C — Two roads (visual, less harsh):** split image — "Keep guessing → 12 months, barely different. Or start now → the best you've ever looked. Same year, two completely different mirrors."
+Recommendation: lead with **A or B** for this audience; C is the softer fallback. Can also A/B test later.
 
 ## Decisions locked
+- **CUT the `commitment` screen.** (Jason, 2026-06-26)
+- **Scan stays gated** — they UPLOAD their photo before the paywall, but the scan/score reveal is post-paywall (current funnel structure). No free scan. The onboarding AHA uses a MOCK weak-point visual + self-reported area. (Jason)
+- **Features: sell the feeling, don't tour.** Only 2 feature-as-proof beats (AHA + "coach handles the rest"). (Jason)
 - **Sell the LOOK + the feeling of looking good ("damn, I look good"), not what it proves.** (Jason, 2026-06-26)
 - Aha = weak-point → well-rounded movie-star physique, the efficient way (less gym time). (Jason)
 - Open on WHY / what's holding them back — pain-first hook, then doom, then aha. (Jason)
