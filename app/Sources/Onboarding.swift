@@ -72,12 +72,11 @@ enum OnbStep: Int, CaseIterable {
          height, weight, goalWeight, pace,               // measurements BEFORE pace (see goal → choose speed)
          sex, days, equipment, equipmentDetail, age, activity, currentSplit,
          reminders, attribution,
-         doom, aha, trainingFix,                         // emotional crescendo → leads into the funnel
-         transformation                                  // ⭐ finale (will move into the funnel, post-scan)
+         doom, aha, trainingFix                          // emotional crescendo → hands off to the funnel (identity transformation now lives there, post-scan)
 
     var isInterstitial: Bool {
         switch self {
-        case .doom, .aha, .trainingFix, .transformation: return true
+        case .doom, .aha, .trainingFix: return true
         default: return false
         }
     }

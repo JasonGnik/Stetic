@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var stage: Stage
     @State private var userName = ""
     @State private var pendingProfile: ScanAPI.ProfileInput?   // held until sign-in (right before paywall)
+    @State private var pendingIdentity = IdentityInputs()      // onboarding answers for the funnel's identity beat
     @AppStorage("steticOnboarded") private var onboarded = false
 
     enum Stage { case loading, welcome, intro, onboarding, main, home }
@@ -116,10 +117,13 @@ struct ContentView: View {
                 OnboardingView { data in
                     userName = data.name
                     pendingProfile = data.payload   // saved after sign-in, inside the funnel
+                    pendingIdentity = IdentityInputs(years: Int(data.timeWantedYears),
+                                                     obstacles: Array(data.obstacles),
+                                                     resultsBehind: data.resultsFeeling == "behind")
                     withAnimation { stage = .main }
                 }
             case .main:
-                RevealFunnelView(name: userName, profile: pendingProfile,
+                RevealFunnelView(name: userName, profile: pendingProfile, identity: pendingIdentity,
                                  onFinish: { onboarded = true; withAnimation { stage = .home } })
             case .home:
                 MainTabView(name: userName)

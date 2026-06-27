@@ -165,9 +165,16 @@ struct TrainingFixScene: View {
     }
 }
 
+// Lightweight identity answers threaded from onboarding into the funnel.
+struct IdentityInputs {
+    var years: Int = 0
+    var obstacles: [String] = []
+    var resultsBehind: Bool = false
+}
+
 // MARK: - Identity transformation (the finale) ⭐
 struct TransformationScreen: View {
-    let data: OnboardingData
+    var inputs: IdentityInputs = .init()
     var onContinue: () -> Void
     var onBack: () -> Void
 
@@ -178,10 +185,10 @@ struct TransformationScreen: View {
     // Old self, pulled from their real answers.
     private var oldCards: [String] {
         var c: [String] = []
-        let y = Int(data.timeWantedYears)
+        let y = inputs.years
         if y >= 1 { c.append("Waited \(y) \(y == 1 ? "year" : "years")") }
-        c.append(contentsOf: data.obstacles.prefix(2).map { obstacleShort($0) })
-        if c.count < 3, let r = data.resultsFeeling, r == "behind" { c.append("Behind where you wanted") }
+        c.append(contentsOf: inputs.obstacles.prefix(2).map { obstacleShort($0) })
+        if c.count < 3, inputs.resultsBehind { c.append("Behind where you wanted") }
         if c.isEmpty { c = ["Spinning your wheels", "Never had a plan"] }
         return Array(c.prefix(3))
     }

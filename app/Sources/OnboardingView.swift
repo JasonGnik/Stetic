@@ -27,9 +27,7 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
-            if step == .transformation {
-                TransformationScreen(data: data, onContinue: { advance() }, onBack: { back() })
-            } else if step.isInterstitial {
+            if step.isInterstitial {
                 interstitialView
             } else {
                 VStack(spacing: 0) {

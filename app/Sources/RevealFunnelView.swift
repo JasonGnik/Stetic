@@ -7,10 +7,12 @@ import RevenueCat
 struct RevealFunnelView: View {
     var name: String = ""
     var profile: ScanAPI.ProfileInput? = nil   // onboarding answers; saved after sign-in
+    var identity: IdentityInputs = .init()      // for the identity-transformation beat (post-scan)
     var rescan: Bool = false        // re-scan (already entitled): skip FOMO/paywall, go straight to scoring
     var onFinish: (() -> Void)? = nil
 
-    enum Phase { case capture, focusPick, fomo, bluff, tease, signin, paywall, trialReminder, scanning, result, error }
+    // New flow: capture → bluff(fake scan) → identity → signin → paywall → real scan → result.
+    enum Phase { case capture, focusPick, fomo, bluff, tease, identity, signin, paywall, trialReminder, scanning, result, error }
     @State private var phase: Phase = .capture
     @State private var focusSel: Set<String> = []   // no-photo path: areas to prioritize in the estimate
     @State private var items: [PhotosPickerItem?] = [nil, nil, nil]
@@ -35,6 +37,7 @@ struct RevealFunnelView: View {
             case .fomo:          fomo
             case .bluff:         bluff
             case .tease:         tease
+            case .identity:      identityView
             case .signin:        signinView
             case .paywall:       paywall
             case .trialReminder: trialReminderView
@@ -94,7 +97,7 @@ struct RevealFunnelView: View {
                              : "Front is required — swipe for side & back to sharpen your score.")
                 .font(.system(size: 12)).foregroundStyle(Theme.mut).multilineTextAlignment(.center).padding(.horizontal, 30)
 
-            Button { withAnimation { rescan ? startRealScan() : (phase = .fomo) } } label: {
+            Button { withAnimation { rescan ? startRealScan() : (phase = .bluff) } } label: {
                 Text(rescan ? "Score my physique" : "Continue").font(.system(size: 16, weight: .bold))
                     .frame(maxWidth: .infinity).padding(14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(hasAnyPhoto ? Theme.acc : Theme.line))
@@ -202,7 +205,7 @@ struct RevealFunnelView: View {
                 .padding(.horizontal, 22).padding(.top, 18)
             }
             .scrollIndicators(.hidden)
-            primaryButton("Continue") { withAnimation { phase = .fomo } }
+            primaryButton("Continue") { withAnimation { phase = .bluff } }
         }
     }
 
@@ -253,12 +256,19 @@ struct RevealFunnelView: View {
         )
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
-                if phase == .bluff { withAnimation { phase = .tease } }
+                if phase == .bluff { withAnimation { phase = .identity } }   // → identity transformation (tease/lock deleted)
             }
         }
     }
 
-    // MARK: tease — blurred result behind a lock
+    // MARK: identity transformation — the last emotional beat before sign-in + paywall
+    private var identityView: some View {
+        TransformationScreen(inputs: identity,
+                             onContinue: { withAnimation { phase = .signin } },
+                             onBack: { withAnimation { phase = .bluff } })
+    }
+
+    // MARK: tease — blurred result behind a lock (no longer in the flow; kept for dev preview)
     private var tease: some View {
         ZStack {
             ScoreCardView(card: .sample).blur(radius: 26).disabled(true).allowsHitTesting(false)
@@ -627,6 +637,7 @@ struct RevealFunnelView: View {
         switch env["STETIC_FUNNEL_PHASE"] {   // dev: jump to a phase for screenshots (no sample needed)
         case "fomo": phase = .fomo
         case "focuspick": phase = .focusPick
+        case "identity": phase = .identity
         case "tease": phase = .tease
         case "signin": phase = .signin
         case "trial": phase = .trialReminder
