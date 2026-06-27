@@ -68,10 +68,10 @@ enum OnbStep: Int, CaseIterable {
     // stats (batched) → payoff → IDENTITY TRANSFORMATION finale. See ONBOARDING-REDESIGN.md.
     case name,
          motivation, timeWanted,
-         trainingFix,                                    // "cost of waiting" stat — computed straight off the years slider
-         obstacles,
-         doom,                                           // future gut-punch — "a year from now" — after they name what's holding them back
-         experience, resultsFeeling, goal,
+         trainingFix,                                    // "you've waited X years; it only takes 12 weeks" — off the years slider + motivation
+         obstacles, experience, resultsFeeling,
+         doom,                                           // FOMO pivot — "a year from now, the time passes anyway" — then we collect their stats
+         goal,
          height, weight, goalWeight, pace,               // measurements BEFORE pace (see goal → choose speed)
          sex, days, equipment, equipmentDetail, age, activity, currentSplit,
          reminders, attribution                          // → hands off to the funnel (photo → scan → identity → paywall)

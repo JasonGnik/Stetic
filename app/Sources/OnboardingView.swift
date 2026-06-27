@@ -87,7 +87,7 @@ struct OnboardingView: View {
 
     private var interstitialCTA: String {
         switch step {
-        case .doom: return "I'm ready"
+        case .doom: return "I'm ready — let's build it"
         case .trainingFix: return "Keep going"
         default: return "Continue"
         }
@@ -139,9 +139,26 @@ struct OnboardingView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(tint.opacity(0.4), lineWidth: 1)))
     }
 
-    // MARK: TRAINING FIX — years of waiting stop now (+ mountain)
+    // Pace, in concrete lb/week — direction (lose vs gain) follows their goal so the number means something.
+    private var paceOptions: [Option] {
+        let gaining = data.goal == "gain_muscle"
+        let rows: [(String, String, String)] = gaining
+            ? [("slow", "Gradual", "~0.25 lb/week gained — lean, almost no fat"),
+               ("recommended", "Recommended", "~0.5 lb/week gained — steady, mostly muscle"),
+               ("aggressive", "Aggressive", "~1 lb/week gained — fastest, more to cut later")]
+            : [("slow", "Gradual", "~0.5 lb/week lost — easy on your routine"),
+               ("recommended", "Recommended", "~1 lb/week lost — fast and sustainable"),
+               ("aggressive", "Aggressive", "~1.5–2 lb/week lost — fastest, hardest to keep up")]
+        let icons = ["tortoise.fill", "bolt.fill", "hare.fill"]
+        let tints = [Color(hex: 0x8A8F98), Theme.acc, Color(hex: 0xFF6B4A)]
+        return rows.enumerated().map { i, r in
+            Option(id: r.0, label: r.1, sub: r.2, icon: icons[i], tint: tints[i])
+        }
+    }
+
+    // MARK: TRAINING FIX — "you've waited years; it only takes 12 weeks"
     private var trainingFixContent: some View {
-        TrainingFixScene(years: Int(data.timeWantedYears))
+        TrainingFixScene(years: Int(data.timeWantedYears), motivation: data.motivation)
     }
 
     // MARK: NUTRITION — show the meal scan, short copy, freedom
@@ -236,7 +253,7 @@ struct OnboardingView: View {
         case .resultsFeeling: singleSelect(OnbOptions.resultsFeeling, data.resultsFeeling) { data.resultsFeeling = $0 }
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
-        case .pace:       singleSelect(OnbOptions.pace, data.pace) { data.pace = $0 }
+        case .pace:       singleSelect(paceOptions, data.pace) { data.pace = $0 }
         case .activity:   singleSelect(OnbOptions.activity, data.activity) { data.activity = $0 }
         case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }

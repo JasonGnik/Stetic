@@ -148,48 +148,62 @@ struct MountainClimbView: View {
 }
 
 // Training-fix screen — the cinematic mountain + the quote that surfaces on the zoom-in.
-// The cost of waiting, made concrete — then the pivot to "today." (Replaces the mountain climb;
+// The reframe: you've wanted this for YEARS — but a real plan gets you there in ~12 weeks.
+// The outcome line is personalized off their motivation answer. (Replaces the mountain climb;
 // MountainClimbView above is kept, unused, in case we revisit the animated version.)
 struct TrainingFixScene: View {
     let years: Int
-    @State private var showQuote = false
-    @State private var countUp = 0
-    // ~3 sessions/week is a conservative, believable cadence for the "could've been done" math.
-    private var workouts: Int { max(36, years * 52 * 3) }
-    private var lead: String {
-        years >= 1 ? "\(years) \(years == 1 ? "year" : "years") of wanting it." : "All that time wanting it."
+    let motivation: Set<String>
+    @State private var show12 = false
+    @State private var showRest = false
+    // What they're chasing, in their words — drives the gut-punch line.
+    private var outcome: String {
+        for id in ["confident", "attention", "lean", "muscle", "event", "stuck"] where motivation.contains(id) {
+            switch id {
+            case "confident": return "confident with your shirt off"
+            case "attention": return "turning heads"
+            case "lean":      return "lean and defined"
+            case "muscle":    return "built the way you want"
+            case "event":     return "ready for summer"
+            case "stuck":     return "out of the rut"
+            default: break
+            }
+        }
+        return "the person you want to be"
     }
     var body: some View {
-        VStack(spacing: 18) {
-            Text(lead).font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-            // a number you can feel
-            VStack(spacing: 2) {
-                Text("\(countUp)")
-                    .font(.system(size: 58, weight: .heavy)).foregroundStyle(Theme.acc)
-                    .contentTransition(.numericText()).animation(.snappy, value: countUp)
-                Text("workouts that could've already been done")
-                    .font(.system(size: 13.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
+        VStack(spacing: 16) {
+            if years >= 1 {
+                VStack(spacing: 1) {
+                    Text("You've wanted this for").font(.system(size: 14)).foregroundStyle(Theme.mut)
+                    Text("\(years) \(years == 1 ? "year" : "years")").font(.system(size: 38, weight: .heavy)).foregroundStyle(Theme.txt)
+                }
+            } else {
+                Text("You've wanted this a while.").font(.system(size: 19, weight: .bold)).foregroundStyle(Theme.txt)
+            }
+            VStack(spacing: 1) {
+                Text("It only takes").font(.system(size: 14)).foregroundStyle(Theme.mut)
+                Text("12 weeks").font(.system(size: 52, weight: .heavy)).foregroundStyle(Theme.acc)
+                    .scaleEffect(show12 ? 1 : 0.7).opacity(show12 ? 1 : 0)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: show12)
             }
             VStack(spacing: 9) {
-                Text("You can't change the past.\nYou can only change today.")
+                Text(brandLimed("Twelve weeks of a real plan and you're \(outcome). You could've already been there — \(years >= 1 ? "for years." : "this whole time.")"))
+                    .font(.system(size: 14.5)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
+                Text("You can't change the past.\nBut the 12 weeks start today.")
                     .font(.system(size: 17, weight: .bold)).multilineTextAlignment(.center).lineSpacing(2).foregroundStyle(Theme.txt)
-                Text(brandLimed("So don't fixate on the big goal. Just do what today asks of you. We've got the rest."))
-                    .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
             }
+            .opacity(showRest ? 1 : 0).animation(.easeIn(duration: 0.7), value: showRest)
             VStack(spacing: 4) {
                 Text("“A man on a thousand-mile walk has to forget his goal and say to himself every morning: today I'm going to cover twenty-five miles.”")
                     .font(.system(size: 12, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2).foregroundStyle(Color(hex: 0xC8C8CE))
                 Text("— Leo Tolstoy").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
             }
-            .opacity(showQuote ? 1 : 0).animation(.easeIn(duration: 0.9), value: showQuote)
+            .opacity(showRest ? 1 : 0).animation(.easeIn(duration: 0.9).delay(0.3), value: showRest)
         }
         .onAppear {
-            Task {   // quick count-up to the number
-                let target = workouts, steps = 28
-                for s in 1...steps { try? await Task.sleep(nanoseconds: 26_000_000); await MainActor.run { countUp = target * s / steps } }
-                await MainActor.run { countUp = target }
-            }
-            Task { try? await Task.sleep(nanoseconds: 1_500_000_000); await MainActor.run { showQuote = true } }
+            Task { try? await Task.sleep(nanoseconds: 400_000_000); await MainActor.run { show12 = true } }
+            Task { try? await Task.sleep(nanoseconds: 1_100_000_000); await MainActor.run { showRest = true } }
         }
     }
 }
