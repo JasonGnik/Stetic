@@ -4,29 +4,28 @@
 > strategy layer the new onboarding is built on. Copy comes after the feeling is locked.
 > Companion to ONBOARDING.md (current funnel) and CONTEXT.md (positioning).
 
-## 1. The core truth: we don't sell a physique. We sell what the physique PROVES.
-The body is the **receipt**. A shredded, well-built frame is external proof of internal traits:
-discipline, self-respect, the ability to start something hard and *finish it*. That's the real product.
+## 1. The core truth: we sell the LOOK — and how looking good FEELS. (corrected 2026-06-26)
+NOT what the physique proves (discipline/follow-through — too virtuous, motivational-poster). We sell
+the **result and the feeling it gives**: you catch yourself in the mirror and think *"damn, I look
+good."* Abs showing. A lean, well-rounded, movie-star frame. People want to look good — **Stetic makes
+them look good.** Vanity-first, not virtue-first.
 
-**The one feeling (north star): EARNED CONFIDENCE.**
-"I set out to do something hard, took no shortcuts, and now I see the proof every time I pass a
-mirror. If I can run my own body — the one thing fully in my control — what else can I do?"
+**The one feeling (north star): "DAMN, I LOOK GOOD" → and that makes you feel unstoppable.**
+Looking good is the thing; the confidence/can-do-anything high is what *looking good* gives you.
 
-Sub-feelings that ladder up to it:
-- **Pride / no-shortcuts** — you earned it the honest way (huge: the audience is surrounded by people who fake it or quit).
-- **Being seen / magnetism** — people notice, ask what you've been doing, doors open, more attention.
-- **Vindication** — you pass the guy who's looked identical for 2 years. You cracked what he couldn't.
-- **Competence / control** — it's not a mystery anymore. You know exactly what to do every session.
-- **Self-trust** — you kept a promise to yourself. That bleeds into everything else.
+Sub-feelings (all anchored to the look):
+- **The mirror moment** — shirt off, abs in, *"this is the best I've ever looked."*
+- **Magnetism / being seen** — heads turn, people notice, you get attention; looking good opens doors.
+- **Movie-star specifically** — lean + balanced reads as elite/leading-man, not gym-bro bulky.
+- **Vindication via the look** — you visibly out-look the guy who's been in the gym 2 years looking the same.
+- (Supporting, minor) earned/no-shortcuts — present as flavor, never the lead.
 
 ## 2. The enemy (the "where you are now" — the doom)
-Not lack of effort — **unguided effort.** The audience is the person who *tries* and gets nothing back.
-- Years in the gym, mirror looks the same. Spinning wheels.
-- Wasting time — **and the time passes anyway.**
-- The deeper cut: if you can't take charge of your own body, what does that say? It seeps into
-  work, career, how seriously people take you. Respect starts with self-respect.
-- Identity jab (use carefully, aspirational not insulting): "Are you someone who wastes their time?
-  No — you value your time. So why train like someone who doesn't?"
+Framed around the LOOK, not morality. The audience *tries* and still doesn't look how they want.
+- **Years in the gym, same body in the mirror.** Still hiding your shirt. Spinning wheels.
+- **Wasting time — and the time passes anyway.** A year from now you either look the part or you look the same.
+- Identity jab (aspirational, not insulting): "You value your time — so why train like someone who
+  doesn't?" Keep it light vs the look; don't moralize about career/seriousness (Jason: lean off that).
 
 ## 3. Our wedge (why Stetic, vs Cal AI, vs everything else)
 Cal AI sells "tracking made easy." We sell **the whole transformation, done for you, the efficient way.**
@@ -40,43 +39,71 @@ Cal AI sells "tracking made easy." We sell **the whole transformation, done for 
   not spamming bench. Small shoulders? We see it and prioritize it with the right science. THIS is
   what no generic plan does, and it's the moment that should hook them in onboarding.
 
-## 4. Identity — "Stetic is for people who…"
-- …value their time and refuse to waste years on guesswork.
-- …want the movie-star look the *efficient*, proven way — no bro-science.
-- …are serious enough to take control of the one thing fully in their hands: their body.
-- …would rather take no shortcuts and earn it than fake it or quit.
+## 4. Identity — "Stetic is for people who…" (look-first)
+- …want to look like a movie star — lean, defined, well-built — not just "fit."
+- …want it the efficient, proven way (less gym time, smarter), without the bro-science guesswork.
+- …value their time and refuse to waste years and still look the same.
+- (minor) …would rather earn the look than fake it.
 
 ## 5. The emotional arc (this is the onboarding spine)
 **PAIN → NAME IT → STAKES → AHA/HOPE → PROOF → IDENTITY COMMITMENT.**
 Open on *their* problem (make them feel it), show the cost of staying the same, then flip to the
 guided, efficient, weak-point-aware path — and close the paywall as an identity choice, not a price.
 
-## 6. Proposed onboarding flow (draft — react to this)
-Hook-first. Physical-stat questions are batched late so they don't bleed the emotional momentum.
+## 6. Screen-by-screen spec (proposed) — ASK = question, SHOW = interstitial
+Hook block first (emotional), stats batched late, payoff at the end. Tag = [KEPT] / [MOVED] /
+[NEW] / [CHANGED] vs the current flow. Options reuse the existing `OnbOptions` unless noted.
 
-1. **Welcome / identity opener** — one line that names who this is for.
-2. **"Why are you really here?"** — the download reason. (Hooks them into their own problem.)
-3. **"What's holding you back?"** — real pain points (don't know what to do / no results despite effort / inconsistent / no time / plateaued). Each picks a matching empathy beat.
-4. **"Have you trained before? How long?"** — sets beginner vs experienced (drives the plan).
-5. **"How do you feel about your results for the time you've put in?"** — the gut-punch. Sets up vindication. (Most will say "not where I want.")
-6. **"Tried a coach or program before?"** — positions Stetic as the thing that finally works.
-7. **Goal + the body they want** — lose fat / build / both; and which areas feel behind (feeds the weak-point aha).
-8. **STAKES screen (doom)** — "Keep going as you are: another year, same mirror. The time passes anyway." Visual, honest, a little uncomfortable.
-9. **AHA screen (hope)** — "Here's the thing — [their weak point]. A balanced frame is what reads as movie-star. We'll prioritize [e.g. shoulders] with science-based training. More result, less time." ← the differentiator moment.
-10. **The efficient promise** — ~45 min, fewer days, plan + nutrition all done for you, nothing to look up.
-11. **Projection payoff** (replaces the "6 months from now" *question*) — show them where they'll GET TO, in visual/visceral language, not tier names (#10). "Will," not "can."
-12. **Proof / no-shortcuts social proof.**
-13. **Physical stats** (height/weight/age/equipment/days) — batched, fast, framed as "so we can build it exactly for you."
-14. **Sign-in → Paywall as identity commitment** — "You're someone who values your time. This is the efficient way. Start." Trial framing.
+### Block A — Hook (make them feel the problem)
+1. **SHOW · Welcome / identity opener** [KEPT — WelcomeView]
+   "Built to make you look like a movie star — the efficient way." One line on who it's for.
+2. **ASK · "Why are you really here?"** [NEW — revive `motivation`, multi-select]
+   Options: Get lean & defined · Build muscle in the right places · Feel good shirtless · Look good for an event/summer · Turn heads · Break out of a rut.
+3. **ASK · "What's holding you back?"** [MOVED to front — `obstacles`, multi]
+   Don't know what to do · Can't stay consistent · Train hard but look the same · Hours for little result · Plateaued · Lost/intimidated.
+4. **SHOW · Empathy beat** [KEPT — `callback`] the sourced stat that answers their top obstacle.
+5. **ASK · "How long have you trained?"** [MOVED earlier — `experience`] Beginner / Intermediate / Advanced.
+6. **ASK · "How do you feel about your results for that time?"** [NEW] — the gut-punch / vindication setup.
+   Options: "Honestly, behind where I should be" · "Some progress, not enough" · "Decent, but stuck/plateaued" · "Just getting started."
+7. **ASK · "Tried a coach or program before?"** [NEW] — positions us as the thing that finally works.
+   Options: "Winged it / free YouTube" · "A paid app or program" · "An actual coach" · "Never had a real plan."
 
-## 7. Open questions / to refine
-- Exact copy for each screen (after the arc is approved).
-- How hard to lean into "doom" (#8) without feeling mean — aspirational threat, not insult.
-- Where the scan sits in the new arc (current funnel scans after paywall — keep, or tease a scan earlier as part of the aha?).
-- Which "feeling" words win for headlines: confidence vs respect vs proof vs magnetism.
+### Block B — Desire + the flip
+8. **ASK · "What do you want to build?"** [KEPT — `goal`] Lose fat / Build / Recomp / Tone.
+9. **ASK · "Which areas feel behind?"** [MOVED into main flow — `focus`, multi] Shoulders/Chest/Back/Arms/Abs/Legs/Lower body fat. → feeds the aha (screen 11).
+10. **SHOW · DOOM** [CHANGED — replaces the "Picture 6 months" *question*]
+    "A year from now: same mirror, or the best you've looked? The time passes either way." Honest, a little uncomfortable, about the LOOK (not morality).
+11. **SHOW · THE AHA** [NEW — the differentiator] personalized from screen 9:
+    "You said your **shoulders** feel behind. That's exactly what breaks the movie-star line. We'll prioritize it with science-based training — so you build a balanced frame, in less gym time." (Pre-scan, this uses their self-reported area; the real scan later confirms it.)
 
-## Decisions locked so far
-- Aha = weak-point identification → personalized split for a well-rounded (movie-star) physique. (Jason)
-- Open onboarding on WHY / what's holding them back — pain-first hook, then shock screens. (Jason)
-- "6 months from now" is NOT a question — it becomes the projection payoff. (Jason)
-- Feeling > features. Sell the transformation + identity, not the feature list. (Jason)
+### Block C — Build it for me (stats, batched & fast)
+12. **ASK · pace** [KEPT] · 13. **ASK · sex** [KEPT, needed for scoring/macros] · 14. **ASK · days** [KEPT] ·
+15. **ASK · equipment (+detail)** [KEPT] · 16. **ASK · height / weight / (goal weight if fat-loss) / age** [KEPT, batched] ·
+17. **ASK · activity** [KEPT] · 18. **ASK · current split** [KEPT, experienced only].
+
+### Block D — Payoff + commit
+19. **SHOW · Projection payoff** [CHANGED — #10] where they'll **GET TO** ("will," not "can"), in visceral/visual language ("abs starting to show, fuller shoulders"), tier name secondary.
+20. **SHOW · Social proof** [KEPT — `socialProof`].
+21. **ASK · reminders** [KEPT] · 22. **ASK · attribution** [KEPT].
+→ **Sign-in → Paywall** as the identity choice ("You value your time. This is the efficient way. Start your 3-day trial.").
+
+## 7. Diff vs current onboarding
+**Added (4 asks + 2 shows):** "Why are you here" (revive motivation) · "How do you feel about your results" · "Tried a coach/program" · "Which areas feel behind" (focus moved into main flow) · DOOM screen · AHA screen.
+**Changed:** "Picture 6 months from now" (stakes) — removed as a *question*, becomes the projection payoff (#19). Projection reworded off tier names (#10).
+**Moved to front:** obstacles, experience (hook block) — they currently sit mid/late.
+**Moved to back / batched:** all physical stats (height/weight/age/days/equipment/activity), attribution, reminders.
+**Cut candidate (decide):** `commitment` ("how committed are you?") — the front-loaded emotional block may make it redundant. Keep or cut?
+**Kept as-is:** name (or fold into welcome), sex, goal, pace, currentSplit, callback, socialProof.
+
+## 8. Open decisions for Jason
+- **Cut `commitment`?** (leaning cut — the hook block already does the emotional work).
+- **DOOM intensity** — gut-punch ceiling confirmed? (Lean off career/seriousness; keep it about the look + wasted time.)
+- **Scan placement** — still after paywall, or tease the aha with an earlier (free) scan? (Big funnel decision.)
+- Headline feeling words for the hero screens: "look like a movie star," "look like you actually train," "the best you've ever looked."
+
+## Decisions locked
+- **Sell the LOOK + the feeling of looking good ("damn, I look good"), not what it proves.** (Jason, 2026-06-26)
+- Aha = weak-point → well-rounded movie-star physique, the efficient way (less gym time). (Jason)
+- Open on WHY / what's holding them back — pain-first hook, then doom, then aha. (Jason)
+- "6 months from now" is NOT a question — it's the projection payoff. (Jason)
+- Feeling > features. (Jason)
