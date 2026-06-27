@@ -64,6 +64,7 @@ func blendHex(_ a: Int, _ b: Int, _ t: Double) -> Color {
 // Wide establishing shot (huge mountain, far summit flag) → camera PUSHES IN on the hiker,
 // who walks a few steps and lies down to rest as it turns to night. Then the quote surfaces.
 struct MountainClimbView: View {
+    var variant: Int = 1   // 1 = path + hiker · 2 = silhouette on the slope · 3 = spotlight beam
     @State private var start = Date()
     var body: some View {
         TimelineView(.animation) { tl in
@@ -81,7 +82,6 @@ struct MountainClimbView: View {
         let zoomS: CGFloat = e < 2.6 ? 1 : min(2.7, 1 + CGFloat(e - 2.6) / 2.2 * 1.7)
         let walkStart = 4.6
         let frac: CGFloat = e < walkStart ? 0.05 : min(0.46, 0.05 + CGFloat(e - walkStart) / 3.6 * 0.41)
-        let sleeping = e > 8.6
         let daylight = e < 2.6 ? 0.85 : e < 8.6 ? max(0.12, 0.85 - (e - 2.6) / 6 * 0.73) : 0.12
         let night = daylight <= 0.16
 
@@ -128,15 +128,20 @@ struct MountainClimbView: View {
         let sx = w*0.72, sy = h*0.03
         ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: sy)); $0.addLine(to: CGPoint(x: sx, y: sy-15)) }, with: .color(.white.opacity(0.85)), lineWidth: 1.5)
         ctx.fill(Path { $0.move(to: CGPoint(x: sx, y: sy-15)); $0.addLine(to: CGPoint(x: sx+12, y: sy-11)); $0.addLine(to: CGPoint(x: sx, y: sy-7)) }, with: .color(Theme.acc))
-        // path
-        ctx.stroke(path, with: .color(Theme.acc.opacity(0.45)), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 5]))
-        // hiker — walking, then lying down to sleep
-        if sleeping {
-            ctx.fill(Path(roundedRect: CGRect(x: hiker.x-9, y: hiker.y-4, width: 18, height: 7), cornerSize: CGSize(width: 3.5, height: 3.5)), with: .color(Theme.acc))
-            let flick = 0.75 + 0.25 * sin(e * 8)
-            ctx.fill(Path(ellipseIn: CGRect(x: hiker.x+11, y: hiker.y-6, width: 9*flick, height: 12*flick)), with: .color(blendHex(0xFF7A1A, 0xC8FF4D, 0.3).opacity(0.9)))
-            ctx.draw(ctx.resolve(Text("z z").font(.system(size: 8, weight: .bold)).foregroundColor(.white.opacity(0.6))), at: CGPoint(x: hiker.x, y: hiker.y - 14))
-        } else {
+
+        switch variant {
+        case 2:   // silhouette figure on the slope (no path, no sleep)
+            let s: CGFloat = 1
+            ctx.fill(Path(ellipseIn: CGRect(x: hiker.x-3*s, y: hiker.y-18*s, width: 6*s, height: 6*s)), with: .color(Theme.acc))
+            ctx.fill(Path(roundedRect: CGRect(x: hiker.x-3*s, y: hiker.y-13*s, width: 6*s, height: 11*s), cornerSize: CGSize(width: 2.5, height: 2.5)), with: .color(Theme.acc))
+            ctx.stroke(Path { $0.move(to: CGPoint(x: hiker.x-2, y: hiker.y-2)); $0.addLine(to: CGPoint(x: hiker.x-4, y: hiker.y+5)) }, with: .color(Theme.acc), lineWidth: 2)
+            ctx.stroke(Path { $0.move(to: CGPoint(x: hiker.x+2, y: hiker.y-2)); $0.addLine(to: CGPoint(x: hiker.x+4, y: hiker.y+5)) }, with: .color(Theme.acc), lineWidth: 2)
+        case 3:   // spotlight beam onto a small figure
+            ctx.fill(Path { $0.move(to: CGPoint(x: hiker.x-26, y: -h*0.3)); $0.addLine(to: CGPoint(x: hiker.x+26, y: -h*0.3)); $0.addLine(to: CGPoint(x: hiker.x+10, y: hiker.y+4)); $0.addLine(to: CGPoint(x: hiker.x-10, y: hiker.y+4)); $0.closeSubpath() },
+                     with: .color(Theme.acc.opacity(0.10)))
+            ctx.fill(Path(ellipseIn: CGRect(x: hiker.x-4, y: hiker.y-6, width: 8, height: 8)), with: .color(Theme.acc))
+        default:  // 1 — dashed path + walking icon
+            ctx.stroke(path, with: .color(Theme.acc.opacity(0.45)), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 5]))
             ctx.draw(ctx.resolve(Text(Image(systemName: "figure.walk")).foregroundColor(Theme.acc).font(.system(size: 14, weight: .bold))), at: CGPoint(x: hiker.x, y: hiker.y - 8))
         }
     }
@@ -149,7 +154,7 @@ struct TrainingFixScene: View {
     private var lead: String { years >= 1 ? "\(years) \(years == 1 ? "year" : "years") of waiting. That stops now." : "The waiting stops now." }
     var body: some View {
         VStack(spacing: 14) {
-            MountainClimbView().frame(height: 188)
+            MountainClimbView(variant: Int(ProcessInfo.processInfo.environment["STETIC_MTN"] ?? "") ?? 1).frame(height: 188)
             Text(lead).font(.system(size: 23, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
             Text(brandLimed("Every week you put in now shows up in the mirror. Don't stare at the summit. Just focus on today. We've got the rest."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
