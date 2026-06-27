@@ -10,9 +10,9 @@ struct IntroView: View {
     private struct Slide { let beat: Beat; let title: String; let sub: String }
 
     private let slides: [Slide] = [
-        .init(beat: .comparison, title: "Aesthetic, not swole.",
+        .init(beat: .comparison, title: "Stetic, not swole.",
               sub: "We make you look as good as possible — not just as big as possible."),
-        .init(beat: .shot("intro_score"), title: "Your physique, scored.",
+        .init(beat: .shot("intro_score"), title: "Your physique, analyzed.",
               sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
         .init(beat: .shot("intro_session"), title: "A plan that fixes your weak points.",
               sub: "Built around what's holding you back — and it tells you exactly when to add weight."),
@@ -30,7 +30,7 @@ struct IntroView: View {
                 visual(slides[i].beat).id("v\(i)").transition(.opacity)
                 Spacer().frame(height: 22)
                 VStack(spacing: 9) {
-                    Text(slides[i].title)
+                    Text(brandLimed(slides[i].title))   // limes "Stetic" in the comparison headline
                         .font(.system(size: 27, weight: .heavy)).multilineTextAlignment(.center)
                         .foregroundStyle(Theme.txt).id("t\(i)").transition(.opacity)
                     if i == slides.count - 1 {   // "Use Stetic." sits right under "Don't stay static."

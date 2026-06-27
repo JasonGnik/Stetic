@@ -169,8 +169,6 @@ enum OnbOptions {
         Option(id: "muscle", label: "Muscle growth", sub: "Put on size, improve composition"),
         Option(id: "fat_loss", label: "Losing weight / fat loss", sub: "Burn calories, manage body fat"),
         Option(id: "looks", label: "Looking better", sub: "Aesthetics, confidence, feeling good"),
-        Option(id: "mental", label: "Mental health", sub: "Stress relief, mood, less anxiety"),
-        Option(id: "performance", label: "Athletic performance", sub: "Train for a sport or activity"),
         Option(id: "longevity", label: "Longevity & health", sub: "Stay mobile and strong as you age"),
         Option(id: "discipline", label: "Routine & discipline", sub: "Structure, accomplishment, habit"),
     ]

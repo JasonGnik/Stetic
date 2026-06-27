@@ -158,13 +158,12 @@ struct TrainingFixScene: View {
     @State private var showRest = false
     // What they're chasing, in their words — drives the gut-punch line.
     private var outcome: String {
-        for id in ["looks", "muscle", "fat_loss", "strength", "performance"] where motivation.contains(id) {
+        for id in ["looks", "muscle", "fat_loss", "strength"] where motivation.contains(id) {
             switch id {
-            case "looks":       return "lean and confident"
-            case "muscle":      return "built the way you want"
-            case "fat_loss":    return "lean and defined"
-            case "strength":    return "visibly stronger"
-            case "performance": return "athletic and capable"
+            case "looks":    return "lean and confident"
+            case "muscle":   return "built the way you want"
+            case "fat_loss": return "lean and defined"
+            case "strength": return "visibly stronger"
             default: break
             }
         }

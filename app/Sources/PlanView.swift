@@ -366,10 +366,15 @@ struct PlanView: View {
                                 }
                                 if let note = e.note, !note.isEmpty {
                                     Text(note).font(.system(size: 10)).foregroundStyle(Theme.mut).lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
                             Spacer()
-                            Text("\(e.sets) × \(e.reps)").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                            VStack(alignment: .trailing, spacing: 1) {
+                                ForEach(Array(repLines(sets: e.sets, reps: e.reps).enumerated()), id: \.offset) { _, line in
+                                    Text(line).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.txt)
+                                }
+                            }
                         }
                     }
                 }
@@ -399,6 +404,7 @@ struct PlanView: View {
                                 .foregroundStyle(ScoreCard.muscleColor(g.rating))
                         }
                         Text(g.detail).font(.system(size: 12.5)).foregroundStyle(Color(hex: 0xC9C9CF)).lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
                         VStack(alignment: .leading, spacing: 7) {
                             ForEach(g.sub) { s in subRow(s) }
                         }
@@ -446,8 +452,18 @@ struct PlanView: View {
                 Spacer(minLength: 0)
             }
             Text(s.cue).font(.system(size: 11)).foregroundStyle(Theme.mut).lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.leading, 12)
         }
+    }
+
+    // Per-set rep targets, labeled so "5–9, 10–12" reads as top-set vs back-off, not a single mystery range.
+    private func repLines(sets: Int, reps: String) -> [String] {
+        let ranges = RepRange.perSet(reps, count: max(1, sets))
+        let labels = ranges.map { $0?.label ?? reps }
+        if Set(labels).count <= 1 { return ["\(sets) × \(labels.first ?? reps)"] }
+        let tags: [String] = labels.count == 2 ? ["Top", "Back-off"] : labels.indices.map { $0 == 0 ? "Top" : "Set \($0 + 1)" }
+        return zip(tags, labels).map { "\($0): \($1)" }
     }
 
     // Lagging/needs-work statuses read red; everything else reads lime.

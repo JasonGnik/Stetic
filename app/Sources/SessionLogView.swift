@@ -18,16 +18,36 @@ struct SessionLogView: View {
     @State private var quote = ""
     @State private var deloadActive = false                         // this is a deload week
     @State private var bumped: Set<String> = []                    // exercises auto-progressed this session
+    @State private var restoredDraft = false                        // resumed an in-progress session from today
     @AppStorage("deloadAnchor") private var deloadAnchor = ""
 
     struct Progression: Identifiable { let id = UUID(); let name: String; let cue: String }
 
     init(day: PlanContent.Day, onDone: @escaping () -> Void) {
         self.day = day; self.onDone = onDone
-        _exercises = State(initialValue: day.exercises.map { e in
+        let fresh = day.exercises.map { e in
             LoggedExercise(name: e.name, target: e.target, repRange: e.reps,
                            sets: (0..<max(1, e.sets)).map { _ in LoggedSet() })
-        })
+        }
+        // Resume an in-progress session saved earlier today (survives swiping the screen away).
+        let key = "sessionDraft_\(day.day)_\(LogDate.today)"
+        if let data = UserDefaults.standard.data(forKey: key),
+           let saved = try? JSONDecoder().decode([LoggedExercise].self, from: data),
+           saved.count == fresh.count {
+            _exercises = State(initialValue: saved)
+            _restoredDraft = State(initialValue: true)
+        } else {
+            _exercises = State(initialValue: fresh)
+        }
+    }
+
+    private var draftKey: String { "sessionDraft_\(day.day)_\(LogDate.today)" }
+    private func saveDraft() {
+        if let data = try? JSONEncoder().encode(exercises) { UserDefaults.standard.set(data, forKey: draftKey) }
+    }
+    private func clearDraft() { UserDefaults.standard.removeObject(forKey: draftKey) }
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     private var doneCount: Int { exercises.flatMap { $0.sets }.filter { $0.done }.count }
@@ -43,6 +63,8 @@ struct SessionLogView: View {
                         ForEach(exercises.indices, id: \.self) { i in exerciseCard(i) }
                     }
                     .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 28)
+                    .contentShape(Rectangle())
+                    .onTapGesture { hideKeyboard() }   // tap empty space to close the number pad
                 }
                 .scrollIndicators(.hidden)
                 .scrollDismissesKeyboard(.interactively)
@@ -54,6 +76,7 @@ struct SessionLogView: View {
         .task { await loadLast() }
         .sensoryFeedback(.success, trigger: pulsedSets.count)
         .keyboardDone()
+        .onChange(of: exercises) { _, _ in saveDraft() }   // persist progress as they log
     }
 
     // Pre-fill weights from the last time each exercise was logged, applying progression
@@ -72,6 +95,7 @@ struct SessionLogView: View {
         await MainActor.run {
             lastByExercise = map
             deloadActive = deload
+            guard !restoredDraft else { return }   // a resumed draft already holds the user's entries — don't overwrite
             for i in exercises.indices {
                 guard let last = map[exercises[i].name] else { continue }
                 let ranges = RepRange.perSet(exercises[i].repRange, count: exercises[i].sets.count)
@@ -292,6 +316,7 @@ struct SessionLogView: View {
         Task {
             try? await ScanAPI.shared.logWorkout(dayLabel: day.day, exercises: exercises)
             await MainActor.run {
+                clearDraft()   // session banked — no draft to resume
                 saving = false
                 quote = Self.quotes.randomElement() ?? Self.quotes[0]
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { progressions = computeProgressions() }
