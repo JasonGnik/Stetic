@@ -116,6 +116,8 @@ cluster in the **periodization/personalization** half.
 
 **Funnel idea (Jason, 2026-06-26) — "show what you get" before the paywall:** add a value-showcase right before the paywall (currently the funnel hides scan/score/plan behind the wall). A few swipeable screens previewing the actual offering: the rank ladder (Bronze→Greek God), a sample plan card, the food scanner, ideas/cravings. Give the user something tangible to say yes to. Focused funnel build; do after the device test passes.
 
+**Exercise swap (Jason, 2026-06-26 — eventually, not now):** let users swap an exercise for a like-for-like alternative (don't like it / equipment taken / travel / time-crunch). Aligns with JP single-lift-stall doctrine (swap, return later) + the coach-gap "on-the-fly substitution." Post-launch.
+
 **Roadmap (post-launch — real builds, NOT blocking):**
 - **Phase 1/2/3 model + recovery assessment** — the guide's THESIS (Person 1 vs Person 2): split should be gated on experience + recovery (sleep/stress/life-load), not days-available. Beginners stay in Phase 1 Upper/Lower; graduate to Phase 2 PPL on a logbook stall. Onboarding asks none of this today. **#1 roadmap item.**
 - **Stall handling** — single-lift stall (2 sessions no PR) → swap like-for-like, return later; multi-lift stall → that's the real deload trigger (vs the current calendar timer). History data already loaded, unused.

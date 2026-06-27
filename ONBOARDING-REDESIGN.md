@@ -75,8 +75,14 @@ Hook block first (emotional), stats batched late, payoff at the end. Tag = [KEPT
     "A year from now: same mirror, or the best you've looked? The time passes either way." Honest, a little uncomfortable, about the LOOK (not morality).
 11. **SHOW · THE AHA** [NEW — the differentiator] personalized from screen 9, with a **MOCK weak-point visual**:
     a body silhouette highlighting their self-reported weak area + "your focus" — makes it tangible without a real (gated) scan. "You said your **shoulders** feel behind. That's exactly what breaks the movie-star line. We'll prioritize it with science-based training — a balanced frame, in less gym time."
-11b. **SHOW · "Your coach handles the rest"** [NEW — feature-as-proof, ONE screen, NOT a tour]
-    Compress everything-a-coach-does into a single benefit beat: "The plan, your food, when to go heavier, when to back off — all done for you. You just show up." Tiny supporting line lists it as outcomes (trains your weak points · macros + meal ideas · tracks your lifts & tells you when to add weight · deloads you on time). Sells the *effortless/it's-all-here* wedge without explaining features one by one.
+11b. **SHOW · Training fix (old split → new split)** [NEW — feature-as-proof]
+    "Here's the problem with how you've been training → here's the smarter split, built around your weak points and backed by science, so you improve **every week** instead of spinning for two years." Maps to the existing split-critique feature. Conveys progressive overload ("we tell you when to go heavier") = the weekly-improvement promise.
+11c. **SHOW · Nutrition made easy** [NEW — separate screen, feature-as-proof]
+    "Your food, handled. Macros set for your goal, meal ideas ready, even your cravings worked in — no counting headaches, no guessing." (This is the one nutrition beat; the actual scanner/cravings UI is discovered in-app.)
+
+> The emotional target of 11→11c (Jason): "Damn — they look at what I've been doing and how my body looks,
+> tell me what I'm doing wrong, then give me an actual science-backed way to improve every week instead of
+> stacking up two years with nothing. I want that. I'll at least give it a shot."
 
 ### Block C — Build it for me (stats, batched & fast)
 12. **ASK · pace** [KEPT] · 13. **ASK · sex** [KEPT, needed for scoring/macros] · 14. **ASK · days** [KEPT] ·
@@ -104,13 +110,68 @@ handles the rest" — one screen compressing nutrition/meal-ideas/cravings + lif
 overload (when to push/add weight) + deload into "it's all done for you." Everything else (the actual
 scanner, meal scan, cravings, logbook UI) is discovered IN the app, not explained in onboarding.
 
-**DOOM options — pick the intensity (all about the look + wasted time, off career/morality):**
-- **A — Mirror gut-punch (hardest):** "Another year. Same body in the mirror. Still hiding your shirt at the beach. The time passes whether you change or not — most people waste it."
-- **B — The other guy (vindication angle):** "The guy who started when you did already looks the part. You've put in the time — you just haven't seen it pay off. That stops here."
-- **C — Two roads (visual, less harsh):** split image — "Keep guessing → 12 months, barely different. Or start now → the best you've ever looked. Same year, two completely different mirrors."
-Recommendation: lead with **A or B** for this audience; C is the softer fallback. Can also A/B test later.
+**DOOM — LOCKED (Jason): Two Roads + "time passes" + results-driven identity callout.**
+Combines the parts he liked (cut "hiding your shirt at the beach" and the "other guy" angle).
+
+> **Headline:** A year from now.
+> **Two paths (visual, side by side):**
+> • Do nothing → *Same body in the mirror. Another year gone.*
+> • Start now → *The best you've ever looked — in 12 weeks.*
+> **Subline:** "The time passes whether you change or not. Most people waste it."
+> **Identity close (the gut-punch twist):** "This is for people who'd rather see results than float
+> aimlessly and complain that nothing changes. Which one are you?"
+
+## 9. Screen copy — v1 draft (red-pen this)
+Stat screens (pace/sex/days/equipment/measurements/activity/split) keep their current copy. New/hero below.
+
+**1 · Welcome** — *"Look like you actually train."* / sub: "Lean, defined, well-built — the efficient way. Let's see where you're starting."  [Get started]
+
+**2 · Why are you really here?** (multi) — sub: "Be honest — this shapes everything."
+Get lean & defined · Build muscle in the right places · Look good with my shirt off · Look good for an event/summer · Turn heads · Break out of a rut
+
+**3 · What's holding you back?** (multi) — sub: "Pick what's true. We'll target it."
+*(keep current obstacle options)*
+
+**4 · Empathy beat** *(callback — keep, sourced stat answering their top obstacle)*
+
+**5 · How long have you trained?** — Beginner (under a year) · Intermediate (1–3 yrs) · Advanced (3+ yrs)
+
+**6 · How do you feel about your results — for the time you've put in?** — sub: "Most people aren't where they hoped."
+"Honestly, behind where I should be" · "Some progress, not enough" · "Decent, but stuck" · "Just getting started"
+
+**7 · Ever followed a real plan?** — sub: "Most people never have. That's usually the problem."
+"Winged it / free YouTube" · "A paid app or program" · "An actual coach" · "Never had a real plan"
+
+**8 · What do you want to build?** *(goal — keep options)*
+
+**9 · Which areas feel behind?** (multi) — sub: "Be real — this is what we'll bring up." *(focus options)*
+
+**10 · DOOM (Two Roads)** — *"A year from now."*
+• Do nothing → "Same body in the mirror. Another year gone."
+• Start now → "The best you've ever looked — in 12 weeks."
+sub: "The time passes whether you change or not. Most people waste it. This is for people who'd rather see results than float and complain nothing changes." [I'm ready]
+
+**11 · AHA (weak points)** — *"Your look is capped by 1–2 weak points."*
+mock silhouette highlighting their picked area. "You told us your **{shoulders}** feel behind — that's exactly what breaks a balanced, movie-star frame. Here's the good news: it's fixable, fast, when you train it right."
+
+**11b · Training fix** — *"We fix what you've been doing wrong."*
+"Most plans bury your weak points under junk volume. We analyze how you train, then build a smarter split around your weak points — science-backed — so you improve **every week** instead of spinning for two years. We even tell you exactly when to add weight."
+
+**11c · Nutrition made easy** — *"Your food, handled."*
+"Macros set for your goal. Meal ideas ready to go. Even your cravings worked in. No counting headaches, no guessing — just eat and progress."
+
+**12–18 · Stats** *(keep current copy — pace, sex, days, equipment, measurements, activity, current split)*
+
+**19 · Projection payoff** — *"Here's where you'll get to."* (replaces the 6-month question)
+Visual climb. Lead with the LOOK: "Abs starting to show. Fuller shoulders. A leaner, more defined frame in 12 weeks." Tier name secondary. "Will," not "can."
+
+**20 · Social proof** *(keep)* · **21 · Reminders** *(keep)* · **22 · How'd you hear about us** *(keep)*
+
+**→ Paywall** — *"Your plan is ready, {name}."* sub: "Built for exactly where you are. You value your time — this is the efficient way to the body you want. Start your 3-day free trial."
 
 ## Decisions locked
+- **Value block = 3 beats:** weak points (AHA) → training fix (old split → new, improve weekly) → nutrition made easy (separate screen). (Jason)
+- **DOOM = Two Roads + "time passes, most waste it" + results-driven-vs-floats-aimlessly identity callout.** (Jason)
 - **CUT the `commitment` screen.** (Jason, 2026-06-26)
 - **Scan stays gated** — they UPLOAD their photo before the paywall, but the scan/score reveal is post-paywall (current funnel structure). No free scan. The onboarding AHA uses a MOCK weak-point visual + self-reported area. (Jason)
 - **Features: sell the feeling, don't tour.** Only 2 feature-as-proof beats (AHA + "coach handles the rest"). (Jason)
