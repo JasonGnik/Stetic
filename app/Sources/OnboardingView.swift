@@ -164,14 +164,14 @@ struct OnboardingView: View {
     private var trainingFixContent: some View {
         let yrs = Int(data.timeWantedYears)
         let lead = yrs >= 1 ? "\(yrs) \(yrs == 1 ? "year" : "years") of waiting. That stops now." : "The waiting stops now."
-        return VStack(spacing: 18) {
-            MountainClimbView().frame(height: 160)
-            Text(lead).font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-            Text(brandLimed("You can't get those years back — but that's behind you. From here, every week you put in shows up in the mirror. Real, visible progress instead of standing still. You don't carry the whole journey at once — you just handle today."))
+        return VStack(spacing: 14) {
+            MountainClimbView().frame(height: 176)
+            Text(lead).font(.system(size: 23, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+            Text(brandLimed("Every week you put in now shows up in the mirror — real, visible progress. Don't stare at the summit. Just focus on today. We've got the rest."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
             Text("“A man on a thousand-mile walk has to forget his goal and say to himself every morning: today I'm going to cover twenty-five miles.”")
-                .font(.system(size: 12.5, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2)
-                .foregroundStyle(Color(hex: 0xD2D2D8))
+                .font(.system(size: 12, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2)
+                .foregroundStyle(Color(hex: 0xC8C8CE))
             Text("— Leo Tolstoy").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
         }
     }

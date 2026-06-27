@@ -3,74 +3,138 @@ import SwiftUI
 // Visual components + the identity-transformation finale for the onboarding emotional arc.
 // See ONBOARDING-REDESIGN.md. Kept out of OnboardingView to stay readable.
 
-// MARK: - Weak-point silhouette (AHA screen) — illustrative, not a real diagnosis
+// MARK: - Weak-point silhouette (AHA screen) — a "mock scan": figure + sweeping scan line + lit weak point.
 struct WeakPointSilhouette: View {
-    @State private var pulse = false
     var body: some View {
-        ZStack {
-            // muted body
-            Image(systemName: "figure.arms.open")
-                .font(.system(size: 132, weight: .regular))
-                .foregroundStyle(Theme.mut.opacity(0.35))
-            // highlighted "weak point" = shoulders, glowing lime
-            Circle().fill(Theme.acc.opacity(pulse ? 0.28 : 0.14))
-                .frame(width: pulse ? 96 : 78, height: pulse ? 96 : 78)
-                .blur(radius: 14)
-                .offset(y: -34)
-            HStack(spacing: 3) {
-                Image(systemName: "scope").font(.system(size: 10, weight: .bold))
-                Text("weak point").font(.system(size: 10, weight: .bold))
-            }
-            .padding(.horizontal, 9).padding(.vertical, 4)
-            .background(Capsule().fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
-            .offset(x: 78, y: -34)
+        TimelineView(.animation) { tl in
+            let p = (tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3.4)) / 3.4
+            Canvas { ctx, size in draw(&ctx, size, p) }
         }
         .frame(maxWidth: .infinity)
-        .onAppear { withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) { pulse = true } }
+    }
+    private func draw(_ ctx: inout GraphicsContext, _ size: CGSize, _ p: Double) {
+        let w = size.width, h = size.height, cx = w/2
+        let mut = Color(hex: 0x595961)
+        func cap(_ x: CGFloat, _ y: CGFloat, _ ww: CGFloat, _ hh: CGFloat, _ c: Color) {
+            ctx.fill(Path(roundedRect: CGRect(x: x, y: y, width: ww, height: hh), cornerSize: CGSize(width: ww/2, height: ww/2)), with: .color(c))
+        }
+        // glow behind shoulders
+        ctx.fill(Path(ellipseIn: CGRect(x: cx-46, y: 18, width: 92, height: 58)), with: .color(Theme.acc.opacity(0.16)))
+        // body (muted)
+        cap(cx-42, 42, 11, 58, mut); cap(cx+31, 42, 11, 58, mut)       // arms
+        cap(cx-16, 86, 13, 56, mut); cap(cx+3, 86, 13, 56, mut)        // legs
+        ctx.fill(Path(ellipseIn: CGRect(x: cx-10, y: 6, width: 20, height: 20)), with: .color(mut))   // head
+        var torso = Path()
+        torso.move(to: CGPoint(x: cx-28, y: 42)); torso.addLine(to: CGPoint(x: cx+28, y: 42))
+        torso.addLine(to: CGPoint(x: cx+14, y: 92)); torso.addLine(to: CGPoint(x: cx-14, y: 92)); torso.closeSubpath()
+        ctx.fill(torso, with: .color(mut))
+        // shoulders = lit weak point
+        ctx.fill(Path(ellipseIn: CGRect(x: cx-48, y: 30, width: 36, height: 26)), with: .color(Theme.acc))
+        ctx.fill(Path(ellipseIn: CGRect(x: cx+12, y: 30, width: 36, height: 26)), with: .color(Theme.acc))
+        // sweeping scan line + trailing band
+        let sy = 6 + (h-12) * p
+        ctx.fill(Path(CGRect(x: 10, y: sy, width: w-20, height: 18)),
+                 with: .linearGradient(Gradient(colors: [Theme.acc.opacity(0.16), .clear]), startPoint: CGPoint(x: 0, y: sy), endPoint: CGPoint(x: 0, y: sy+18)))
+        ctx.fill(Path(CGRect(x: 10, y: sy-1, width: w-20, height: 2)), with: .color(Theme.acc.opacity(0.85)))
+        // scan-frame corner brackets
+        let L: CGFloat = 14, m: CGFloat = 6
+        for (ox, oy, sxn, syn) in [(m, m, 1.0, 1.0), (w-m, m, -1.0, 1.0), (m, h-m, 1.0, -1.0), (w-m, h-m, -1.0, -1.0)] {
+            var b = Path()
+            b.move(to: CGPoint(x: ox + L*sxn, y: oy)); b.addLine(to: CGPoint(x: ox, y: oy)); b.addLine(to: CGPoint(x: ox, y: oy + L*syn))
+            ctx.stroke(b, with: .color(Theme.acc.opacity(0.7)), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+        }
+        // weak-point tag
+        let tag = CGRect(x: cx+44, y: 26, width: 58, height: 18)
+        ctx.fill(Path(roundedRect: tag, cornerSize: CGSize(width: 9, height: 9)), with: .color(Theme.acc))
+        ctx.draw(ctx.resolve(Text("weak point").font(.system(size: 9.5, weight: .bold)).foregroundColor(Color(hex: 0x0E0E10))), at: CGPoint(x: tag.midX, y: tag.midY))
     }
 }
 
-// MARK: - Mountain climb (Training-fix screen) — "cover today's 25 miles, rest, go again"
+// Blend two 0xRRGGBB colors.
+func blendHex(_ a: Int, _ b: Int, _ t: Double) -> Color {
+    let tt = max(0, min(1, t))
+    func ch(_ x: Int, _ sh: Int) -> Double { Double((x >> sh) & 0xFF) }
+    let r = ch(a,16) + (ch(b,16) - ch(a,16)) * tt
+    let g = ch(a,8)  + (ch(b,8)  - ch(a,8))  * tt
+    let bl = ch(a,0) + (ch(b,0)  - ch(a,0))  * tt
+    return Color(red: r/255, green: g/255, blue: bl/255)
+}
+
+// MARK: - Mountain climb (Training-fix screen) — cinematic day→dusk cycle.
+// One looping "day": dawn → hiker walks up to camp → dusk → night (rests by a fire) → repeat.
+// The message: don't stare at the summit; just do today's stretch, rest, go again.
 struct MountainClimbView: View {
-    @State private var t: CGFloat = 0
+    private let dayLength: Double = 13
+
     var body: some View {
         TimelineView(.animation) { tl in
-            Canvas { ctx, size in
-                let w = size.width, h = size.height
-                // sky gradient handled by background; draw mountains
-                func mountain(peakX: CGFloat, peakY: CGFloat, base: CGFloat, color: Color) {
-                    var p = Path()
-                    p.move(to: CGPoint(x: peakX - base, y: h))
-                    p.addLine(to: CGPoint(x: peakX, y: peakY))
-                    p.addLine(to: CGPoint(x: peakX + base, y: h))
-                    p.closeSubpath()
-                    ctx.fill(p, with: .color(color))
-                }
-                mountain(peakX: w * 0.32, peakY: h * 0.18, base: w * 0.5, color: Color(hex: 0x1B1B20))
-                mountain(peakX: w * 0.68, peakY: h * 0.06, base: w * 0.55, color: Color(hex: 0x232329))
-                // dashed switchback path
-                var path = Path()
-                path.move(to: CGPoint(x: w * 0.12, y: h * 0.96))
-                path.addCurve(to: CGPoint(x: w * 0.68, y: h * 0.12),
-                              control1: CGPoint(x: w * 0.55, y: h * 0.85),
-                              control2: CGPoint(x: w * 0.35, y: h * 0.35))
-                ctx.stroke(path, with: .color(Theme.acc.opacity(0.5)),
-                           style: StrokeStyle(lineWidth: 2, dash: [4, 5]))
-                // hiker progressing along the path
-                let frac = (sin(tl.date.timeIntervalSinceReferenceDate * 0.5) + 1) / 2
-                if let pt = path.trimmedPath(from: 0, to: max(0.02, frac)).currentPoint {
-                    ctx.fill(Path(ellipseIn: CGRect(x: pt.x - 4, y: pt.y - 4, width: 8, height: 8)),
-                             with: .color(Theme.acc))
-                    ctx.draw(ctx.resolve(Text(Image(systemName: "figure.walk")).foregroundColor(Theme.acc).font(.system(size: 14))),
-                             at: CGPoint(x: pt.x, y: pt.y - 12))
-                }
-            }
+            let p = (tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: dayLength)) / dayLength
+            Canvas { ctx, size in draw(&ctx, size, p) }
         }
-        .background(
-            LinearGradient(colors: [Color(hex: 0x121218), Color(hex: 0x0E0E10)], startPoint: .top, endPoint: .bottom)
-        )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1))
+    }
+
+    private func draw(_ ctx: inout GraphicsContext, _ size: CGSize, _ p: Double) {
+        let w = size.width, h = size.height
+        let dayProg = min(p, 0.62) / 0.62
+        let daylight = max(0, sin(dayProg * .pi))
+        let night = p >= 0.62
+        let glow = night ? 0 : max(0, 1 - abs(dayProg - 0.5) * 2.2)
+
+        let top = blendHex(0x0A0A12, 0x15263B, daylight * 0.85)
+        let bottom = night ? blendHex(0x0E0E10, 0x14141C, 0.6) : blendHex(0x12100E, 0x21381F, daylight)
+        ctx.fill(Path(CGRect(x: 0, y: 0, width: w, height: h)),
+                 with: .linearGradient(Gradient(colors: [top, bottom]), startPoint: .zero, endPoint: CGPoint(x: 0, y: h)))
+        if glow > 0.05 {
+            ctx.fill(Path(CGRect(x: 0, y: h*0.45, width: w, height: h*0.55)),
+                     with: .linearGradient(Gradient(colors: [blendHex(0xFF7A1A, 0xC8FF4D, 0.4).opacity(glow*0.35), .clear]),
+                                           startPoint: CGPoint(x: 0, y: h), endPoint: CGPoint(x: 0, y: h*0.45)))
+        }
+        if night {
+            let fade = min(1, (p - 0.62) / 0.12)
+            for s in [(0.18,0.16),(0.34,0.27),(0.52,0.12),(0.7,0.22),(0.84,0.14),(0.26,0.4),(0.62,0.36)] {
+                ctx.fill(Path(ellipseIn: CGRect(x: w*s.0, y: h*s.1, width: 1.6, height: 1.6)), with: .color(.white.opacity(0.5*fade)))
+            }
+        }
+        let celX = w * (0.12 + dayProg * 0.76)
+        let celY = h * (0.62 - daylight * 0.46)
+        if night {
+            let mx = w*0.74, my = h*0.2
+            ctx.fill(Path(ellipseIn: CGRect(x: mx-9, y: my-9, width: 18, height: 18)), with: .color(.white.opacity(0.85)))
+            ctx.fill(Path(ellipseIn: CGRect(x: mx-4, y: my-11, width: 16, height: 16)), with: .color(bottom))
+        } else {
+            ctx.fill(Path(ellipseIn: CGRect(x: celX-22, y: celY-22, width: 44, height: 44)), with: .color(blendHex(0xFFB24A, 0xC8FF4D, daylight).opacity(0.18)))
+            ctx.fill(Path(ellipseIn: CGRect(x: celX-9, y: celY-9, width: 18, height: 18)), with: .color(blendHex(0xFFB24A, 0xEFFFAE, daylight)))
+        }
+        func mtn(_ peakX: CGFloat, _ peakY: CGFloat, _ base: CGFloat, _ color: Color) {
+            var pa = Path()
+            pa.move(to: CGPoint(x: peakX - base, y: h)); pa.addLine(to: CGPoint(x: peakX, y: peakY)); pa.addLine(to: CGPoint(x: peakX + base, y: h)); pa.closeSubpath()
+            ctx.fill(pa, with: .color(color))
+        }
+        let shade = night ? 0.0 : daylight * 0.10
+        mtn(w*0.30, h*0.20, w*0.52, blendHex(0x191920, 0x22323A, shade))
+        mtn(w*0.72, h*0.07, w*0.58, blendHex(0x111118, 0x1A2730, shade))
+        ctx.fill(Path(CGRect(x: 0, y: h*0.86, width: w, height: h*0.14)), with: .color(blendHex(0x0C0C10, 0x12180F, shade)))
+
+        let sx = w*0.72, sy = h*0.07
+        ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: sy)); $0.addLine(to: CGPoint(x: sx, y: sy-16)) }, with: .color(.white.opacity(0.85)), lineWidth: 1.5)
+        ctx.fill(Path { $0.move(to: CGPoint(x: sx, y: sy-16)); $0.addLine(to: CGPoint(x: sx+13, y: sy-12)); $0.addLine(to: CGPoint(x: sx, y: sy-8)) }, with: .color(Theme.acc))
+
+        let camp = CGPoint(x: w*0.5, y: h*0.5)
+        var path = Path()
+        path.move(to: CGPoint(x: w*0.14, y: h*0.9))
+        path.addCurve(to: camp, control1: CGPoint(x: w*0.42, y: h*0.84), control2: CGPoint(x: w*0.26, y: h*0.6))
+        ctx.stroke(path, with: .color(Theme.acc.opacity(0.45)), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 5]))
+
+        if night {
+            ctx.fill(Path { $0.move(to: CGPoint(x: camp.x-12, y: camp.y)); $0.addLine(to: CGPoint(x: camp.x-2, y: camp.y-13)); $0.addLine(to: CGPoint(x: camp.x+8, y: camp.y)); $0.closeSubpath() }, with: .color(Color(hex: 0x2A2A30)))
+            let flick = 0.7 + 0.3 * sin(p * 60)
+            ctx.fill(Path(ellipseIn: CGRect(x: camp.x+11, y: camp.y-7, width: 12*flick, height: 14*flick)), with: .color(blendHex(0xFF7A1A, 0xC8FF4D, 0.3).opacity(0.9)))
+            ctx.fill(Path(ellipseIn: CGRect(x: camp.x+13, y: camp.y-4, width: 6, height: 8)), with: .color(blendHex(0xFFD27A, 0xEFFFAE, 0.4)))
+        } else if let pt = path.trimmedPath(from: 0, to: max(0.04, dayProg)).currentPoint {
+            ctx.draw(ctx.resolve(Text(Image(systemName: "figure.walk")).foregroundColor(Theme.acc).font(.system(size: 15, weight: .bold))), at: CGPoint(x: pt.x, y: pt.y - 9))
+        }
     }
 }
 
@@ -81,7 +145,7 @@ struct TransformationScreen: View {
     var onBack: () -> Void
 
     @State private var act = 0          // 0 = trash old, 1 = become new, 2 = close
-    @State private var trashed = false
+    @State private var trashPhase = 0   // 0 shown, 1 falling, 2 embers
     @State private var revealed = 0     // how many new-identity lines shown
 
     // Old self, pulled from their real answers.
@@ -137,28 +201,35 @@ struct TransformationScreen: View {
         .onAppear { runTrash() }
     }
 
-    // ACT 1 — trash the old self
+    // ACT 1 — trash the old self, then burn it. trashPhase: 0 shown · 1 falling into bin · 2 embers.
     private var trashAct: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 20) {
             Text("That's not you anymore.")
                 .font(.system(size: 27, weight: .heavy)).foregroundStyle(Theme.txt).multilineTextAlignment(.center)
             VStack(spacing: 10) {
-                ForEach(Array(oldCards.enumerated()), id: \.offset) { _, c in
+                ForEach(Array(oldCards.enumerated()), id: \.offset) { i, c in
                     Text(c).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.mut)
-                        .strikethrough(trashed, color: Theme.red)
+                        .strikethrough(trashPhase >= 1, color: Theme.red)
                         .padding(.horizontal, 16).padding(.vertical, 12)
                         .frame(maxWidth: .infinity)
                         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
-                        .opacity(trashed ? 0 : 1)
-                        .offset(y: trashed ? 40 : 0)
-                        .scaleEffect(trashed ? 0.9 : 1)
+                        .opacity(trashPhase == 0 ? 1 : 0)
+                        .offset(y: trashPhase == 0 ? 0 : 150)
+                        .scaleEffect(trashPhase == 0 ? 1 : 0.5)
+                        .rotationEffect(.degrees(trashPhase == 0 ? 0 : (i % 2 == 0 ? 14 : -12)))
+                        .animation(.easeIn(duration: 0.7).delay(Double(i) * 0.08), value: trashPhase)
                 }
             }
-            Image(systemName: "trash.fill")
-                .font(.system(size: 26)).foregroundStyle(trashed ? Theme.acc : Theme.mut.opacity(0.4))
-                .scaleEffect(trashed ? 1.15 : 1)
+            ZStack {
+                if trashPhase >= 2 { EmberBurst().frame(width: 90, height: 64).offset(y: -10) }
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(trashPhase >= 1 ? Theme.acc : Theme.mut.opacity(0.4))
+                    .scaleEffect(trashPhase == 1 ? 1.2 : 1)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.6), value: trashPhase)
+            }
+            .frame(height: 70)
         }
-        .animation(.spring(response: 0.6, dampingFraction: 0.7), value: trashed)
     }
 
     // ACT 2 — you ARE this now
@@ -209,7 +280,12 @@ struct TransformationScreen: View {
     }
 
     private func runTrash() {
-        Task { try? await Task.sleep(nanoseconds: 1_100_000_000); await MainActor.run { trashed = true } }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            await MainActor.run { trashPhase = 1 }                 // cards fall into the bin
+            try? await Task.sleep(nanoseconds: 750_000_000)
+            await MainActor.run { withAnimation(.easeOut(duration: 0.3)) { trashPhase = 2 } }   // burn
+        }
     }
     private func runReveal() {
         revealed = 0
@@ -217,6 +293,28 @@ struct TransformationScreen: View {
             Task {
                 try? await Task.sleep(nanoseconds: UInt64(i) * 380_000_000)
                 await MainActor.run { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { revealed = i } }
+            }
+        }
+    }
+}
+
+// Rising, fading embers — the old self burning away.
+struct EmberBurst: View {
+    var body: some View {
+        TimelineView(.animation) { tl in
+            let t = tl.date.timeIntervalSinceReferenceDate
+            Canvas { ctx, size in
+                let w = size.width, h = size.height
+                for i in 0..<16 {
+                    let seed = Double(i) * 0.41
+                    let prog = (t * 0.85 + seed).truncatingRemainder(dividingBy: 1)
+                    let x = w*0.5 + sin((t + seed) * 2.2 + Double(i)) * (6 + Double(i % 5) * 4)
+                    let y = h - prog * h
+                    let op = (1 - prog) * 0.9
+                    let r = 1.4 + (1 - prog) * 2.2
+                    let col = i % 3 == 0 ? blendHex(0xFFB24A, 0xFFD27A, 0.3) : Theme.acc
+                    ctx.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r*2, height: r*2)), with: .color(col.opacity(op)))
+                }
             }
         }
     }
