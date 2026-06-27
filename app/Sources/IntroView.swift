@@ -8,13 +8,13 @@ struct IntroView: View {
     @State private var i = Int(ProcessInfo.processInfo.environment["STETIC_INTRO_SLIDE"] ?? "") ?? 0
 
     // .demo plays a looping screen-recording if the .mp4 is in the bundle, else falls back to the poster screenshot.
-    private enum Beat { case comparison; case shot(String); case score(String); case demo(video: String, poster: String); case chart }
+    private enum Beat { case comparison; case shot(String); case demo(video: String, poster: String); case chart }
     private struct Slide { let beat: Beat; let title: String; let sub: String }
 
     private let slides: [Slide] = [
         .init(beat: .comparison, title: "Stetic, not swole.",
               sub: "We make you look as good as possible — not just as big as possible."),
-        .init(beat: .score("intro_score"), title: "Your physique, analyzed.",
+        .init(beat: .shot("intro_score"), title: "Your physique, analyzed.",
               sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
         .init(beat: .shot("intro_plan"), title: "A plan built on your weak points.",
               sub: "Your laggards, prioritized — the exact split and progression to bring them up."),
@@ -74,7 +74,6 @@ struct IntroView: View {
         switch beat {
         case .comparison: comparisonVisual
         case .shot(let name): shotVisual(name)
-        case .score(let name): scoreVisual(name)
         case .demo(let video, let poster):
             if let url = Bundle.main.url(forResource: video, withExtension: "mp4") {
                 VideoLoop(url: url)
@@ -123,28 +122,6 @@ struct IntroView: View {
             .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
     }
     private func shotVisual(_ name: String) -> some View { shotImage(name) }
-
-    // Score slide: the card + the full rank ladder (Bronze → Greek God) so they see what they're climbing.
-    private func scoreVisual(_ name: String) -> some View {
-        VStack(spacing: 13) {
-            shotImage(name, height: 300)
-            VStack(spacing: 6) {
-                Text("EVERY RANK — BRONZE TO GREEK GOD")
-                    .font(.system(size: 8.5, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
-                HStack(alignment: .bottom, spacing: 5) {
-                    ForEach(Array(Tier.allCases.enumerated()), id: \.offset) { idx, t in
-                        VStack(spacing: 4) {
-                            RoundedRectangle(cornerRadius: 2).fill(t.color)
-                                .frame(width: 20, height: 6 + CGFloat(idx) * 2.5)
-                            Text(t.label).font(.system(size: 7.5, weight: .bold)).foregroundStyle(t.color)
-                                .lineLimit(1).minimumScaleFactor(0.5).frame(width: 36)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 14)
-        }
-    }
 }
 
 // A muted, auto-looping screen recording for the intro demo slides.
