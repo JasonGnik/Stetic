@@ -144,11 +144,11 @@ enum OnbOptions {
     static let sex = [Option(id: "male", label: "Male", sub: nil),
                       Option(id: "female", label: "Female", sub: nil)]
     static let goal = [
-        Option(id: "lose_fat", label: "Lose fat", sub: "Get lean and defined",
+        Option(id: "lose_fat", label: "Lose fat", sub: "Lose weight — get lean & defined",
                icon: "flame.fill", tint: Color(hex: 0xFF6B4A)),
-        Option(id: "gain_muscle", label: "Build muscle", sub: "Add size where it counts",
+        Option(id: "gain_muscle", label: "Build muscle", sub: "Gain weight — add lean size",
                icon: "figure.strengthtraining.traditional", tint: Theme.acc),
-        Option(id: "both", label: "Both — recomp", sub: "Lean out and build at once",
+        Option(id: "both", label: "Lean bulk", sub: "Gain slowly — size with minimal fat",
                icon: "arrow.triangle.2.circlepath", tint: Color(hex: 0x49B6FF)),
         Option(id: "tone", label: "Tone up", sub: "Lean and defined, not bulky",
                icon: "sparkles", tint: Color(hex: 0xFFC24B)),
