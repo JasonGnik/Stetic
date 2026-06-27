@@ -185,9 +185,6 @@ struct PlanView: View {
             }
             Button { confirm = .newPlan } label: { Label("Generate a new plan", systemImage: "sparkles") }
             Button { confirm = .finish } label: { Label("Finish this block", systemImage: "flag.checkered") }
-            Divider()
-            Button { confirm = .archive } label: { Label("Archive plan", systemImage: "archivebox") }
-            Button(role: .destructive) { confirm = .delete } label: { Label("Delete plan", systemImage: "trash") }
         } label: {
             Image(systemName: "ellipsis").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
                 .frame(width: 34, height: 34).background(Circle().fill(Theme.card))

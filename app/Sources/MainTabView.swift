@@ -7,6 +7,8 @@ struct MainTabView: View {
     @State private var workoutDates: [String] = []
     @State private var showScan = false
     @State private var tab = Int(ProcessInfo.processInfo.environment["STETIC_TAB"] ?? "") ?? 0
+    @Environment(\.requestReview) private var requestReview
+    @AppStorage("askedReview") private var askedReview = false
 
     init(name: String = "") {
         self.name = name
@@ -31,7 +33,14 @@ struct MainTabView: View {
                 .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(3)
         }
         .tint(Theme.acc)
-        .task { await refresh() }
+        .task {
+            await refresh()
+            // Ask for an App Store rating once, after they've landed in the app with a plan.
+            if !askedReview, bundle != nil {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                await MainActor.run { requestReview(); askedReview = true }
+            }
+        }
         .fullScreenCover(isPresented: $showScan) {
             RevealFunnelView(name: name, rescan: true, onFinish: {
                 showScan = false

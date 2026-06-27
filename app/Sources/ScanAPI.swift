@@ -297,6 +297,17 @@ actor ScanAPI {
         return PlanBundle(content: content, scan: scan, id: row.id, startedAt: row.created_at)
     }
 
+    // The user's most recent scan (for the Progress header / share card — independent of which plan is active).
+    func latestScan() async throws -> ScoreCard? {
+        let (data, s) = try await authed(restURL("scans", query: [
+            .init(name: "select", value: "*"),
+            .init(name: "order", value: "created_at.desc"),
+            .init(name: "limit", value: "1"),
+        ]), method: "GET")
+        guard s == 200, let scans = try? JSONDecoder().decode([ScoreCard].self, from: data) else { return nil }
+        return scans.first
+    }
+
     // MARK: plan lifecycle (active → archived/finished, delete, regenerate)
     func setPlanStatus(_ id: String, _ status: String) async throws {
         struct Body: Encodable { let status: String; let finished_at: String? }

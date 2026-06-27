@@ -91,9 +91,9 @@ struct ContentView: View {
                             calories: 420, protein_g: 53, carbs_g: 10, fat_g: 19, confidence: "high"))
         } else if env["STETIC_SESSION"] == "1" {
             SessionLogView(day: .init(day: "Pull Day", focus: "Back, rear delts & biceps", exercises: [
-                .init(name: "Weighted Pull-up", sets: 2, reps: "5-9, 10-12", target: "lats", note: nil),
-                .init(name: "Chest-Supported Row", sets: 2, reps: "8-10", target: "upper back", note: nil),
-                .init(name: "Incline Dumbbell Curl", sets: 3, reps: "6-9, 10-12, 15-20", target: "biceps", note: nil),
+                .init(name: "Weighted Pull-up", sets: 2, reps: "6-10", target: "lats", note: nil),
+                .init(name: "Chest-Supported Row", sets: 2, reps: "6-10", target: "upper back", note: nil),
+                .init(name: "Incline Dumbbell Curl", sets: 2, reps: "10-15", target: "biceps", note: nil),
             ]), onDone: {})
         } else {
             switch stage {

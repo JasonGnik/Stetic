@@ -56,15 +56,14 @@ struct ProgressScreen: View {
         .background(Theme.bg.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .task(id: scan?.id) {   // reloads when a new scan lands (was once-only → stale after re-scan)
+            let fresh = try? await ScanAPI.shared.latestScan()   // share the user's CURRENT rank, not the plan's old scan
             points = (try? await ScanAPI.shared.scanPoints()) ?? []
             sessions = (try? await ScanAPI.shared.recentWorkouts()) ?? []
             await loadWeights()
+            if let s = fresh ?? scan { shareURL = await MainActor.run { ShareCard.makeImageURL(s, name: name) } }
         }
         .sheet(isPresented: $showWeightSheet) { weightSheet }
         .sheet(isPresented: $showSettings) { SettingsView() }
-        .task(id: scan?.id) {
-            if let scan { shareURL = await MainActor.run { ShareCard.makeImageURL(scan, name: name) } }
-        }
     }
 
     private var scoreHeader: some View {
