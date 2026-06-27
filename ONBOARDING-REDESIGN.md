@@ -167,9 +167,9 @@ builds your whole plan around fixing it." *(Feeling: the 'ohhh, THAT's why' clar
 **11b · Training fix** — *"{X} years of waiting. That stops now."* (pull their slider answer from 2b)
 Feeling first + forward-looking: "You can't get those years back — but that's behind you now. From here,
 every week you put in shows up in the mirror. Real, visible progress instead of standing still. And you
-don't carry the whole journey at once — *a journey of a thousand miles begins with a single step.* You
-just handle today. We've got the rest." *(Reframe: the wasted past is gone, look forward, progress weekly,
-just do today. Optional Lao Tzu proverb — public domain, OK to quote.)*
+don't carry the whole journey at once — you just handle today. We've got the rest."
+QUOTE (Leo Tolstoy, public domain): *"A man on a thousand-mile walk has to forget his goal and say to
+himself every morning: today I'm going to cover twenty-five miles."* → lands "just do today, not the whole mountain."
 > Psychology reframe to weave here + in-app: the gym journey is NOT the huge undertaking people fear —
 > you're in the gym LESS (not 3-hr daily), it's simple if you stay consistent. Shrink the mountain.
 
@@ -196,21 +196,30 @@ from THEIR answers. Two acts with an animation:
 (animation): "Wanted this for {X} years." · "{their obstacle: couldn't stay consistent}." · "{felt lost /
 intimidated}." · "{why they downloaded}." → all swept away. Copy: "That's not you anymore. The past is the past."
 
-**ACT 2 — Become who you are now.** Reveal the new identity (these are the new "you are"):
-- You're someone who **sticks to the plan.**
-- You're someone who **stays consistent.**
-- You're **efficient with your time** — you don't waste it.
-- You **work hard** and **do what you have to, every day.**
-- You **don't obsess over how long it takes** — the time passes anyway.
-- One hiccup? You're **right back on track the next day.**
+**ACT 2 — You ARE this now.** Phrase every line as **"You are…"** (not "you're someone who could") — make it
+their IDENTITY so they can't escape it. Bridge from their WANTS (their goals/why, screens 2 & 8) into the new
+self: *"You came here to {get lean / turn heads / build muscle}. From today, that's not a wish — it's who you are:"*
+- **You ARE someone who sticks to the plan.**  *(opposite of "don't know what to do")*
+- **You ARE consistent.**  *(opposite of "can't stay consistent")*
+- **You ARE efficient with your time** — you don't waste it.  *(opposite of "wasting hours / years")*
+- **You ARE someone who works hard and does what's required, every day.**
+- **You don't obsess over how long it takes** — the time passes anyway.
+- **One hiccup, and you're right back on track the next day.**  *(Jason's favorite — keep)*
 
-**The close (the real sell):** "Transforming your body is bigger than the gym. It's the one thing that's
-fully yours — you only get one. Master *that*, and you prove you can do anything." → This identity spills
-into every other part of their life. [Become that person → ]
+Each line is built as the **opposite of their stated obstacle** where possible; generic ones fill the gaps.
+Target feeling: *"I'm all these things now. So what am I waiting for? What have I been doing all this time? I have to go do this."*
 
-> Tone: it's not easy, but it's **simple**. We hand you everything — plan, food, exactly what to do. All
-> that's left is to execute. No influencer noise. (Weave "simple, not complicated" into Act 2 or the close.)
-> Personalization is the magic — use their literal slider/obstacle/why answers in Act 1.
+**The close (rewritten — was choppy).** Lead with a quote, then the spill-into-life line:
+> *"It is a shame for a man to grow old without seeing the beauty and strength of which his body is capable."* — Socrates
+> "Your body is the one thing that's fully yours — you only get one. Transform that, and you prove to yourself
+> you can do anything. It doesn't stay in the gym — it changes how you carry every part of your life."
+> *(Alt quote option — Marcus Aurelius: "You have power over your mind, not outside events. Realize this, and you will find strength.")*
+
+**CTA = step into the new you, FREE:** "**Step into your new identity — free for 3 days.**" (ties the transformation
+directly to the 3-day trial; the paywall is "become this person now, at no cost to start"). [Step in free → ]
+
+> Tone throughout: it's not easy, but it's **simple**. We hand you everything — plan, food, exactly what to do.
+> All that's left is to execute. Personalization is the magic — use their literal answers in Act 1 + their goals in Act 2.
 
 **→ Paywall** — *"Your plan is ready, {name}."* sub: "Built for exactly where you are. You value your time — this is the efficient way to the body you want. Start your 3-day free trial."
 
@@ -218,7 +227,7 @@ into every other part of their life. [Become that person → ]
 - **NEW early question:** "How long have you wanted to change your body?" (slider, years) — the "why haven't I done it yet?" gut-punch; feeds 11b + the identity transformation. (Jason)
 - **11b is forward-looking:** their wasted years are the past; from here, weekly visible progress; just do today (Lao Tzu proverb OK). Shrink the mountain — gym is LESS of an undertaking than they fear. (Jason)
 - **11c sells FREEDOM:** no chicken-and-broccoli, eat with friends, cravings calibrated, on track every day without starving. (Jason)
-- **⭐ END-OF-ONBOARDING IDENTITY TRANSFORMATION** (Jason's billion-dollar centerpiece): trash their old self (real answers → animation) → become the new self (sticks to plan, consistent, efficient, back-on-track-after-a-hiccup); close on "transform your body = the one thing fully yours, you only get one → prove you can do anything; it spills into all of life." (Jason)
+- **⭐ END-OF-ONBOARDING IDENTITY TRANSFORMATION** (Jason's billion-dollar centerpiece): Act 1 trash their old self using their REAL answers (animation). Act 2 phrase as **"You ARE…"** (locked identity, can't escape it), each line the OPPOSITE of their obstacle + bridged from their goals/wants → "I'm all these now, what am I waiting for?" Close with the **Socrates** quote ("a shame to grow old without seeing the beauty/strength your body is capable of"; alt: Marcus Aurelius) + "your body is the one thing fully yours → prove you can do anything → spills into all of life." **CTA = "Step into your new identity — free for 3 days"** (ties to the trial). 11b quote = **Tolstoy** thousand-mile / 25-miles-a-day. (Jason)
 - **Screen 9 (areas behind) CUT** from main flow — scan owns weak points; `focus` only on the no-photo path. (Jason)
 - **Meal ideas → MEAL-IDEAS.md**, discuss later. (Jason)
 - **Value block = 3 beats:** weak points (AHA) → training fix (old split → new, improve weekly) → nutrition made easy (separate screen). (Jason)
