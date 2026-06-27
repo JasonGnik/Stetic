@@ -69,7 +69,7 @@ enum OnbStep: Int, CaseIterable {
     case name,
          motivation, timeWanted,
          trainingFix,                                    // "you've waited X years; it only takes 12 weeks" — off the years slider + motivation
-         obstacles, experience, resultsFeeling,
+         experience, obstacles, resultsFeeling,          // experience FIRST → obstacles branch off it (barriers vs progress-stallers)
          doom,                                           // FOMO pivot — "a year from now, the time passes anyway" — then we collect their stats
          goal,
          height, weight, goalWeight, pace,               // measurements BEFORE pace (see goal → choose speed)
@@ -186,12 +186,23 @@ enum OnbOptions {
         Option(id: "coach", label: "An actual coach", sub: nil),
         Option(id: "never", label: "Never had a real plan", sub: nil),
     ]
-    static let obstacles = [
-        Option(id: "dont_know", label: "I don't know what to do in the gym", sub: nil),
+    // Shown to never-trained / beginners — barriers to getting started.
+    static let obstaclesStart = [
+        Option(id: "start_unknown", label: "I don't know where to start", sub: nil),
+        Option(id: "intimidated", label: "Gym intimidation — feeling judged or lost", sub: nil),
         Option(id: "consistent", label: "I can't stay consistent", sub: nil),
-        Option(id: "plateau", label: "I train hard but I'm stuck — no change", sub: nil),
-        Option(id: "wasting_time", label: "I spend hours in the gym for little result", sub: nil),
-        Option(id: "intimidated", label: "I feel lost or intimidated", sub: nil),
+        Option(id: "time", label: "I don't have the time", sub: nil),
+        Option(id: "motivation_low", label: "Low motivation — no clear why", sub: nil),
+        Option(id: "past_fail", label: "Tried before, didn't stick", sub: nil),
+    ]
+    // Shown to intermediate / advanced — what stalls progress once they're going.
+    static let obstaclesProgress = [
+        Option(id: "plateau", label: "I train hard but I'm not changing", sub: nil),
+        Option(id: "no_overload", label: "Stuck on the same weights", sub: nil),
+        Option(id: "no_plan", label: "No real plan — just winging it", sub: nil),
+        Option(id: "nutrition", label: "My diet doesn't match my goal", sub: nil),
+        Option(id: "program_hop", label: "I jump between programs", sub: nil),
+        Option(id: "consistent", label: "I can't stay consistent", sub: nil),
     ]
     static let focus = [
         Option(id: "shoulders", label: "Shoulders", sub: nil),

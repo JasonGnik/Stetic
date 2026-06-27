@@ -10,8 +10,8 @@ struct IntroView: View {
     private struct Slide { let beat: Beat; let title: String; let sub: String }
 
     private let slides: [Slide] = [
-        .init(beat: .comparison, title: "Size isn't the goal.",
-              sub: "Most apps just make you bigger. Stetic builds the look — lean, proportioned, athletic."),
+        .init(beat: .comparison, title: "Aesthetic, not swole.",
+              sub: "We make you look as good as possible — not just as big as possible."),
         .init(beat: .shot("intro_score"), title: "Your physique, scored.",
               sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
         .init(beat: .shot("intro_session"), title: "A plan that fixes your weak points.",
@@ -19,7 +19,7 @@ struct IntroView: View {
         .init(beat: .shot("intro_meal"), title: "Get lean without the math.",
               sub: "Scan any meal for instant calories and protein. Eat out, hit your macros, stay on track."),
         .init(beat: .chart, title: "Don't stay static.",
-              sub: "Keep guessing and you stay where you are. With Stetic, your score climbs."),
+              sub: "People using Stetic see 3× more results in the same time."),
     ]
 
     var body: some View {

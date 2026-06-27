@@ -236,12 +236,17 @@ struct TransformationScreen: View {
     }
     private func obstacleShort(_ id: String) -> String {
         switch id {
-        case "dont_know": return "Didn't know what to do"
-        case "consistent": return "Couldn't stay consistent"
-        case "look_same": return "Hard work, no payoff"
-        case "wasting_time": return "Wasted hours"
-        case "plateau": return "Stuck at a plateau"
-        case "intimidated": return "Felt lost in the gym"
+        case "start_unknown": return "Didn't know where to start"
+        case "intimidated":   return "Felt lost in the gym"
+        case "consistent":    return "Couldn't stay consistent"
+        case "time":          return "Couldn't find the time"
+        case "motivation_low": return "Lost motivation"
+        case "past_fail":     return "Tried before, fell off"
+        case "plateau":       return "Stuck — no change"
+        case "no_overload":   return "Never progressing"
+        case "no_plan":       return "No real plan"
+        case "nutrition":     return "Diet off track"
+        case "program_hop":   return "Jumped between plans"
         default: return "Held back"
         }
     }

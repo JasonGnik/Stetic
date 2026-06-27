@@ -139,6 +139,12 @@ struct OnboardingView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(tint.opacity(0.4), lineWidth: 1)))
     }
 
+    // Obstacles branch off training experience: never/beginner see barriers-to-start, the rest see progress-stallers.
+    private var obstacleOptions: [Option] {
+        let beginner = data.experience == nil || data.experience == "never" || data.experience == "beginner"
+        return beginner ? OnbOptions.obstaclesStart : OnbOptions.obstaclesProgress
+    }
+
     // Pace, in concrete lb/week — direction (lose vs gain) follows their goal so the number means something.
     private var paceOptions: [Option] {
         let gaining = data.goal == "gain_muscle"
@@ -255,7 +261,7 @@ struct OnboardingView: View {
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
         case .pace:       singleSelect(paceOptions, data.pace) { data.pace = $0 }
         case .activity:   singleSelect(OnbOptions.activity, data.activity) { data.activity = $0 }
-        case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
+        case .obstacles:  multiSelect(obstacleOptions, data.obstacles) { toggle(&data.obstacles, $0) }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .currentSplit: splitField
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
