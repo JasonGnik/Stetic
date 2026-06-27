@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 // Intro — show what Stetic does with the real app, then "don't stay static".
 // Order: comparison (aesthetics, not mass) → score → plan + progression → nutrition → with/without chart.
@@ -6,7 +7,8 @@ struct IntroView: View {
     var onDone: () -> Void
     @State private var i = Int(ProcessInfo.processInfo.environment["STETIC_INTRO_SLIDE"] ?? "") ?? 0
 
-    private enum Beat { case comparison; case shot(String); case chart }
+    // .demo plays a looping screen-recording if the .mp4 is in the bundle, else falls back to the poster screenshot.
+    private enum Beat { case comparison; case shot(String); case demo(video: String, poster: String); case chart }
     private struct Slide { let beat: Beat; let title: String; let sub: String }
 
     private let slides: [Slide] = [
@@ -14,9 +16,9 @@ struct IntroView: View {
               sub: "We make you look as good as possible — not just as big as possible."),
         .init(beat: .shot("intro_score"), title: "Your physique, analyzed.",
               sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
-        .init(beat: .shot("intro_session"), title: "A plan that fixes your weak points.",
+        .init(beat: .demo(video: "intro_log", poster: "intro_session"), title: "A plan that fixes your weak points.",
               sub: "Built around what's holding you back — and it tells you exactly when to add weight."),
-        .init(beat: .shot("intro_meal"), title: "Get lean without the math.",
+        .init(beat: .demo(video: "intro_food", poster: "intro_meal"), title: "Get lean without the math.",
               sub: "Scan any meal for instant calories and protein. Eat out, hit your macros, stay on track."),
         .init(beat: .chart, title: "Don't stay static.",
               sub: "People using Stetic see 3× more results in the same time."),
@@ -70,6 +72,16 @@ struct IntroView: View {
         switch beat {
         case .comparison: comparisonVisual
         case .shot(let name): shotVisual(name)
+        case .demo(let video, let poster):
+            if let url = Bundle.main.url(forResource: video, withExtension: "mp4") {
+                VideoLoop(url: url)
+                    .frame(width: 150, height: 320)
+                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
+                    .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
+            } else {
+                shotVisual(poster)   // no recording dropped in yet → show the still
+            }
         case .chart: WithVsWithoutChart().frame(height: 230).padding(.horizontal, 30)
         }
     }
@@ -107,6 +119,30 @@ struct IntroView: View {
             .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
             .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
     }
+}
+
+// A muted, auto-looping screen recording for the intro demo slides.
+struct VideoLoop: UIViewRepresentable {
+    let url: URL
+    func makeUIView(context: Context) -> LoopUIView { LoopUIView(url: url) }
+    func updateUIView(_ uiView: LoopUIView, context: Context) {}
+}
+
+final class LoopUIView: UIView {
+    override class var layerClass: AnyClass { AVPlayerLayer.self }
+    private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    private let player = AVQueuePlayer()
+    private var looper: AVPlayerLooper?
+    init(url: URL) {
+        super.init(frame: .zero)
+        let item = AVPlayerItem(url: url)
+        looper = AVPlayerLooper(player: player, templateItem: item)   // seamless loop
+        player.isMuted = true
+        playerLayer.player = player
+        playerLayer.videoGravity = .resizeAspectFill
+        player.play()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 #Preview { IntroView(onDone: {}).preferredColorScheme(.dark) }
