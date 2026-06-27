@@ -69,7 +69,6 @@ struct OnboardingView: View {
             Group {
                 switch step {
                 case .doom: doomContent
-                case .aha: ahaContent
                 case .trainingFix: trainingFixContent
                 default: EmptyView()
                 }
@@ -89,7 +88,6 @@ struct OnboardingView: View {
     private var interstitialCTA: String {
         switch step {
         case .doom: return "I'm ready"
-        case .aha: return "Show me how"
         case .trainingFix: return "Keep going"
         default: return "Continue"
         }
@@ -139,11 +137,6 @@ struct OnboardingView: View {
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card)
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(tint.opacity(0.4), lineWidth: 1)))
-    }
-
-    // MARK: AHA — "how it works" auto-play demo (scan → weak points → plan → progress)
-    private var ahaContent: some View {
-        HowItWorksDemo()
     }
 
     // MARK: TRAINING FIX — years of waiting stop now (+ mountain)

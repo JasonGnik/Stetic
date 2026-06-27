@@ -68,9 +68,9 @@ enum OnbStep: Int, CaseIterable {
     // stats (batched) → payoff → IDENTITY TRANSFORMATION finale. See ONBOARDING-REDESIGN.md.
     case name,
          motivation, timeWanted,
-         doom,                                           // gut-punch right on the ache — straight after "how long have you wanted this"
+         trainingFix,                                    // "cost of waiting" stat — computed straight off the years slider
          obstacles,
-         aha, trainingFix,                               // how-it-works carousel + mountain — they've felt the problem, now show the fix
+         doom,                                           // future gut-punch — "a year from now" — after they name what's holding them back
          experience, resultsFeeling, goal,
          height, weight, goalWeight, pace,               // measurements BEFORE pace (see goal → choose speed)
          sex, days, equipment, equipmentDetail, age, activity, currentSplit,
@@ -78,7 +78,7 @@ enum OnbStep: Int, CaseIterable {
 
     var isInterstitial: Bool {
         switch self {
-        case .doom, .aha, .trainingFix: return true
+        case .doom, .trainingFix: return true
         default: return false
         }
     }

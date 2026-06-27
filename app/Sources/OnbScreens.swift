@@ -253,8 +253,7 @@ struct TransformationScreen: View {
                 Spacer()
                 Group {
                     if act == 0 { trashAct }
-                    else if act == 1 { becomeAct }
-                    else { closeAct }
+                    else { becomeAct }   // identity reveal + Socrates close, one screen
                 }
                 .padding(.horizontal, 28)
                 Spacer()
@@ -315,25 +314,24 @@ struct TransformationScreen: View {
                     }
                 }
             }
-        }
-    }
-
-    // CLOSE — Socrates + can't-buy-respect
-    private var closeAct: some View {
-        VStack(spacing: 16) {
-            Text("“It is a shame for a man to grow old without seeing the beauty and strength of which his body is capable.”")
-                .font(.system(size: 16, weight: .semibold)).italic().multilineTextAlignment(.center).lineSpacing(3)
-                .foregroundStyle(Theme.txt)
-            Text("— Socrates").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+            if revealed >= newIdentity.count {   // Socrates close, on the same screen
+                VStack(spacing: 5) {
+                    Text("“It is a shame for a man to grow old without seeing the beauty and strength of which his body is capable.”")
+                        .font(.system(size: 14.5, weight: .semibold)).italic().multilineTextAlignment(.center).lineSpacing(2)
+                        .foregroundStyle(Theme.txt)
+                    Text("— Socrates").font(.system(size: 11.5, weight: .bold)).foregroundStyle(Theme.mut)
+                }
+                .padding(.top, 10).transition(.opacity)
+            }
         }
     }
 
     private var cta: some View {
         Button {
-            if act < 2 { withAnimation(.easeInOut) { act += 1 }; if act == 1 { runReveal() } }
+            if act < 1 { withAnimation(.easeInOut) { act += 1 }; runReveal() }
             else { onContinue() }
         } label: {
-            Text(act < 2 ? "Continue" : "Step into your new identity — for free")
+            Text(act < 1 ? "Continue" : "Step into your new identity — for free")
                 .font(.system(size: 16, weight: .bold)).multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity).padding(15)
                 .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
