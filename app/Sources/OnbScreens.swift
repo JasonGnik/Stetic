@@ -244,18 +244,21 @@ struct TransformationScreen: View {
                         .offset(y: trashPhase == 0 ? 0 : 150)
                         .scaleEffect(trashPhase == 0 ? 1 : 0.5)
                         .rotationEffect(.degrees(trashPhase == 0 ? 0 : (i % 2 == 0 ? 14 : -12)))
-                        .animation(.easeIn(duration: 0.7).delay(Double(i) * 0.08), value: trashPhase)
+                        .animation(.easeIn(duration: 0.6).delay(Double(i) * 0.32), value: trashPhase)   // one at a time, readable
                 }
             }
-            ZStack {
-                if trashPhase >= 2 { EmberBurst().frame(width: 90, height: 64).offset(y: -10) }
+            ZStack(alignment: .bottom) {
+                if trashPhase >= 2 {
+                    EmberBurst().frame(width: 86, height: 72).offset(y: -34)
+                    FlameBurst().frame(width: 58, height: 56).offset(y: -16)
+                }
                 Image(systemName: "trash.fill")
                     .font(.system(size: 28))
                     .foregroundStyle(trashPhase >= 1 ? Theme.acc : Theme.mut.opacity(0.4))
                     .scaleEffect(trashPhase == 1 ? 1.2 : 1)
                     .animation(.spring(response: 0.4, dampingFraction: 0.6), value: trashPhase)
             }
-            .frame(height: 70)
+            .frame(height: 92)
         }
     }
 
@@ -308,10 +311,10 @@ struct TransformationScreen: View {
 
     private func runTrash() {
         Task {
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            await MainActor.run { trashPhase = 1 }                 // cards fall into the bin
-            try? await Task.sleep(nanoseconds: 750_000_000)
-            await MainActor.run { withAnimation(.easeOut(duration: 0.3)) { trashPhase = 2 } }   // burn
+            try? await Task.sleep(nanoseconds: 2_000_000_000)      // read what's being thrown away
+            await MainActor.run { trashPhase = 1 }                 // cards drop one at a time
+            try? await Task.sleep(nanoseconds: 1_500_000_000)      // let them all fall
+            await MainActor.run { withAnimation(.easeOut(duration: 0.3)) { trashPhase = 2 } }   // ignite
         }
     }
     private func runReveal() {
@@ -482,6 +485,43 @@ struct PhysiqueFigure: View {
     }
 }
 
+// MARK: - Nutrition mini (shows a scanned meal instead of a paragraph)
+struct NutritionMini: View {
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 11) {
+                RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0x20210F))
+                    .frame(width: 46, height: 46)
+                    .overlay(Image(systemName: "fork.knife").font(.system(size: 18)).foregroundStyle(Theme.acc))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Chicken & rice bowl").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles").font(.system(size: 9))
+                        Text("scanned just now").font(.system(size: 11, weight: .semibold))
+                    }.foregroundStyle(Theme.acc)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("620").font(.system(size: 17, weight: .heavy)).foregroundStyle(Theme.txt)
+                    Text("cal").font(.system(size: 10)).foregroundStyle(Theme.mut)
+                }
+            }
+            HStack(spacing: 8) { chip("Protein", "52g"); chip("Carbs", "58g"); chip("Fat", "18g") }
+        }
+        .padding(14).frame(width: 266)
+        .background(RoundedRectangle(cornerRadius: 18).fill(Color(hex: 0x121214))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.line, lineWidth: 1)))
+    }
+    private func chip(_ l: String, _ v: String) -> some View {
+        VStack(spacing: 2) {
+            Text(v).font(.system(size: 13, weight: .heavy)).foregroundStyle(Theme.acc)
+            Text(l).font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.mut)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0x17171A)))
+    }
+}
+
 // MARK: - Before → after physique (projection payoff in the funnel)
 // Illustrative (pre-scan): a soft "now" figure → a lean, defined "potential" figure.
 struct BeforeAfterPhysique: View {
@@ -523,6 +563,30 @@ struct BeforeAfterPhysique: View {
             for k in 0..<3 {
                 let yy = 64 + CGFloat(k)*11
                 ctx.stroke(Path { $0.move(to: CGPoint(x: cx-9, y: yy)); $0.addLine(to: CGPoint(x: cx+9, y: yy)) }, with: .color(dark), lineWidth: 1)
+            }
+        }
+    }
+}
+
+// Layered, flickering flames — real fire for the burn.
+struct FlameBurst: View {
+    var body: some View {
+        TimelineView(.animation) { tl in
+            let t = tl.date.timeIntervalSinceReferenceDate
+            Canvas { ctx, size in
+                let w = size.width, h = size.height, cx = w/2, by = h*0.96
+                func flame(_ width: CGFloat, _ height: CGFloat, _ wob: CGFloat, _ color: Color) {
+                    var p = Path()
+                    p.move(to: CGPoint(x: cx - width/2, y: by))
+                    p.addQuadCurve(to: CGPoint(x: cx + wob, y: by - height), control: CGPoint(x: cx - width*0.55, y: by - height*0.55))
+                    p.addQuadCurve(to: CGPoint(x: cx + width/2, y: by), control: CGPoint(x: cx + width*0.55, y: by - height*0.55))
+                    p.addQuadCurve(to: CGPoint(x: cx - width/2, y: by), control: CGPoint(x: cx, y: by + height*0.14))
+                    ctx.fill(p, with: .color(color))
+                }
+                let f = CGFloat(sin(t*9)), f2 = CGFloat(sin(t*13 + 1))
+                flame(w*0.62, h*0.74 + f*5, f*5, Theme.acc.opacity(0.9))
+                flame(w*0.42, h*0.56 + f2*4, f2*4, blendHex(0xC8FF4D, 0xFFB24A, 0.5))
+                flame(w*0.22, h*0.36 + f*3, -f*3, blendHex(0xFFD27A, 0xFFFFFF, 0.4))
             }
         }
     }

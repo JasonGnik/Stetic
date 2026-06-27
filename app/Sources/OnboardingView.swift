@@ -156,15 +156,14 @@ struct OnboardingView: View {
         TrainingFixScene(years: Int(data.timeWantedYears))
     }
 
-    // MARK: NUTRITION — freedom, on track every day
+    // MARK: NUTRITION — show the meal scan, short copy, freedom
     private var nutritionContent: some View {
         VStack(spacing: 18) {
-            Image(systemName: "fork.knife.circle.fill")
-                .font(.system(size: 50)).foregroundStyle(Theme.acc)
-            Text("No chicken-and-broccoli. Just on track — every day.")
+            NutritionMini()
+            Text("No chicken-and-broccoli. Eat real food.")
                 .font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-            Text(brandLimed("Forget the strict bodybuilder diet — that stigma isn't real. Eat out with friends, have the thing you're craving — we help you fit the rest of your day around it. Track it, stick to it most of the time, and you'll see results without starving. Just the feeling of knowing you're on your way, every single day."))
-                .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4).foregroundStyle(Theme.mut)
+            Text(brandLimed("Scan a meal, hit your macros, still eat out with friends. Stick to it most of the time — no starving, no obsessing. Just on track, every day."))
+                .font(.system(size: 14.5)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
         }
     }
 
