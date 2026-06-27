@@ -270,6 +270,24 @@ a visual of the ACTUAL app (mini score card / weak-point breakdown / meal scan /
    The identity transformation (not-you-anymore → who-you-are-now) should be the **LAST beat before the
    paywall/plan** (it already is — keep). Results save and show later.
 
+## Round-3 feedback (Jason, on-device, 2026-06-26)
+**Deletes (from onboarding/funnel):** the obstacle-callback empathy screen ("Consistency beats intensity"
+— DOOM replaces it) · the **nutrition** "chicken-and-broccoli" screen (he's iffy → likely cut) · the
+**social-proof "12,000 analyzed"** screen · the **tease/lock** screen ("your analysis is ready / unlock") ·
+the **sleeping** beat of the mountain. (trial-reminder already gone.)
+**DOOM:** keep "A year from now." + two roads; bottom line = just **"The time will pass anyways."** (done)
+**Carousel (how-it-works):** must be **swipeable (swipe back)** AND use **real app screens** — esp. beats 3
+(plan) & 4 (climb); the climb is "a generic graph, shows nothing," beat 1 is "basic stick-figure scanned."
+**Mountain:** big mountain + tiny person → **zoom in** → small road ahead → **surface the quote** (tie quote
+to the visual). NO sleeping. Wants **~10 walking/zoom OPTIONS to choose from** (mockups).
+**Reorder:** ask **height/weight (+ goal weight) BEFORE pace** (see goal → then choose how fast).
+**Flow restructure (he's thinking aloud — CONFIRM):** the **identity transformation** should be the LAST
+beat before the paywall, and they should **SCAN before seeing their new identity** → upload photo → (scan)
+→ identity (not-you → who-you-are) → "step in for free" → loading → make account → paywall. Results saved,
+shown in-app later. **12-week projection** (after photo) — maybe move earlier near the carousel, "doesn't
+need to be at the end." Old tagline idea: "Don't stay static. Use Stetic." The transformation close
+paragraph (under Socrates) reads better once surrounding screens are trimmed.
+
 ## Decisions locked
 - **NEW early question:** "How long have you wanted to change your body?" (slider, years) — the "why haven't I done it yet?" gut-punch; feeds 11b + the identity transformation. (Jason)
 - **11b is forward-looking:** their wasted years are the past; from here, weekly visible progress; just do today (Lao Tzu proverb OK). Shrink the mountain — gym is LESS of an undertaking than they fear. (Jason)

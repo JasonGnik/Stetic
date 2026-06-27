@@ -125,9 +125,9 @@ struct OnboardingView: View {
                 roadCard(icon: "flame.fill", tint: Theme.acc, head: "Start now",
                          body: "The best you've ever looked — in 12 weeks.")
             }
-            Text(brandLimed("The time passes whether you change or not. Most people waste it. This is for people who'd rather see results than float around and wonder why nothing changes."))
-                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3)
-                .foregroundStyle(Theme.mut)
+            Text("The time will pass anyways.")
+                .font(.system(size: 15, weight: .semibold)).multilineTextAlignment(.center)
+                .foregroundStyle(Theme.mut).padding(.top, 4)
         }
     }
     private func roadCard(icon: String, tint: Color, head: String, body: String) -> some View {
