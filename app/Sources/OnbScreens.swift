@@ -148,25 +148,49 @@ struct MountainClimbView: View {
 }
 
 // Training-fix screen — the cinematic mountain + the quote that surfaces on the zoom-in.
+// The cost of waiting, made concrete — then the pivot to "today." (Replaces the mountain climb;
+// MountainClimbView above is kept, unused, in case we revisit the animated version.)
 struct TrainingFixScene: View {
     let years: Int
     @State private var showQuote = false
-    private var lead: String { years >= 1 ? "\(years) \(years == 1 ? "year" : "years") of waiting. That stops now." : "The waiting stops now." }
+    @State private var countUp = 0
+    // ~3 sessions/week is a conservative, believable cadence for the "could've been done" math.
+    private var workouts: Int { max(36, years * 52 * 3) }
+    private var lead: String {
+        years >= 1 ? "\(years) \(years == 1 ? "year" : "years") of wanting it." : "All that time wanting it."
+    }
     var body: some View {
-        VStack(spacing: 14) {
-            MountainClimbView(variant: Int(ProcessInfo.processInfo.environment["STETIC_MTN"] ?? "") ?? 1).frame(height: 188)
-            Text(lead).font(.system(size: 23, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-            Text(brandLimed("Every week you put in now shows up in the mirror. Don't stare at the summit. Just focus on today. We've got the rest."))
-                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
+        VStack(spacing: 18) {
+            Text(lead).font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+            // a number you can feel
+            VStack(spacing: 2) {
+                Text("\(countUp)")
+                    .font(.system(size: 58, weight: .heavy)).foregroundStyle(Theme.acc)
+                    .contentTransition(.numericText()).animation(.snappy, value: countUp)
+                Text("workouts that could've already been done")
+                    .font(.system(size: 13.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut)
+            }
+            VStack(spacing: 9) {
+                Text("You can't change the past.\nYou can only change today.")
+                    .font(.system(size: 17, weight: .bold)).multilineTextAlignment(.center).lineSpacing(2).foregroundStyle(Theme.txt)
+                Text(brandLimed("So don't fixate on the big goal. Just do what today asks of you. We've got the rest."))
+                    .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
+            }
             VStack(spacing: 4) {
                 Text("“A man on a thousand-mile walk has to forget his goal and say to himself every morning: today I'm going to cover twenty-five miles.”")
                     .font(.system(size: 12, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2).foregroundStyle(Color(hex: 0xC8C8CE))
                 Text("— Leo Tolstoy").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
             }
-            .opacity(showQuote ? 1 : 0)
-            .animation(.easeIn(duration: 0.9), value: showQuote)
+            .opacity(showQuote ? 1 : 0).animation(.easeIn(duration: 0.9), value: showQuote)
         }
-        .onAppear { Task { try? await Task.sleep(nanoseconds: 4_700_000_000); await MainActor.run { showQuote = true } } }
+        .onAppear {
+            Task {   // quick count-up to the number
+                let target = workouts, steps = 28
+                for s in 1...steps { try? await Task.sleep(nanoseconds: 26_000_000); await MainActor.run { countUp = target * s / steps } }
+                await MainActor.run { countUp = target }
+            }
+            Task { try? await Task.sleep(nanoseconds: 1_500_000_000); await MainActor.run { showQuote = true } }
+        }
     }
 }
 
