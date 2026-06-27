@@ -16,6 +16,8 @@ struct IntroView: View {
               sub: "We make you look as good as possible — not just as big as possible."),
         .init(beat: .shot("intro_score"), title: "Your physique, analyzed.",
               sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
+        .init(beat: .shot("intro_plan"), title: "A plan built on your weak points.",
+              sub: "Your laggards, prioritized — the exact split and progression to bring them up."),
         .init(beat: .demo(video: "intro_log", poster: "intro_session"), title: "Every session, provably better.",
               sub: "Log your lifts — Stetic tells you when you beat last time and when to add weight."),
         .init(beat: .demo(video: "intro_food", poster: "intro_meal"), title: "Get lean without the math.",
@@ -75,7 +77,7 @@ struct IntroView: View {
         case .demo(let video, let poster):
             if let url = Bundle.main.url(forResource: video, withExtension: "mp4") {
                 VideoLoop(url: url)
-                    .frame(width: 150, height: 320)
+                    .frame(width: 175, height: 374)
                     .clipShape(RoundedRectangle(cornerRadius: 22))
                     .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
                     .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
@@ -114,7 +116,7 @@ struct IntroView: View {
     // A real app screen in a phone-ish frame.
     private func shotVisual(_ name: String) -> some View {
         Image(uiImage: UIImage(named: name) ?? UIImage()).resizable().aspectRatio(contentMode: .fit)
-            .frame(height: 320)
+            .frame(height: 374)
             .clipShape(RoundedRectangle(cornerRadius: 22))
             .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
             .shadow(color: .black.opacity(0.45), radius: 14, y: 6)

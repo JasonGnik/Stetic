@@ -58,6 +58,7 @@ struct PlanContent: Codable {
         let reps: String
         let target: String
         var note: String?
+        var weak_point: Bool?   // LLM-set: this exercise directly targets a lagging sub-muscle
     }
     struct Priority: Codable, Identifiable {
         var id: String { area }

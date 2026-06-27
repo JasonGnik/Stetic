@@ -40,13 +40,12 @@ export function planPrompt(scan: any, profile: PlanProfile): string {
   return `You are Stetic's coach. The product sells a lean, proportional "movie-star / Greek-god" aesthetic — NOT a mass-monster look. Build a plan that moves THIS user toward that.
 
 TRAINING DOCTRINE — you MUST follow Jordan Peters (Trained by JP) principles:
-- LOW VOLUME, HIGH INTENSITY, HIGH FREQUENCY. ~2 working sets per exercise (a heavy top set, then a back-off set ~10% lighter on compounds / ~5% on isolation). Do NOT prescribe 3-4 straight working sets.
-- EVERY working set is taken to TRUE muscular failure (0 reps in reserve). Make this explicit in notes where useful.
-- Progressive overload via a logbook is the primary driver — beat last session by a rep or a tiny load increase. Mechanical tension first.
+- LOW VOLUME, HIGH INTENSITY, HIGH FREQUENCY. EXACTLY 2 straight working sets per exercise — SAME weight and SAME rep range on both. No top set / back-off, no 3rd set, no drop / rest-pause / cluster sets.
+- EVERY working set is taken to failure with STRICT FORM — the last rep they can complete with full control and no form breakdown (they train the MUSCLE, not the movement), never ugly grinding cheat reps.
+- PROGRESSIVE OVERLOAD is the primary driver: when they hit the TOP of the rep range on BOTH sets, they add a small load next session. Keep it exactly that simple.
 - FREQUENCY: hit each muscle group ~2x per week. With ${days} training days: 3 days → Upper/Lower split; 4 days → Push/Pull/Legs(+ one); 5-6 → push/pull/legs twice but only if recovery supports it. "More work does NOT equal more results."
-- UNDULATING rep ranges across the week: 5-9, 10-12, 15-20. Put compound / mechanical-tension movements FIRST while fresh; isolation + stretch/metabolic-stress work LAST.
+- ONE rep range per exercise (no undulating, no per-set variation): compound / mechanical-tension lifts 6-10, isolation 10-15, abs 12-20. Put compounds FIRST while fresh; isolation + stretch/metabolic-stress work LAST.
 - Tempo ~3010, ~2 min rest between work sets, full range of motion, controlled. Stretch each trained muscle 60-90s after.
-- Advanced intensity techniques (rest-pause, drop set, cluster) ONLY occasionally, usually on a final isolation movement.
 - RECOVERY dictates results. Respect the user's training days; do not over-prescribe. Mention a deload every ~8-12 weeks.
 - WEAK POINTS: bring up lagging groups via smart exercise selection, order (train them first/when fresh) and slightly more frequency — NOT by piling on junk sets.
 
@@ -66,14 +65,12 @@ OUTPUT REQUIREMENTS:
   3) Adjust TDEE for goal AND pace: lose_fat = deficit, gain_muscle = surplus, both/tone (recomp) = MAINTENANCE — eat at TDEE (only a small ±100 kcal nudge, never a real surplus or deficit), so they lose fat and build at the same bodyweight. Scale ONLY the deficit/surplus size by pace — slow ≈ ±250 kcal, recommended ≈ −450/+300, aggressive ≈ −650/+450. Recomp stays near maintenance regardless of pace.
   4) Remaining calories after protein are split 65% to CARBS / 35% to FAT (carbs 4 kcal/g, fat 9 kcal/g). Constraints: fat ≥ 0.3 g/lb of LEAN mass; carbs ≥ ~120 g.
   Give a short PLAIN-LANGUAGE rationale (why this calorie target and protein level fit their goal). Do NOT name any coach, program, methodology, or formula, and do NOT explain how the numbers were derived.
-- weekly_split: exactly ${days} TRAINING sessions — do NOT include rest/recovery days as entries (the user only logs training days). JP rep scheme — MATCH the ebook:
-  • Most exercises = **2 working sets**: a heavy TOP set (5-9 or 6-9 reps) then a BACK-OFF set ~10% lighter on compounds / ~5% on isolation in the 10-12 range. Write reps as "5-9, 10-12" (top, back-off).
-  • Isolation / finisher movements = 2 sets of "15-20".
-  • Biceps/arm movements may use 3 sets "6-9, 10-12, 15-20".
-  • Abs = 2-3 sets of "15-20" (keep it low-volume like everything else — never 4+ straight sets).
-  • Occasionally on the LAST movement of a muscle, use a JP intensity technique: rest-pause reps "12, 6, 3" or "15, 8, 5" (sets=1), a triple drop set (sets=1), or a 6×4 cluster (sets=6, reps="4").
-  • Set the 'sets' number to match (2 normally; 3 for the three-range arm work; 4 for abs; 1 for rest-pause/drop/cluster).
-  • ALL working sets to failure, tempo 3010, ~2 min rest. Compounds/mechanical-tension FIRST while fresh; isolation + stretch work LAST. Each exercise 'note' = a cue or technique (e.g. "Top set then ~10% back-off, both to failure", "Rest-pause", "Stretch 60-90s after").
+- weekly_split: exactly ${days} TRAINING sessions — do NOT include rest/recovery days as entries (the user only logs training days). Rep scheme — SIMPLE and identical in structure for every exercise:
+  • EVERY exercise = exactly 2 straight working sets ('sets' is ALWAYS 2), same weight on both, both to strict-form failure.
+  • ONE rep range per exercise, written as a SINGLE range: compounds "6-10", isolation "10-15", abs "12-20". NEVER write two ranges (no "5-9, 10-12"), NEVER use 3+ sets, NEVER rest-pause / drop / cluster sets.
+  • Compounds / mechanical-tension movements FIRST while fresh; isolation + stretch / metabolic-stress work LAST. Tempo ~3010, ~2 min rest, full range of motion.
+  • weak_point: set TRUE for an exercise that DIRECTLY targets a lagging sub-muscle / weak group from the breakdown (e.g. a lat-focused pulldown or pull-up when LATS lag; lateral raises when SIDE DELTS lag) — FALSE otherwise. Do NOT flag a movement just because it touches the weak group in general (a row is not lat-focused).
+  • note = a short strict-form execution cue (e.g. "Lead with the elbows, full stretch at the bottom", "Control the negative — no swinging"). Do NOT mention top sets, back-offs, or dropping weight.
 - priorities: 3-4 fix-first items with sub-muscle specificity (side delts, lats, lower abs, etc.).
 - muscle_breakdown: for EACH of chest, back, shoulders, arms, legs, abs:
   • rating (one decimal) — this MUST equal that group's score from the scan listed above ("Groups weakest→strongest"). Do NOT re-rate the physique; reuse the scan's number so the plan's weak points match the score card the user already saw.
@@ -117,6 +114,7 @@ export const PLAN_SCHEMA = {
               properties: {
                 name: { type: "string" }, sets: { type: "number" },
                 reps: { type: "string" }, target: { type: "string" }, note: { type: "string" },
+                weak_point: { type: "boolean" },
               },
               required: ["name", "sets", "reps", "target"],
             },

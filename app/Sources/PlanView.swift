@@ -350,7 +350,8 @@ struct PlanView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(d.day).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.acc)
                     ForEach(d.exercises) { e in
-                        let hitsWeak = weak.contains { e.target.lowercased().contains($0) }
+                        // Prefer the LLM's exact per-exercise flag; fall back to the group heuristic for older plans.
+                        let hitsWeak = e.weak_point ?? weak.contains { e.target.lowercased().contains($0) }
                         HStack(spacing: 10) {
                             Circle().fill(hitsWeak ? Theme.red : Theme.acc).frame(width: 6, height: 6)
                             VStack(alignment: .leading, spacing: 2) {
