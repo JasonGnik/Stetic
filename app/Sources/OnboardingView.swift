@@ -18,7 +18,8 @@ struct OnboardingView: View {
     // Single-select steps auto-advance on tap — no Continue button needed.
     private var needsContinue: Bool {
         switch step {
-        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution, .reminders, .stakes, .commitment: return false
+        case .sex, .goal, .pace, .activity, .experience, .days, .equipment, .attribution, .reminders,
+             .resultsFeeling, .triedPlan: return false   // single-select auto-advances
         default: return true
         }
     }
@@ -26,7 +27,9 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
-            if step.isInterstitial {
+            if step == .transformation {
+                TransformationScreen(data: data, onContinue: { advance() }, onBack: { back() })
+            } else if step.isInterstitial {
                 interstitialView
             } else {
                 VStack(spacing: 0) {
@@ -68,6 +71,10 @@ struct OnboardingView: View {
             Group {
                 switch step {
                 case .callback: callbackContent
+                case .doom: doomContent
+                case .aha: ahaContent
+                case .trainingFix: trainingFixContent
+                case .nutrition: nutritionContent
                 case .socialProof: socialProofContent
                 default: EmptyView()
                 }
@@ -75,12 +82,21 @@ struct OnboardingView: View {
             .padding(.horizontal, 30)
             Spacer()
             Button { advance() } label: {
-                Text("Continue").font(.system(size: 16, weight: .bold))
+                Text(interstitialCTA).font(.system(size: 16, weight: .bold))
                     .frame(maxWidth: .infinity).padding(15)
                     .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
                     .foregroundStyle(Color(hex: 0x0E0E10))
             }
             .padding(.horizontal, 22).padding(.bottom, 14)
+        }
+    }
+
+    private var interstitialCTA: String {
+        switch step {
+        case .doom: return "I'm ready"
+        case .aha: return "Show me how"
+        case .trainingFix, .nutrition: return "Keep going"
+        default: return "Continue"
         }
     }
 
@@ -95,6 +111,80 @@ struct OnboardingView: View {
             Text(brandLimed(cb.body))
                 .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4)
                 .foregroundStyle(Theme.mut)
+        }
+    }
+
+    // MARK: DOOM — two roads
+    private var doomContent: some View {
+        VStack(spacing: 20) {
+            Text("A year from now.")
+                .font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.txt)
+            VStack(spacing: 12) {
+                roadCard(icon: "arrow.uturn.backward", tint: Theme.red, head: "Do nothing",
+                         body: "Same body in the mirror. Another year gone.")
+                roadCard(icon: "flame.fill", tint: Theme.acc, head: "Start now",
+                         body: "The best you've ever looked — in 12 weeks.")
+            }
+            Text(brandLimed("The time passes whether you change or not. Most people waste it. This is for people who'd rather see results than float and wonder why nothing changes."))
+                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3)
+                .foregroundStyle(Theme.mut)
+        }
+    }
+    private func roadCard(icon: String, tint: Color, head: String, body: String) -> some View {
+        HStack(spacing: 13) {
+            RoundedRectangle(cornerRadius: 11, style: .continuous).fill(tint.opacity(0.16))
+                .frame(width: 44, height: 44)
+                .overlay(Image(systemName: icon).font(.system(size: 19, weight: .bold)).foregroundStyle(tint))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(head).font(.system(size: 13, weight: .bold)).foregroundStyle(tint)
+                Text(body).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+            }
+            Spacer()
+        }
+        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.card)
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(tint.opacity(0.4), lineWidth: 1)))
+    }
+
+    // MARK: AHA — an aesthetic physique is a complete one
+    private var ahaContent: some View {
+        VStack(spacing: 18) {
+            WeakPointSilhouette()
+                .frame(height: 150)
+            Text("An aesthetic physique is a *complete* one.")
+                .font(.system(size: 25, weight: .heavy)).multilineTextAlignment(.center)
+                .foregroundStyle(Theme.txt)
+            Text(brandLimed("The physiques you see in movies are balanced — shoulders, chest, back, all in proportion. Most guys are held back by one or two weak points they never notice. They just know they don't look how they want. Stetic finds yours — and builds your whole plan around fixing it."))
+                .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4)
+                .foregroundStyle(Theme.mut)
+        }
+    }
+
+    // MARK: TRAINING FIX — years of waiting stop now (+ mountain)
+    private var trainingFixContent: some View {
+        let yrs = Int(data.timeWantedYears)
+        let lead = yrs >= 1 ? "\(yrs) \(yrs == 1 ? "year" : "years") of waiting. That stops now." : "The waiting stops now."
+        return VStack(spacing: 18) {
+            MountainClimbView().frame(height: 160)
+            Text(lead).font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+            Text(brandLimed("You can't get those years back — but that's behind you. From here, every week you put in shows up in the mirror. Real, visible progress instead of standing still. You don't carry the whole journey at once — you just handle today."))
+                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
+            Text("“A man on a thousand-mile walk has to forget his goal and say to himself every morning: today I'm going to cover twenty-five miles.”")
+                .font(.system(size: 12.5, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2)
+                .foregroundStyle(Color(hex: 0xD2D2D8))
+            Text("— Leo Tolstoy").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+        }
+    }
+
+    // MARK: NUTRITION — freedom, on track every day
+    private var nutritionContent: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "fork.knife.circle.fill")
+                .font(.system(size: 50)).foregroundStyle(Theme.acc)
+            Text("No chicken-and-broccoli. Just on track — every day.")
+                .font(.system(size: 24, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+            Text(brandLimed("Forget the strict bodybuilder diet — that stigma isn't real. Eat out with friends, have the thing you're craving — we help you fit the rest of your day around it. Track it, stick to it most of the time, and you'll see results without starving. Just the feeling of knowing you're on your way, every single day."))
+                .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4).foregroundStyle(Theme.mut)
         }
     }
 
@@ -174,13 +264,15 @@ struct OnboardingView: View {
     @ViewBuilder private var stepContent: some View {
         switch step {
         case .name:       nameField
+        case .motivation: multiSelect(OnbOptions.motivation, data.motivation) { toggle(&data.motivation, $0) }
+        case .timeWanted: timeWantedStep
+        case .resultsFeeling: singleSelect(OnbOptions.resultsFeeling, data.resultsFeeling) { data.resultsFeeling = $0 }
+        case .triedPlan:  singleSelect(OnbOptions.triedPlan, data.triedPlan) { data.triedPlan = $0 }
         case .sex:        singleSelect(OnbOptions.sex, data.sex) { data.sex = $0 }
         case .goal:       singleSelect(OnbOptions.goal, data.goal) { data.goal = $0 }
         case .pace:       singleSelect(OnbOptions.pace, data.pace) { data.pace = $0 }
         case .activity:   singleSelect(OnbOptions.activity, data.activity) { data.activity = $0 }
         case .obstacles:  multiSelect(OnbOptions.obstacles, data.obstacles) { toggle(&data.obstacles, $0) }
-        case .stakes:     singleSelect(OnbOptions.stakes, data.stakes) { data.stakes = $0 }
-        case .commitment: singleSelect(OnbOptions.commitment, data.commitment) { data.commitment = $0 }
         case .experience: singleSelect(OnbOptions.experience, data.experience) { data.experience = $0 }
         case .currentSplit: splitField
         case .days:       singleSelect(OnbOptions.days, data.daysPerWeek.map(String.init)) { data.daysPerWeek = Int($0) }
@@ -192,7 +284,7 @@ struct OnboardingView: View {
         case .age:        ageStep
         case .attribution: singleSelect(OnbOptions.attribution, data.attribution) { data.attribution = $0 }
         case .reminders:  remindersStep
-        case .callback, .socialProof: EmptyView()   // rendered by interstitialView
+        default:          EmptyView()   // interstitials rendered by interstitialView
         }
     }
 
@@ -365,6 +457,28 @@ struct OnboardingView: View {
         .padding(.top, 20)
     }
 
+    // How long they've WANTED to change — the "damn, X years, why haven't I?" hook.
+    private var timeWantedStep: some View {
+        let yrs = data.timeWantedYears
+        let label: String = yrs < 1 ? "A few months"
+            : yrs >= 15 ? "15+ years"
+            : "\(Int(yrs)) " + (Int(yrs) == 1 ? "year" : "years")
+        let gut: String = yrs < 1 ? "The best time to start is now."
+            : yrs < 3 ? "Long enough. Let's make it count."
+            : yrs < 7 ? "That's a long time to keep wishing for it."
+            : "Years of wanting it. Imagine if you'd started back then."
+        return VStack(spacing: 18) {
+            Text(label).font(.system(size: 44, weight: .heavy)).foregroundStyle(Theme.acc)
+                .frame(maxWidth: .infinity).contentTransition(.numericText())
+                .animation(.snappy, value: Int(yrs))
+            Slider(value: $data.timeWantedYears, in: 0...15, step: 1).tint(Theme.acc)
+                .sensoryFeedback(.selection, trigger: Int(yrs))
+            Text(gut).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.mut)
+                .multilineTextAlignment(.center).animation(.easeInOut, value: gut)
+        }
+        .padding(.top, 24)
+    }
+
     private func heightLabel(_ cm: Double, _ u: Int) -> String {
         if u == 1 { return "\(Int(cm)) cm" }            // u==0 → ft (default)
         let totalIn = (cm / 2.54).rounded()
@@ -378,13 +492,15 @@ struct OnboardingView: View {
     private var canAdvance: Bool {
         switch step {
         case .name: return !data.name.trimmingCharacters(in: .whitespaces).isEmpty
+        case .motivation: return true   // optional
+        case .timeWanted: return true
+        case .resultsFeeling: return data.resultsFeeling != nil
+        case .triedPlan: return data.triedPlan != nil
         case .sex: return data.sex != nil
         case .pace: return data.pace != nil
         case .activity: return data.activity != nil
         case .goal: return data.goal != nil
         case .obstacles: return true   // optional
-        case .stakes: return data.stakes != nil
-        case .commitment: return data.commitment != nil
         case .experience: return data.experience != nil
         case .currentSplit: return true   // optional
         case .days: return data.daysPerWeek != nil
@@ -393,7 +509,7 @@ struct OnboardingView: View {
         case .equipmentDetail: return true   // optional
         case .attribution: return data.attribution != nil
         case .reminders: return true   // tap-to-finish
-        case .callback, .socialProof: return true
+        default: return true   // interstitials
         }
     }
 

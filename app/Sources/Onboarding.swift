@@ -19,8 +19,11 @@ import SwiftUI
     var age: Int = 25
     var activity: String?       // sedentary | light | active | very_active
     var pace: String?           // slow | recommended | aggressive
-    var stakes: String?         // 6-mo concern: confidence | health | energy | opportunities (funnel priming, not persisted yet)
-    var commitment: String?     // all_in | committed | testing (not persisted yet)
+    var stakes: String?         // (legacy, unused in new flow)
+    var commitment: String?     // (legacy, unused in new flow)
+    var timeWantedYears: Double = 3   // how long they've WANTED to change (slider) — emotional hook
+    var resultsFeeling: String? // how they feel about results for time invested
+    var triedPlan: String?      // ever followed a real plan/coach
     var reminders: Bool = true  // workout reminder opt-in
     var attribution: String?    // how they heard about us
 
@@ -61,25 +64,36 @@ enum Callbacks {
 }
 
 enum OnbStep: Int, CaseIterable {
-    // Easy/factual questions first (build momentum), heavier emotional ones later
-    // (obstacles → stakes → commitment), once they've already invested taps.
-    case name, sex, goal, pace, experience, currentSplit, days,
-         equipment, equipmentDetail, height, weight, goalWeight, age, activity,
-         obstacles, callback, stakes, commitment,
-         socialProof, attribution, reminders
+    // NEW ARC: hook (feel the problem) → flip (doom → aha → fix → nutrition) →
+    // stats (batched) → payoff → IDENTITY TRANSFORMATION finale. See ONBOARDING-REDESIGN.md.
+    case name,
+         motivation, timeWanted, obstacles, callback,    // hook
+         experience, resultsFeeling, triedPlan, goal,
+         doom, aha, trainingFix, nutrition,              // the flip (interstitials)
+         pace, sex, days, equipment, equipmentDetail,    // stats (batched)
+         height, weight, goalWeight, age, activity, currentSplit,
+         socialProof, reminders, attribution,
+         transformation                                  // ⭐ finale
 
-    var isInterstitial: Bool { self == .callback || self == .socialProof }
+    var isInterstitial: Bool {
+        switch self {
+        case .callback, .doom, .aha, .trainingFix, .nutrition, .socialProof, .transformation: return true
+        default: return false
+        }
+    }
 
     var title: String {
         switch self {
         case .name:        return "What should we call you?"
-        case .sex:         return "Which are you?"
-        case .goal:        return "What's your goal?"
-        case .pace:        return "How fast do you want results?"
-        case .obstacles:   return "What's holding you back?"
-        case .stakes:      return "Picture 6 months from now."
-        case .commitment:  return "How committed are you?"
+        case .motivation:  return "Why are you really here?"
+        case .timeWanted:  return "How long have you wanted this?"
+        case .obstacles:   return "What's been holding you back?"
         case .experience:  return "How long have you trained?"
+        case .resultsFeeling: return "And how do you feel about your results?"
+        case .triedPlan:   return "Ever followed a real plan?"
+        case .goal:        return "What do you want to build?"
+        case .sex:         return "Which are you?"
+        case .pace:        return "How fast do you want results?"
         case .currentSplit: return "What are you running now?"
         case .days:        return "How many days a week can you train?"
         case .equipment:   return "What can you train with?"
@@ -88,22 +102,24 @@ enum OnbStep: Int, CaseIterable {
         case .weight:      return "What do you weigh?"
         case .goalWeight:  return "What's your goal weight?"
         case .age:         return "How old are you?"
-        case .activity:    return "How active are you?"
+        case .activity:    return "How active are you outside the gym?"
         case .attribution: return "How did you hear about us?"
         case .reminders:   return "Stay on track?"
-        case .callback, .socialProof: return ""
+        default: return ""
         }
     }
     var subtitle: String {
         switch self {
-        case .name:       return "We'll make your plan feel like yours."
-        case .sex:        return "Routes your scoring to the right rubric."
-        case .goal:       return "Shapes your plan and nutrition."
-        case .pace:       return "Sets how aggressive your nutrition is."
-        case .obstacles:  return "Pick any that apply — we'll target them."
-        case .stakes:     return "If nothing changes, what would bother you most?"
-        case .commitment: return "Be honest — it shapes how hard we push you."
+        case .name:       return "We'll make this feel like yours."
+        case .motivation: return "Be honest — this shapes everything."
+        case .timeWanted: return "How long it's been on your mind."
+        case .obstacles:  return "Pick what's true. We'll target it."
         case .experience: return "Sets your starting intensity."
+        case .resultsFeeling: return "Most people aren't where they hoped."
+        case .triedPlan:  return "Most never have. That's usually the problem."
+        case .goal:       return "Shapes your plan and your nutrition."
+        case .sex:        return "Routes your scoring to the right rubric."
+        case .pace:       return "Sets how aggressive your nutrition is."
         case .currentSplit: return "We'll analyse why it's leaving your weak points behind."
         case .days:       return "We'll build your split around your real schedule."
         case .equipment:  return "We only program what you can do."
@@ -112,10 +128,10 @@ enum OnbStep: Int, CaseIterable {
         case .weight:      return "Used for protein and calories."
         case .goalWeight:  return "We'll set your nutrition to land you here."
         case .age:         return "Used for your calorie targets."
-        case .activity:    return "Outside the gym — drives your calories."
+        case .activity:    return "Drives your daily calories."
         case .attribution: return "Helps us reach more people like you."
         case .reminders:   return "A nudge on your training days is one of the biggest drivers of staying consistent."
-        case .callback, .socialProof: return ""
+        default: return ""
         }
     }
 }
@@ -152,10 +168,22 @@ enum OnbOptions {
     static let motivation = [
         Option(id: "lean", label: "Get lean & defined", sub: nil),
         Option(id: "muscle", label: "Build muscle in the right places", sub: nil),
-        Option(id: "confident", label: "Feel confident shirtless", sub: nil),
+        Option(id: "confident", label: "Look good with my shirt off", sub: nil),
         Option(id: "event", label: "Look good for an event / summer", sub: nil),
         Option(id: "attention", label: "Turn heads", sub: nil),
         Option(id: "stuck", label: "Break out of a rut", sub: nil),
+    ]
+    static let resultsFeeling = [
+        Option(id: "behind", label: "Honestly, behind where I should be", sub: nil),
+        Option(id: "some", label: "Some progress — not enough", sub: nil),
+        Option(id: "stuck", label: "Decent, but stuck", sub: nil),
+        Option(id: "starting", label: "Just getting started", sub: nil),
+    ]
+    static let triedPlan = [
+        Option(id: "winged", label: "Winged it / free YouTube", sub: nil),
+        Option(id: "app", label: "A paid app or program", sub: nil),
+        Option(id: "coach", label: "An actual coach", sub: nil),
+        Option(id: "never", label: "Never had a real plan", sub: nil),
     ]
     static let obstacles = [
         Option(id: "dont_know", label: "I don't know what to do in the gym", sub: nil),
