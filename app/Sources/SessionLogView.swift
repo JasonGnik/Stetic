@@ -264,15 +264,21 @@ struct SessionLogView: View {
 
     private func numField(_ label: String, value: Binding<Double>) -> some View {
         HStack(spacing: 4) {
-            TextField("0", value: value, format: .number)
+            // Show an empty field with a "0" placeholder when the value is 0 — so tapping in starts
+            // a fresh number instead of fighting a persistent leading zero.
+            TextField("0", text: Binding(
+                get: { value.wrappedValue == 0 ? "" : fmtNum(value.wrappedValue) },
+                set: { value.wrappedValue = Double($0) ?? 0 }
+            ))
                 .keyboardType(.numberPad).multilineTextAlignment(.center)
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt)
                 .frame(width: 46).padding(.vertical, 7)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Theme.bg)
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.line, lineWidth: 1)))
-            Text(label).font(.system(size: 11)).foregroundStyle(Theme.mut)
+            Text(label).font(.system(size: 11)).foregroundStyle(Theme.mut).fixedSize()   // keep "lb"/"reps" on one line
         }
     }
+    private func fmtNum(_ v: Double) -> String { v == v.rounded() ? String(Int(v)) : String(v) }
 
     private var footer: some View {
         Button { finish() } label: {
