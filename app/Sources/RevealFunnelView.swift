@@ -215,26 +215,19 @@ struct RevealFunnelView: View {
         return (Tier.forScore(current).label, Tier.forScore(potential).label)
     }
 
-    // MARK: FOMO — personalized projection from their answers (illustrative, no AI yet)
+    // MARK: FOMO — before → after payoff (illustrative, no AI yet)
     private var fomo: some View {
-        let proj = projectedTiers
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             Spacer()
             VStack(spacing: 10) {
                 Text("YOUR 12-WEEK PROJECTION").font(.system(size: 11, weight: .bold)).tracking(2).foregroundStyle(Theme.mut)
-                Text(brandLimed(name.isEmpty ? "You're leaving\ngains on the table." : "\(name), you're leaving\ngains on the table."))
+                Text(brandLimed(name.isEmpty ? "Here's where you\ncould be." : "\(name), here's where\nyou could be."))
                     .font(.system(size: 27, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
             }
-            WithVsWithoutChart().frame(height: 180).padding(.horizontal, 30).padding(.top, 20)
-            HStack(spacing: 12) {
-                tierPill("Likely plateau", proj.plateau, Theme.mut)
-                Image(systemName: "arrow.right").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.acc)
-                tierPill("Your potential", proj.potential, Theme.acc)
-            }
-            .padding(.top, 22)
-            Text(brandLimed("Most people stall here — training without a plan built on their weak points. Stetic closes that gap."))
+            BeforeAfterPhysique().padding(.top, 26)
+            Text(brandLimed("A leaner, more complete frame — built around the weak points holding you back. That's what 12 focused weeks looks like."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(4)
-                .foregroundStyle(Theme.mut).padding(.horizontal, 34).padding(.top, 18)
+                .foregroundStyle(Theme.mut).padding(.horizontal, 34).padding(.top, 24)
             Spacer()
             primaryButton("See my potential") { withAnimation { phase = .bluff } }
         }
@@ -631,12 +624,7 @@ struct RevealFunnelView: View {
         guard !didDevInit else { return }
         didDevInit = true
         let env = ProcessInfo.processInfo.environment
-        guard env["STETIC_AUTOSCAN"] == "1" || env["STETIC_LOADSAMPLE"] == "1",
-              let url = Bundle.main.url(forResource: "sample", withExtension: "jpg"),
-              let data = try? Data(contentsOf: url) else { return }
-        datas[0] = data; images[0] = UIImage(data: data)
-        if env["STETIC_AUTOSCAN"] == "1" { startRealScan() }
-        switch env["STETIC_FUNNEL_PHASE"] {   // dev: jump to a phase for screenshots
+        switch env["STETIC_FUNNEL_PHASE"] {   // dev: jump to a phase for screenshots (no sample needed)
         case "fomo": phase = .fomo
         case "focuspick": phase = .focusPick
         case "tease": phase = .tease
@@ -645,6 +633,11 @@ struct RevealFunnelView: View {
         case "paywall": phase = .paywall
         default: break
         }
+        guard env["STETIC_AUTOSCAN"] == "1" || env["STETIC_LOADSAMPLE"] == "1",
+              let url = Bundle.main.url(forResource: "sample", withExtension: "jpg"),
+              let data = try? Data(contentsOf: url) else { return }
+        datas[0] = data; images[0] = UIImage(data: data)
+        if env["STETIC_AUTOSCAN"] == "1" { startRealScan() }
     }
 }
 

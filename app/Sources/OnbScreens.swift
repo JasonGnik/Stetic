@@ -298,6 +298,52 @@ struct TransformationScreen: View {
     }
 }
 
+// MARK: - Before → after physique (projection payoff in the funnel)
+// Illustrative (pre-scan): a soft "now" figure → a lean, defined "potential" figure.
+struct BeforeAfterPhysique: View {
+    var nowLabel: String = "Now"
+    var afterLabel: String = "12 weeks"
+    var body: some View {
+        HStack(spacing: 16) {
+            figureCol(nowLabel, "soft, undefined", tint: Color(hex: 0x5A5A62), lean: false)
+            Image(systemName: "arrow.right").font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.acc)
+            figureCol(afterLabel, "lean, complete", tint: Theme.acc, lean: true)
+        }
+    }
+    private func figureCol(_ title: String, _ sub: String, tint: Color, lean: Bool) -> some View {
+        VStack(spacing: 8) {
+            Canvas { ctx, size in drawFigure(&ctx, size, tint: tint, lean: lean) }
+                .frame(width: 92, height: 132)
+            Text(title).font(.system(size: 13, weight: .bold)).foregroundStyle(lean ? Theme.acc : Theme.txt)
+            Text(sub).font(.system(size: 10.5)).foregroundStyle(Theme.mut)
+        }
+    }
+    private func drawFigure(_ ctx: inout GraphicsContext, _ size: CGSize, tint: Color, lean: Bool) {
+        let w = size.width, h = size.height, cx = w/2
+        func cap(_ x: CGFloat, _ y: CGFloat, _ ww: CGFloat, _ hh: CGFloat) {
+            ctx.fill(Path(roundedRect: CGRect(x: x, y: y, width: ww, height: hh), cornerSize: CGSize(width: ww/2, height: ww/2)), with: .color(tint))
+        }
+        let shoulder: CGFloat = lean ? 30 : 22
+        let waist: CGFloat = lean ? 13 : 21
+        ctx.fill(Path(ellipseIn: CGRect(x: cx-9, y: 6, width: 18, height: 18)), with: .color(tint))   // head
+        cap(cx-shoulder-9, 34, 10, 56); cap(cx+shoulder-1, 34, 10, 56)                                  // arms
+        cap(cx-15, h-54, 12, 52); cap(cx+3, h-54, 12, 52)                                               // legs
+        var torso = Path()
+        torso.move(to: CGPoint(x: cx-shoulder, y: 34)); torso.addLine(to: CGPoint(x: cx+shoulder, y: 34))
+        torso.addLine(to: CGPoint(x: cx+waist, y: h-56)); torso.addLine(to: CGPoint(x: cx-waist, y: h-56)); torso.closeSubpath()
+        ctx.fill(torso, with: .color(tint))
+        if lean {   // definition lines on the lean figure
+            let dark = Color(hex: 0x0E0E10).opacity(0.5)
+            ctx.stroke(Path { $0.move(to: CGPoint(x: cx, y: 46)); $0.addLine(to: CGPoint(x: cx, y: h-58)) }, with: .color(dark), lineWidth: 1.2)
+            ctx.stroke(Path { $0.move(to: CGPoint(x: cx-15, y: 50)); $0.addLine(to: CGPoint(x: cx+15, y: 50)) }, with: .color(dark), lineWidth: 1.2)
+            for k in 0..<3 {
+                let yy = 64 + CGFloat(k)*11
+                ctx.stroke(Path { $0.move(to: CGPoint(x: cx-9, y: yy)); $0.addLine(to: CGPoint(x: cx+9, y: yy)) }, with: .color(dark), lineWidth: 1)
+            }
+        }
+    }
+}
+
 // Rising, fading embers — the old self burning away.
 struct EmberBurst: View {
     var body: some View {

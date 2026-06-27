@@ -43,6 +43,8 @@ struct ContentView: View {
     var body: some View {
         if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
+        } else if env["STETIC_FUNNEL_PHASE"] != nil {
+            RevealFunnelView(name: "Jason", profile: nil, onFinish: {})
         } else if env["STETIC_SCORECARD"] == "1" {
             ScoreCardExport()
         } else if env["STETIC_SETTINGS"] == "1" {
