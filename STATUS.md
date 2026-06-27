@@ -61,6 +61,16 @@ Real iPhone required — the simulator can't do Apple sign-in or sandbox purchas
 - [ ] Camera meal scan + **barcode** + food-label modes (no camera in sim).
 - [ ] HealthKit steps + bodyweight prompt.
 
+## ⭐ NEW ONBOARDING — BUILT (2026-06-26, commit 967cf2a). Emotion-first, identity-driven.
+Implements ONBOARDING-REDESIGN.md. Live in `OnboardingView` + `OnbScreens.swift` + `Onboarding.swift`.
+Flow: name → why-here → **time-wanted slider** → what's-holding-you-back → empathy → trained-how-long →
+**results-feeling** → **ever-had-a-plan** → goal → **DOOM (two roads)** → **AHA (complete physique + weak-point
+silhouette)** → **TRAINING FIX (X-years + animated mountain + Tolstoy)** → **NUTRITION (freedom)** → stats (batched) →
+social proof → reminders → attribution → **⭐ IDENTITY TRANSFORMATION** (trash old self from their real answers →
+"You ARE…" reveal → Socrates close → "step in for free") → funnel/paywall. All screens verified on iOS 26 sim.
+Preview any step: `STETIC_ONB_STEP=N` (name=0 … doom=9, aha=10, trainingFix=11, nutrition=12 … transformation=27).
+**Polish candidates (optional):** richer AHA body silhouette · mountain camp/sleep beat · more dramatic trash animation · projection-payoff rework (#10, lives in the funnel/RevealFunnelView, not yet done).
+
 ## ⭐ DEVICE-TEST FEEDBACK — punch list (2026-06-26, Jason's on-device pass). NOTHING HERE GETS LOST.
 **Sandbox purchase WORKED ✅** (full A-path: Apple sign-in → onboarding → paywall → sandbox buy → unlock). Lean physique scored **Mythic** — Jason is OK with it (aspirational for the target audience).
 
