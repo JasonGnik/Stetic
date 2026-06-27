@@ -67,12 +67,13 @@ enum OnbStep: Int, CaseIterable {
     // NEW ARC: hook (feel the problem) → flip (doom → aha → fix → nutrition) →
     // stats (batched) → payoff → IDENTITY TRANSFORMATION finale. See ONBOARDING-REDESIGN.md.
     case name,
-         motivation, timeWanted, obstacles,              // hook (callback empathy screen cut)
+         motivation, timeWanted, obstacles,
+         doom,                                           // gut-punch right after their pain (replaces the old empathy callback)
          experience, resultsFeeling, triedPlan, goal,
+         aha, trainingFix,                               // how-it-works carousel + mountain, right after they give their goal
          height, weight, goalWeight, pace,               // measurements BEFORE pace (see goal → choose speed)
          sex, days, equipment, equipmentDetail, age, activity, currentSplit,
-         reminders, attribution,
-         doom, aha, trainingFix                          // emotional crescendo → hands off to the funnel (identity transformation now lives there, post-scan)
+         reminders, attribution                          // → hands off to the funnel (photo → scan → identity → paywall)
 
     var isInterstitial: Bool {
         switch self {
