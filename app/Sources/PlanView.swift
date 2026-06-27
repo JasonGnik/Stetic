@@ -156,8 +156,8 @@ struct PlanView: View {
                 }
                 macros(p.macros)
                 section("PRIORITIES") { priorities(p.priorities) }
-                section("WEEKLY SPLIT") { split(p.weekly_split, weak: weakGroups(p.muscle_breakdown)) }
-                section("MUSCLE BREAKDOWN") { breakdown(p.muscle_breakdown, weak: weakGroups(p.muscle_breakdown)) }
+                section("WEEKLY SPLIT") { split(p.weekly_split, weak: weakSet(p)) }
+                section("MUSCLE BREAKDOWN") { breakdown(p.muscle_breakdown, weak: weakSet(p)) }
                 if let onStart {
                     Button { onStart() } label: {
                         Text("Start training →").font(.system(size: 16, weight: .bold))
@@ -466,6 +466,11 @@ struct PlanView: View {
         return zip(tags, labels).map { "\($0): \($1)" }
     }
 
+    private func isLagging(_ status: String) -> Bool {
+        let s = status.lowercased()
+        return ["lag", "weak", "lack", "need", "under", "thin", "behind", "poor", "small"].contains { s.contains($0) }
+    }
+
     // Lagging/needs-work statuses read red; everything else reads lime.
     private func subColor(_ status: String) -> Color {
         let s = status.lowercased()
@@ -473,7 +478,14 @@ struct PlanView: View {
         return weak.contains { s.contains($0) } ? Theme.red : Theme.acc
     }
 
-    private func weakGroups(_ groups: [PlanContent.Breakdown]) -> Set<String> {
-        Set(groups.sorted { $0.rating < $1.rating }.prefix(2).map { $0.group.lowercased() })
+    // A group is a weak point if it's bottom-2 by rating, OR has a lagging sub-muscle (e.g. side delts
+    // under "shoulders"), OR the AI named it in the priorities — so side-delt/lat work gets flagged,
+    // not just the two lowest groups.
+    private func weakSet(_ p: PlanContent) -> Set<String> {
+        let bottom2 = p.muscle_breakdown.sorted { $0.rating < $1.rating }.prefix(2).map { $0.group.lowercased() }
+        let laggingSub = p.muscle_breakdown.filter { g in g.sub.contains { isLagging($0.status) } }.map { $0.group.lowercased() }
+        let inPriority = p.muscle_breakdown.map { $0.group.lowercased() }
+            .filter { group in p.priorities.contains { $0.area.lowercased().contains(group) } }
+        return Set(bottom2).union(laggingSub).union(inPriority)
     }
 }
