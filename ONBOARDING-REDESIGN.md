@@ -121,6 +121,24 @@ Combines the parts he liked (cut "hiding your shirt at the beach" and the "other
 > **Identity close (the gut-punch twist):** "This is for people who'd rather see results than float
 > aimlessly and complain that nothing changes. Which one are you?"
 
+## 9a. OLD vs NEW onboarding (at a glance)
+**CURRENT (21 steps, stat-heavy, emotion late):**
+name → sex → goal → pace → experience → current split → days → equipment → equipment detail →
+height → weight → goal weight → age → activity → **obstacles** → callback → **"Picture 6 months"** →
+**commitment** → social proof → attribution → reminders. (Welcome before.)
+
+**NEW (emotion front-loaded, stats batched, identity finale):**
+1 Welcome · 2 Why are you here · **2b How long have you wanted this (slider)** · 3 What's holding you back ·
+4 Empathy beat · 5 How long have you trained · **6 How do you feel about your results** · **7 Ever followed a real plan** ·
+8 What to build (goal) · **10 DOOM (Two Roads)** · **11 AHA weak points** · **11b Training fix (+ mountain animation)** ·
+**11c Nutrition = freedom** · 12 pace · 13 sex · 14 days · 15 equipment(+detail) · 16 measurements · 17 activity ·
+18 current split · **19 Projection payoff** · 20 social proof · 21 reminders · 22 attribution ·
+**23 ⭐ IDENTITY TRANSFORMATION** → Paywall ("step in for free").
+
+**Net:** ➕ why-here, time-wanted slider, results-feeling, ever-had-a-plan, DOOM, AHA, training-fix, nutrition,
+projection-as-payoff, identity transformation. ➖ "Picture 6 months" question, commitment, areas-behind. 🔀 obstacles
++ experience to the front, all stats to the back.
+
 ## 9. Screen copy — v1 draft (red-pen this)
 Stat screens (pace/sex/days/equipment/measurements/activity/split) keep their current copy. New/hero below.
 **Guiding principle (Jason): when describing ANY feature, sell the FEELING it gives, not the feature.**
@@ -170,6 +188,9 @@ every week you put in shows up in the mirror. Real, visible progress instead of 
 don't carry the whole journey at once — you just handle today. We've got the rest."
 QUOTE (Leo Tolstoy, public domain): *"A man on a thousand-mile walk has to forget his goal and say to
 himself every morning: today I'm going to cover twenty-five miles."* → lands "just do today, not the whole mountain."
+⭐ ANIMATION (Jason — make this cinematic, brand lime): open on a HUGE intimidating mountain, then the
+camera zooms in to a lone figure walking a stretch → setting up camp → sleeping under the stars → next
+day walking again. Visceral proof of "you don't climb it all at once — you just cover today's ground, then rest, then go again."
 > Psychology reframe to weave here + in-app: the gym journey is NOT the huge undertaking people fear —
 > you're in the gym LESS (not 3-hr daily), it's simple if you stay consistent. Shrink the mountain.
 
@@ -209,14 +230,15 @@ self: *"You came here to {get lean / turn heads / build muscle}. From today, tha
 Each line is built as the **opposite of their stated obstacle** where possible; generic ones fill the gaps.
 Target feeling: *"I'm all these things now. So what am I waiting for? What have I been doing all this time? I have to go do this."*
 
-**The close (rewritten — was choppy).** Lead with a quote, then the spill-into-life line:
+**The close (rewritten).** Socrates quote, then the "can't-buy-respect" angle (Jason's, LOCKED — keep Socrates over Aurelius):
 > *"It is a shame for a man to grow old without seeing the beauty and strength of which his body is capable."* — Socrates
-> "Your body is the one thing that's fully yours — you only get one. Transform that, and you prove to yourself
-> you can do anything. It doesn't stay in the gym — it changes how you carry every part of your life."
-> *(Alt quote option — Marcus Aurelius: "You have power over your mind, not outside events. Realize this, and you will find strength.")*
+> "A great physique is the one thing in life that **can't be bought.** No one can go to the gym for you, or
+> eat right for you, every day. So it commands respect anywhere you go — it's living proof that you set a
+> plan and put in the work. If you can do that, you can do anything. It changes how you carry yourself.
+> It changes how you carry every part of your life. It changes *you.*"
 
-**CTA = step into the new you, FREE:** "**Step into your new identity — free for 3 days.**" (ties the transformation
-directly to the 3-day trial; the paywall is "become this person now, at no cost to start"). [Step in free → ]
+**CTA = step into the new you, for FREE:** "**Step into your new identity — for free.**" → flows into the
+3-day free trial (the paywall). (Wording per Jason: "for free," not "free for 3 days.") [Step in → ]
 
 > Tone throughout: it's not easy, but it's **simple**. We hand you everything — plan, food, exactly what to do.
 > All that's left is to execute. Personalization is the magic — use their literal answers in Act 1 + their goals in Act 2.
