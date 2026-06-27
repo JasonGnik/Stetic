@@ -131,6 +131,9 @@ Stat screens (pace/sex/days/equipment/measurements/activity/split) keep their cu
 **2 · Why are you really here?** (multi) — sub: "Be honest — this shapes everything."
 Get lean & defined · Build muscle in the right places · Look good with my shirt off · Look good for an event/summer · Turn heads · Break out of a rut
 
+**2b · How long have you wanted to change your body?** [NEW — slider, years] — asked of everyone (beginner or not).
+Slider: months → "10+ years". Goal = the gut realization: *"Damn… I've wanted this for {X} years. Why haven't I done it yet?"* Sets up screen 3 directly, and feeds 11b ("{X} years — that's the past. Now you move forward.") and the end-of-onboarding identity transformation.
+
 **3 · What's holding you back?** (multi) — sub: "Pick what's true. We'll target it."
 *(keep current obstacle options)*
 
@@ -146,10 +149,8 @@ Get lean & defined · Build muscle in the right places · Look good with my shir
 
 **8 · What do you want to build?** *(goal — keep options)*
 
-**9 · Which areas feel behind?** (multi) — sub: "Be real — this is what we'll bring up." *(focus options)*
-> DECISION: the AHA no longer claims "you picked X" (they scan later). So screen 9 is now optional —
-> either CUT it (the scan does this job) or keep it light to personalize the AHA's example highlight.
-> Leaning: cut from onboarding, let the scan own weak points. (confirm)
+**9 · Which areas feel behind?** — ❌ CUT from main flow (Jason). The scan owns weak points. Keep `focus`
+ONLY on the occasional no-photo path (estimate). Not in the standard onboarding.
 
 **10 · DOOM (Two Roads)** — *"A year from now."*
 • Do nothing → "Same body in the mirror. Another year gone."
@@ -163,18 +164,22 @@ shoulders, chest, back, all in proportion. Most guys are held back by just one o
 never notice. They only know they don't look how they want in the mirror. Stetic finds yours — and
 builds your whole plan around fixing it." *(Feeling: the 'ohhh, THAT's why' clarity + it's fixable.)*
 
-**11b · Training fix** — *"Finally see it work — every week."*
-Feeling first: "No more spinning your wheels for years. We fix what you've been doing wrong and build a
-smarter, science-backed split around your weak points — so every week you look in the mirror and see
-real progress. The feeling of actually moving forward, not standing still." *(Sells momentum/it's-working,
-not 'we tell you when to add weight'.)*
+**11b · Training fix** — *"{X} years of waiting. That stops now."* (pull their slider answer from 2b)
+Feeling first + forward-looking: "You can't get those years back — but that's behind you now. From here,
+every week you put in shows up in the mirror. Real, visible progress instead of standing still. And you
+don't carry the whole journey at once — *a journey of a thousand miles begins with a single step.* You
+just handle today. We've got the rest." *(Reframe: the wasted past is gone, look forward, progress weekly,
+just do today. Optional Lao Tzu proverb — public domain, OK to quote.)*
+> Psychology reframe to weave here + in-app: the gym journey is NOT the huge undertaking people fear —
+> you're in the gym LESS (not 3-hr daily), it's simple if you stay consistent. Shrink the mountain.
 
-**11c · Nutrition made easy** — *"Know you're on your way — every single day."*
-Feeling first: "Eat well, stay on track, and feel yourself getting closer to that physique daily. Your
-macros are set, meal ideas are ready, cravings are worked in — and instead of logging every bite by
-hand, just scan it and keep moving. No headaches, no guessing." *(Benefit = the daily on-track feeling +
-the time saved by scanning, not 'your food handled'.)*
-> Meal ideas need expansion — how users get MORE / varied ideas. Separate discussion (noted, not blocking).
+**11c · Nutrition made easy** — *"No chicken-and-broccoli. Just on track, every day."*
+Feeling = FREEDOM + daily progress (not deprivation): "Forget the strict bodybuilder diet — that stigma
+isn't real. Eat out with friends, have the thing you're craving — we just help you calibrate the rest of
+your day around it. Track it, stick to it most of the time, and you'll see results without starving. The
+feeling of knowing, every single day, that you're on your way." *(Cravings handled, scan instead of
+logging by hand — but lead with the freedom + on-track-daily feeling.)*
+> Meal ideas → tracked in MEAL-IDEAS.md (how users get more/varied ideas). Discuss later.
 
 **12–18 · Stats** *(keep current copy — pace, sex, days, equipment, measurements, activity, current split)*
 
@@ -183,16 +188,39 @@ Visual climb. Lead with the LOOK: "Abs starting to show. Fuller shoulders. A lea
 
 **20 · Social proof** *(keep)* · **21 · Reminders** *(keep)* · **22 · How'd you hear about us** *(keep)*
 
-**23 · EXECUTE / identity** [NEW — the punchy version of the cut commitment screen]
-*"It's not easy. But it's simple."*
-"Getting a movie-star physique isn't complicated — the internet just makes it feel that way. We hand
-you everything: the plan, the food, exactly what to do every session. All that's left is to execute —
-show up, train smart, push hard. No influencer noise, no guessing. **That's the whole game.**"
-Identity close → "Are you someone who executes — or someone who keeps floating and wondering why nothing changes?" [I'm in / Let's go]
+**23 · THE IDENTITY TRANSFORMATION** ⭐ [NEW — Jason's centerpiece, "this makes us a billion dollars"]
+The emotional peak of onboarding. A personalized **shed-the-old-self → become-the-new-self** ritual built
+from THEIR answers. Two acts with an animation:
+
+**ACT 1 — Trash the old self.** Pull their real answers onto cards and visibly **throw them in the trash**
+(animation): "Wanted this for {X} years." · "{their obstacle: couldn't stay consistent}." · "{felt lost /
+intimidated}." · "{why they downloaded}." → all swept away. Copy: "That's not you anymore. The past is the past."
+
+**ACT 2 — Become who you are now.** Reveal the new identity (these are the new "you are"):
+- You're someone who **sticks to the plan.**
+- You're someone who **stays consistent.**
+- You're **efficient with your time** — you don't waste it.
+- You **work hard** and **do what you have to, every day.**
+- You **don't obsess over how long it takes** — the time passes anyway.
+- One hiccup? You're **right back on track the next day.**
+
+**The close (the real sell):** "Transforming your body is bigger than the gym. It's the one thing that's
+fully yours — you only get one. Master *that*, and you prove you can do anything." → This identity spills
+into every other part of their life. [Become that person → ]
+
+> Tone: it's not easy, but it's **simple**. We hand you everything — plan, food, exactly what to do. All
+> that's left is to execute. No influencer noise. (Weave "simple, not complicated" into Act 2 or the close.)
+> Personalization is the magic — use their literal slider/obstacle/why answers in Act 1.
 
 **→ Paywall** — *"Your plan is ready, {name}."* sub: "Built for exactly where you are. You value your time — this is the efficient way to the body you want. Start your 3-day free trial."
 
 ## Decisions locked
+- **NEW early question:** "How long have you wanted to change your body?" (slider, years) — the "why haven't I done it yet?" gut-punch; feeds 11b + the identity transformation. (Jason)
+- **11b is forward-looking:** their wasted years are the past; from here, weekly visible progress; just do today (Lao Tzu proverb OK). Shrink the mountain — gym is LESS of an undertaking than they fear. (Jason)
+- **11c sells FREEDOM:** no chicken-and-broccoli, eat with friends, cravings calibrated, on track every day without starving. (Jason)
+- **⭐ END-OF-ONBOARDING IDENTITY TRANSFORMATION** (Jason's billion-dollar centerpiece): trash their old self (real answers → animation) → become the new self (sticks to plan, consistent, efficient, back-on-track-after-a-hiccup); close on "transform your body = the one thing fully yours, you only get one → prove you can do anything; it spills into all of life." (Jason)
+- **Screen 9 (areas behind) CUT** from main flow — scan owns weak points; `focus` only on the no-photo path. (Jason)
+- **Meal ideas → MEAL-IDEAS.md**, discuss later. (Jason)
 - **Value block = 3 beats:** weak points (AHA) → training fix (old split → new, improve weekly) → nutrition made easy (separate screen). (Jason)
 - **DOOM = Two Roads + "time passes, most waste it" + results-driven-vs-floats-aimlessly identity callout.** (Jason)
 - **CUT the `commitment` screen.** (Jason, 2026-06-26)
