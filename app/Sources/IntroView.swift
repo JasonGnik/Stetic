@@ -8,13 +8,13 @@ struct IntroView: View {
     @State private var i = Int(ProcessInfo.processInfo.environment["STETIC_INTRO_SLIDE"] ?? "") ?? 0
 
     // .demo plays a looping screen-recording if the .mp4 is in the bundle, else falls back to the poster screenshot.
-    private enum Beat { case comparison; case shot(String); case demo(video: String, poster: String); case chart }
+    private enum Beat { case comparison; case shot(String); case score(String); case demo(video: String, poster: String); case chart }
     private struct Slide { let beat: Beat; let title: String; let sub: String }
 
     private let slides: [Slide] = [
         .init(beat: .comparison, title: "Stetic, not swole.",
               sub: "We make you look as good as possible — not just as big as possible."),
-        .init(beat: .shot("intro_score"), title: "Your physique, analyzed.",
+        .init(beat: .score("intro_score"), title: "Your physique, analyzed.",
               sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
         .init(beat: .shot("intro_plan"), title: "A plan built on your weak points.",
               sub: "Your laggards, prioritized — the exact split and progression to bring them up."),
@@ -74,6 +74,7 @@ struct IntroView: View {
         switch beat {
         case .comparison: comparisonVisual
         case .shot(let name): shotVisual(name)
+        case .score(let name): scoreVisual(name)
         case .demo(let video, let poster):
             if let url = Bundle.main.url(forResource: video, withExtension: "mp4") {
                 VideoLoop(url: url)
@@ -122,6 +123,34 @@ struct IntroView: View {
             .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
     }
     private func shotVisual(_ name: String) -> some View { shotImage(name) }
+
+    // Score slide: the real card framed by the 8 tier badges in an "n" arch (current tier lit).
+    private func scoreVisual(_ name: String) -> some View {
+        ZStack {
+            shotImage(name, height: 298)
+            ForEach(Array(Tier.allCases.enumerated()), id: \.offset) { idx, t in
+                tierBadge(t, you: t == .platinum)   // 6.4 → Platinum
+                    .offset(badgeOffset(idx))
+            }
+        }
+        .frame(width: 300, height: 412)
+    }
+    private func badgeOffset(_ i: Int) -> CGSize {
+        let angles: [Double] = [201, 169, 137, 106, 74, 43, 11, -21]   // lower-left → over the top → lower-right
+        let a = angles[i] * .pi / 180
+        return CGSize(width: 104 * cos(a), height: -184 * sin(a))
+    }
+    private func tierBadge(_ t: Tier, you: Bool) -> some View {
+        let d: CGFloat = you ? 46 : 34
+        return ZStack {
+            if you { Circle().fill(t.color.opacity(0.30)).frame(width: d + 18, height: d + 18).blur(radius: 7) }
+            Circle().fill(Theme.bg)
+                .overlay(Circle().fill(t.color.opacity(0.16)))
+                .overlay(Circle().stroke(t.color, lineWidth: you ? 2.2 : 1.4))
+                .frame(width: d, height: d)
+            Image(systemName: t.icon).font(.system(size: you ? 19 : 14, weight: .bold)).foregroundStyle(t.color)
+        }
+    }
 }
 
 // A muted, auto-looping screen recording for the intro demo slides.
