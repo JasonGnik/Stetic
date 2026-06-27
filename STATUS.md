@@ -69,7 +69,7 @@ silhouette)** → **TRAINING FIX (X-years + animated mountain + Tolstoy)** → *
 social proof → reminders → attribution → **⭐ IDENTITY TRANSFORMATION** (trash old self from their real answers →
 "You ARE…" reveal → Socrates close → "step in for free") → funnel/paywall. All screens verified on iOS 26 sim.
 Preview any step: `STETIC_ONB_STEP=N` (name=0 … doom=9, aha=10, trainingFix=11, nutrition=12 … transformation=27).
-**Polish candidates (optional):** richer AHA body silhouette · mountain camp/sleep beat · more dramatic trash animation · projection-payoff rework (#10, lives in the funnel/RevealFunnelView, not yet done).
+**Signature visuals — DONE (commit d9b2b34):** ⛰️ cinematic mountain (day→dusk→night cycle, hiker walks to camp + campfire, summit flag, "just focus on today" + Tolstoy) · 🫥 AHA "mock scan" (figure + sweeping scan line + scan brackets + lit weak point) · 🗑️ transformation Act 1 toss→burn (cards fall into bin → rising embers) · 📈 funnel projection = before→after physique (soft "now" → lean V-taper "12 weeks", replaced the Gold→Diamond tier pills). Preview: `STETIC_ONB_STEP=10` (aha) `=11` (mountain) `=27` (transformation); `STETIC_FUNNEL_PHASE=fomo` (before→after). Figures are geometric/composed-shape — open to a more refined art pass if Jason wants.
 
 ## ⭐ DEVICE-TEST FEEDBACK — punch list (2026-06-26, Jason's on-device pass). NOTHING HERE GETS LOST.
 **Sandbox purchase WORKED ✅** (full A-path: Apple sign-in → onboarding → paywall → sandbox buy → unlock). Lean physique scored **Mythic** — Jason is OK with it (aspirational for the target audience).
