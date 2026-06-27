@@ -9,6 +9,8 @@ struct MainTabView: View {
     @State private var tab = Int(ProcessInfo.processInfo.environment["STETIC_TAB"] ?? "") ?? 0
     @Environment(\.requestReview) private var requestReview
     @AppStorage("askedReview") private var askedReview = false
+    @AppStorage("askedWorkoutTime") private var askedWorkoutTime = false
+    @State private var showWorkoutTime = false
 
     init(name: String = "") {
         self.name = name
@@ -35,11 +37,16 @@ struct MainTabView: View {
         .tint(Theme.acc)
         .task {
             await refresh()
-            // Ask for an App Store rating once, after they've landed in the app with a plan.
-            if !askedReview, bundle != nil {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            if !askedWorkoutTime, bundle != nil {
+                await MainActor.run { showWorkoutTime = true }   // first entry: ask their workout time
+            } else if !askedReview, askedWorkoutTime, bundle != nil {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)   // a later session: ask for a rating
                 await MainActor.run { requestReview(); askedReview = true }
             }
+        }
+        .fullScreenCover(isPresented: $showWorkoutTime) {
+            WorkoutTimeSheet(daysPerWeek: bundle?.content.weekly_split.count ?? 4,
+                             onDone: { askedWorkoutTime = true })
         }
         .fullScreenCover(isPresented: $showScan) {
             RevealFunnelView(name: name, rescan: true, onFinish: {

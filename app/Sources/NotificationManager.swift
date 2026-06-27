@@ -41,6 +41,21 @@ enum NotificationManager {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: weekdayIds)
     }
 
+    // A daily morning nudge to log the "how are you feeling" check-in.
+    static func enableCheckInReminder(hour: Int = 9) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+            guard granted else { return }
+            var dc = DateComponents(); dc.hour = hour
+            let content = UNMutableNotificationContent()
+            content.title = "Stetic"
+            content.body = "How are you feeling today? Take 10 seconds to check in."
+            content.sound = .default
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+            center.add(UNNotificationRequest(identifier: "stetic.checkin", content: content, trigger: trigger))
+        }
+    }
+
     private static var weekdayIds: [String] { (1...7).map { "stetic.train.\($0)" } }
 
     // Daily meal reminders. Pass an hour per meal type (-1 / missing = off).

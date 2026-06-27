@@ -330,6 +330,39 @@ actor ScanAPI {
         return scans.first
     }
 
+    struct PastPlan: Identifiable, Sendable { let id: String; let date: String?; let goalLabel: String }
+
+    // Finished / archived plans, newest first (history). Empty if the status column isn't deployed.
+    func pastPlans() async throws -> [PastPlan] {
+        let (data, s) = try await authed(restURL("plans", query: [
+            .init(name: "select", value: "id,workout,created_at"),
+            .init(name: "status", value: "in.(finished,archived)"),
+            .init(name: "order", value: "created_at.desc"),
+            .init(name: "limit", value: "30"),
+        ]), method: "GET")
+        guard s == 200, let rows = try? JSONDecoder().decode([SavedPlanRow].self, from: data) else { return [] }
+        return rows.compactMap { r in r.id.map { PastPlan(id: $0, date: r.created_at, goalLabel: r.workout.goal_label) } }
+    }
+
+    // Load one specific plan by id (read-only history view).
+    func loadPlan(_ id: String) async throws -> PlanBundle? {
+        let (data, s) = try await authed(restURL("plans", query: [
+            .init(name: "select", value: "id,workout,macros,scan_id,created_at"),
+            .init(name: "id", value: "eq.\(id)"), .init(name: "limit", value: "1"),
+        ]), method: "GET")
+        guard s == 200, let rows = try? JSONDecoder().decode([SavedPlanRow].self, from: data),
+              let row = rows.first, let scanId = row.scan_id else { return nil }
+        let (sd, ss) = try await authed(restURL("scans", query: [
+            .init(name: "select", value: "*"), .init(name: "id", value: "eq.\(scanId)"), .init(name: "limit", value: "1"),
+        ]), method: "GET")
+        guard ss == 200, let scans = try? JSONDecoder().decode([ScoreCard].self, from: sd), let scan = scans.first else { return nil }
+        let w = row.workout
+        let content = PlanContent(goal_label: w.goal_label, summary: w.summary, macros: row.macros,
+            weekly_split: w.weekly_split, priorities: w.priorities, muscle_breakdown: w.muscle_breakdown,
+            projection: w.projection, split_critique: w.split_critique, split_changes: w.split_changes)
+        return PlanBundle(content: content, scan: scan, id: row.id, startedAt: row.created_at)
+    }
+
     // MARK: plan lifecycle (active → archived/finished, delete, regenerate)
     func setPlanStatus(_ id: String, _ status: String) async throws {
         struct Body: Encodable { let status: String; let finished_at: String? }

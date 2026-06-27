@@ -9,9 +9,12 @@ struct PlanView: View {
     @State private var bundle: ScanAPI.PlanBundle?
     @State private var confirm: PlanAction?
     @State private var regen: RegenMode?
+    @State private var past: [ScanAPI.PastPlan] = []
+    @State private var activeId: String?     // the current ACTIVE plan's id (nil when none)
+    @State private var viewingPast = false
 
     enum RegenMode: Int, Identifiable { case new, finish; var id: Int { rawValue } }
-    enum Phase: Equatable { case loading, ready, error(String) }
+    enum Phase: Equatable { case loading, ready, empty, error(String) }
 
     enum PlanAction: Identifiable {
         case newPlan, finish, archive, delete
@@ -27,14 +30,14 @@ struct PlanView: View {
         var message: String {
             switch self {
             case .newPlan: return "We'll build a fresh plan from your latest scan. Your current plan is archived."
-            case .finish:  return "Marks this block done and builds your next one from your latest scan. Re-scan first for the most accurate progression."
+            case .finish:  return "Marks this block done and moves it to your history. Build a fresh plan whenever you're ready."
             case .archive: return "Moves this plan to your history and starts a fresh one."
             case .delete:  return "Permanently removes this plan. This can't be undone."
             }
         }
         var button: String {
             switch self {
-            case .newPlan: return "New plan"; case .finish: return "Finish & rebuild"
+            case .newPlan: return "New plan"; case .finish: return "Finish block"
             case .archive: return "Archive"; case .delete: return "Delete"
             }
         }
@@ -47,7 +50,14 @@ struct PlanView: View {
             switch phase {
             case .loading: loading
             case .error(let m): errorView(m)
-            case .ready: if let bundle { content(bundle.content, scan: bundle.scan) }
+            case .empty: emptyState
+            case .ready:
+                if let bundle {
+                    VStack(spacing: 0) {
+                        if viewingPast { pastBanner }
+                        content(bundle.content, scan: bundle.scan)
+                    }
+                }
             }
         }
         .task { await load() }
@@ -64,21 +74,26 @@ struct PlanView: View {
 
     // Update the plan-driving inputs from the questionnaire, then archive/finish the old block and rebuild.
     private func performRegen(_ mode: RegenMode, goal: String, days: Int, pace: String) {
-        let id = bundle?.id
+        let id = activeId   // archive the active plan (nil when building from the empty state)
         Task {
             try? await ScanAPI.shared.updatePlanInputs(goal: goal, daysPerWeek: days, pace: pace)
             await MainActor.run { phase = .loading }
-            if mode == .finish, let id { try? await ScanAPI.shared.setPlanStatus(id, "finished") }
-            let fresh = try? await ScanAPI.shared.regeneratePlan(archiving: mode == .new ? id : nil)
+            let fresh = try? await ScanAPI.shared.regeneratePlan(archiving: id)
             await MainActor.run {
-                if let fresh { bundle = fresh; phase = .ready } else { Task { await reload() } }
+                if let fresh { bundle = fresh; activeId = fresh.id; viewingPast = false; phase = .ready }
+                else { Task { await reload() } }
             }
         }
     }
 
     private func load() async {
-        do { bundle = try await ScanAPI.shared.plan(); phase = .ready }
-        catch { phase = .error(error.localizedDescription) }
+        // Active plan only — no auto-generate. If there's none, show the empty state with history.
+        if let active = try? await ScanAPI.shared.fetchLatestPlan() {
+            await MainActor.run { bundle = active; activeId = active.id; viewingPast = false; phase = .ready }
+        } else {
+            let history = (try? await ScanAPI.shared.pastPlans()) ?? []
+            await MainActor.run { past = history; activeId = nil; bundle = nil; viewingPast = false; phase = .empty }
+        }
     }
 
     // Weeks elapsed in the current block (1-based), capped at the block length.
@@ -92,31 +107,28 @@ struct PlanView: View {
     }
 
     private func perform(_ action: PlanAction) {
-        let id = bundle?.id
         Task {
-            switch action {
-            case .delete:
-                if let id { try? await ScanAPI.shared.deletePlan(id) }
-                await reload()
-            case .archive:
-                if let id { try? await ScanAPI.shared.setPlanStatus(id, "archived") }
-                await reload()
-            case .newPlan, .finish:
-                if action == .finish, let id { try? await ScanAPI.shared.setPlanStatus(id, "finished") }
-                await MainActor.run { phase = .loading }
-                let fresh = try? await ScanAPI.shared.regeneratePlan(archiving: action == .newPlan ? id : nil)
-                await MainActor.run {
-                    if let fresh { bundle = fresh; phase = .ready } else { Task { await reload() } }
-                }
-            }
+            // "Finish this block" archives the active plan and drops to the empty state (no auto-rebuild).
+            if let id = activeId { try? await ScanAPI.shared.setPlanStatus(id, action == .delete ? "archived" : "finished") }
+            ScanAPI.shared.clearPlanCache()
+            await reload()
+        }
+    }
+
+    // Update plan-driving inputs from the questionnaire, archive the active plan, build the new one.
+    private func openPast(_ id: String) {
+        Task {
+            await MainActor.run { phase = .loading }
+            if let b = try? await ScanAPI.shared.loadPlan(id) {
+                await MainActor.run { bundle = b; viewingPast = true; phase = .ready }
+            } else { await reload() }
         }
     }
 
     private func reload() async {
         await MainActor.run { phase = .loading }
         ScanAPI.shared.clearPlanCache()
-        do { bundle = try await ScanAPI.shared.plan(); await MainActor.run { phase = .ready } }
-        catch { await MainActor.run { phase = .error(error.localizedDescription) } }
+        await load()
     }
 
     // MARK: states
@@ -199,13 +211,73 @@ struct PlanView: View {
         }
     }
 
+    // Shown when there's no active plan (after finishing a block) — history + a way to rebuild.
+    private var emptyState: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Spacer().frame(height: 44)
+                Image(systemName: "checkmark.seal.fill").font(.system(size: 50)).foregroundStyle(Theme.acc)
+                Text("Block complete").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text("Nice work. Build your next plan from your latest scan whenever you're ready.")
+                    .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3)
+                    .foregroundStyle(Theme.mut).padding(.horizontal, 38)
+                Button { regen = .new } label: {
+                    Text("Generate a new plan").font(.system(size: 16, weight: .bold))
+                        .frame(maxWidth: .infinity).padding(15)
+                        .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc)).foregroundStyle(Color(hex: 0x0E0E10))
+                }
+                .padding(.horizontal, 22).padding(.top, 4)
+                if let onRescan {
+                    Button { onRescan() } label: {
+                        Text("Re-scan my physique first").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.acc)
+                    }
+                }
+                if !past.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("PAST PLANS").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+                        ForEach(past) { p in
+                            Button { openPast(p.id) } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(p.goalLabel).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+                                        Text(prettyDate(p.date)).font(.system(size: 11)).foregroundStyle(Theme.mut)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+                                }
+                                .padding(14).frame(maxWidth: .infinity)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.card))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 22).padding(.top, 14)
+                }
+            }
+            .padding(.bottom, 32)
+        }
+    }
+    private var pastBanner: some View {
+        HStack {
+            Text("Viewing a past plan").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+            Spacer()
+            Button { Task { await reload() } } label: {
+                Text("Back").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.acc)
+            }
+        }
+        .padding(.horizontal, 18).padding(.vertical, 9).frame(maxWidth: .infinity).background(Theme.card)
+    }
+    private func prettyDate(_ iso: String?) -> String { iso.map { String($0.prefix(10)) } ?? "" }
+
     private var planMenu: some View {
         Menu {
             if let onRescan {
                 Button { onRescan() } label: { Label("Re-scan my physique", systemImage: "camera.viewfinder") }
             }
             Button { regen = .new } label: { Label("Generate a new plan", systemImage: "sparkles") }
-            Button { regen = .finish } label: { Label("Finish this block", systemImage: "flag.checkered") }
+            if !viewingPast {
+                Button { confirm = .finish } label: { Label("Finish this block", systemImage: "flag.checkered") }
+            }
         } label: {
             Image(systemName: "ellipsis").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
                 .frame(width: 34, height: 34).background(Circle().fill(Theme.card))
