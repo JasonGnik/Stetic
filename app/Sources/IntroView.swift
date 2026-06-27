@@ -33,13 +33,13 @@ struct IntroView: View {
                     Text(slides[i].title)
                         .font(.system(size: 27, weight: .heavy)).multilineTextAlignment(.center)
                         .foregroundStyle(Theme.txt).id("t\(i)").transition(.opacity)
+                    if i == slides.count - 1 {   // "Use Stetic." sits right under "Don't stay static."
+                        Text("Use Stetic.").font(.system(size: 22, weight: .heavy))
+                            .foregroundStyle(Theme.acc).padding(.top, -2)
+                    }
                     Text(brandLimed(slides[i].sub))
                         .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(3)
                         .foregroundStyle(Theme.mut).id("s\(i)").transition(.opacity)
-                    if i == slides.count - 1 {
-                        Text("Use Stetic.").font(.system(size: 18, weight: .heavy))
-                            .foregroundStyle(Theme.acc).padding(.top, 2).transition(.opacity)
-                    }
                 }
                 .padding(.horizontal, 34)
                 Spacer(minLength: 10)

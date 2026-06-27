@@ -499,7 +499,7 @@ struct OnboardingView: View {
     private func shouldShow(_ s: OnbStep) -> Bool {
         switch s {
         case .equipmentDetail: return data.equipment == "home"
-        case .currentSplit: return data.experience != nil && data.experience != "beginner"
+        case .currentSplit: return data.experience != nil && data.experience != "beginner" && data.experience != "never"
         default: return true
         }
     }

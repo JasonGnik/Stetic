@@ -165,12 +165,14 @@ enum OnbOptions {
         Option(id: "testing", label: "Just testing it out", sub: "Show me what this can do"),
     ]
     static let motivation = [
-        Option(id: "lean", label: "Get lean & defined", sub: nil),
-        Option(id: "muscle", label: "Build muscle in the right places", sub: nil),
-        Option(id: "confident", label: "Look good with my shirt off", sub: nil),
-        Option(id: "event", label: "Look good for an event / summer", sub: nil),
-        Option(id: "attention", label: "Turn heads", sub: nil),
-        Option(id: "stuck", label: "Break out of a rut", sub: nil),
+        Option(id: "strength", label: "Building strength", sub: "Get stronger, lift heavier over time"),
+        Option(id: "muscle", label: "Muscle growth", sub: "Put on size, improve composition"),
+        Option(id: "fat_loss", label: "Losing weight / fat loss", sub: "Burn calories, manage body fat"),
+        Option(id: "looks", label: "Looking better", sub: "Aesthetics, confidence, feeling good"),
+        Option(id: "mental", label: "Mental health", sub: "Stress relief, mood, less anxiety"),
+        Option(id: "performance", label: "Athletic performance", sub: "Train for a sport or activity"),
+        Option(id: "longevity", label: "Longevity & health", sub: "Stay mobile and strong as you age"),
+        Option(id: "discipline", label: "Routine & discipline", sub: "Structure, accomplishment, habit"),
     ]
     static let resultsFeeling = [
         Option(id: "behind", label: "Honestly, behind where I should be", sub: nil),
@@ -201,6 +203,7 @@ enum OnbOptions {
         Option(id: "lower_bf", label: "Lower body fat", sub: nil),
     ]
     static let experience = [
+        Option(id: "never", label: "Never trained", sub: "Just getting started"),
         Option(id: "beginner", label: "Beginner", sub: "Under a year"),
         Option(id: "intermediate", label: "Intermediate", sub: "1–3 years"),
         Option(id: "advanced", label: "Advanced", sub: "3+ years"),
