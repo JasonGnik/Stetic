@@ -359,7 +359,7 @@ struct HowItWorksDemo: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 236)
-            .simultaneousGesture(DragGesture().onChanged { _ in touched = true })
+            .simultaneousGesture(DragGesture(minimumDistance: 12).onChanged { _ in touched = true })
             HStack(spacing: 6) {
                 ForEach(0..<beats, id: \.self) { i in
                     Capsule().fill(i == beat ? Theme.acc : Theme.line)
@@ -450,22 +450,33 @@ struct HowItWorksDemo: View {
         .background(RoundedRectangle(cornerRadius: 9).fill(Color(hex: 0x17171A)))
     }
     private var progressMini: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("YOUR CLIMB").font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.mut)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("STETIC SCORE").font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.mut)
+                Spacer()
+                Text("7.2").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+                Image(systemName: "arrow.right").font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.acc)
+                Text("9.0").font(.system(size: 13, weight: .heavy)).foregroundStyle(Theme.acc)
+            }
             Canvas { ctx, size in
                 let w = size.width, h = size.height
-                let pts = [CGPoint(x: 0, y: h*0.82), CGPoint(x: w*0.34, y: h*0.6), CGPoint(x: w*0.66, y: h*0.34), CGPoint(x: w, y: h*0.12)]
-                var area = Path(); area.move(to: CGPoint(x: 0, y: h)); pts.forEach { area.addLine(to: $0) }; area.addLine(to: CGPoint(x: w, y: h)); area.closeSubpath()
+                for gy in [0.2, 0.5, 0.8] {   // gridlines (real-chart feel)
+                    ctx.stroke(Path { $0.move(to: CGPoint(x: 0, y: h*gy)); $0.addLine(to: CGPoint(x: w, y: h*gy)) }, with: .color(Theme.line.opacity(0.5)), lineWidth: 0.5)
+                }
+                let pts = [CGPoint(x: 2, y: h*0.82), CGPoint(x: w*0.34, y: h*0.62), CGPoint(x: w*0.67, y: h*0.36), CGPoint(x: w-2, y: h*0.14)]
+                var area = Path(); area.move(to: CGPoint(x: 2, y: h)); pts.forEach { area.addLine(to: $0) }; area.addLine(to: CGPoint(x: w-2, y: h)); area.closeSubpath()
                 ctx.fill(area, with: .color(Theme.acc.opacity(0.12)))
                 var line = Path(); line.move(to: pts[0]); pts.dropFirst().forEach { line.addLine(to: $0) }
                 ctx.stroke(line, with: .color(Theme.acc), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                ctx.fill(Path(ellipseIn: CGRect(x: pts[0].x-3, y: pts[0].y-3, width: 6, height: 6)), with: .color(Theme.mut))
                 ctx.fill(Path(ellipseIn: CGRect(x: pts.last!.x-5, y: pts.last!.y-5, width: 10, height: 10)), with: .color(Theme.acc))
-            }.frame(height: 116)
+                ctx.draw(ctx.resolve(Text("Diamond").font(.system(size: 9, weight: .bold)).foregroundColor(Color(hex: 0x7FD0FF))), at: CGPoint(x: pts[0].x+22, y: pts[0].y-10))
+                ctx.draw(ctx.resolve(Text("Mythic").font(.system(size: 9.5, weight: .bold)).foregroundColor(Color(hex: 0xFF7AB0))), at: CGPoint(x: pts.last!.x-22, y: pts.last!.y-12))
+            }.frame(height: 104)
             HStack {
                 Text("Week 1").font(.system(size: 10)).foregroundStyle(Theme.mut)
                 Spacer()
-                Text("Week 12  ").font(.system(size: 10)).foregroundStyle(Theme.mut)
-                Text("+1.8").font(.system(size: 12, weight: .heavy)).foregroundStyle(Theme.acc)
+                Text("Week 12").font(.system(size: 10)).foregroundStyle(Theme.mut)
             }
         }
     }
