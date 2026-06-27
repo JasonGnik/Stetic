@@ -339,9 +339,15 @@ struct HowItWorksDemo: View {
                         "The one or two lagging areas breaking your look.",
                         "Built around fixing them — not junk volume.",
                         "Re-scan and watch the gap close."]
+    @State private var touched = false   // stop auto-advance once they swipe
     var body: some View {
         VStack(spacing: 16) {
-            ZStack { card }.frame(height: 226)
+            TabView(selection: $beat) {
+                ForEach(0..<beats, id: \.self) { i in cardBody(i).tag(i) }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: 236)
+            .simultaneousGesture(DragGesture().onChanged { _ in touched = true })
             HStack(spacing: 6) {
                 ForEach(0..<beats, id: \.self) { i in
                     Capsule().fill(i == beat ? Theme.acc : Theme.line)
@@ -353,13 +359,13 @@ struct HowItWorksDemo: View {
                 Text(titles[beat]).font(.system(size: 21, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
                 Text(subs[beat]).font(.system(size: 13.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut).lineSpacing(2)
             }
-            .id(beat).transition(.opacity)
+            .contentTransition(.opacity).animation(.easeInOut(duration: 0.3), value: beat)
         }
         .onAppear { run() }
     }
-    private var card: some View {
+    private func cardBody(_ i: Int) -> some View {
         Group {
-            switch beat {
+            switch i {
             case 0: scanMini
             case 1: weakMini
             case 2: planMini
@@ -369,8 +375,6 @@ struct HowItWorksDemo: View {
         .padding(15).frame(width: 252, height: 226)
         .background(RoundedRectangle(cornerRadius: 20).fill(Color(hex: 0x121214))
             .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.line, lineWidth: 1)))
-        .transition(.opacity.combined(with: .scale(scale: 0.97)))
-        .id(beat)
     }
     private var scanMini: some View {
         VStack(spacing: 9) {
@@ -457,6 +461,7 @@ struct HowItWorksDemo: View {
         Task {
             for b in 1..<beats {
                 try? await Task.sleep(nanoseconds: 2_300_000_000)
+                if touched { break }   // they took control — stop auto-advancing
                 await MainActor.run { withAnimation(.easeInOut(duration: 0.45)) { beat = b } }
             }
         }

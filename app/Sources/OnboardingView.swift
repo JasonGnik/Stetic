@@ -70,12 +70,9 @@ struct OnboardingView: View {
             Spacer()
             Group {
                 switch step {
-                case .callback: callbackContent
                 case .doom: doomContent
                 case .aha: ahaContent
                 case .trainingFix: trainingFixContent
-                case .nutrition: nutritionContent
-                case .socialProof: socialProofContent
                 default: EmptyView()
                 }
             }
@@ -95,7 +92,7 @@ struct OnboardingView: View {
         switch step {
         case .doom: return "I'm ready"
         case .aha: return "Show me how"
-        case .trainingFix, .nutrition: return "Keep going"
+        case .trainingFix: return "Keep going"
         default: return "Continue"
         }
     }
