@@ -60,81 +60,108 @@ func blendHex(_ a: Int, _ b: Int, _ t: Double) -> Color {
     return Color(red: r/255, green: g/255, blue: bl/255)
 }
 
-// MARK: - Mountain climb (Training-fix screen) — cinematic day→dusk cycle.
-// One looping "day": dawn → hiker walks up to camp → dusk → night (rests by a fire) → repeat.
-// The message: don't stare at the summit; just do today's stretch, rest, go again.
+// MARK: - Mountain (Training-fix screen) — one-shot CINEMATIC sequence.
+// Wide establishing shot (huge mountain, far summit flag) → camera PUSHES IN on the hiker,
+// who walks a few steps and lies down to rest as it turns to night. Then the quote surfaces.
 struct MountainClimbView: View {
-    private let dayLength: Double = 13
-
+    @State private var start = Date()
     var body: some View {
         TimelineView(.animation) { tl in
-            let p = (tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: dayLength)) / dayLength
-            Canvas { ctx, size in draw(&ctx, size, p) }
+            let e = tl.date.timeIntervalSince(start)
+            Canvas { ctx, size in draw(&ctx, size, e) }
         }
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.line, lineWidth: 1))
+        .onAppear { start = Date() }
     }
 
-    private func draw(_ ctx: inout GraphicsContext, _ size: CGSize, _ p: Double) {
+    private func draw(_ ctx: inout GraphicsContext, _ size: CGSize, _ e: Double) {
         let w = size.width, h = size.height
-        let dayProg = min(p, 0.62) / 0.62
-        let daylight = max(0, sin(dayProg * .pi))
-        let night = p >= 0.62
-        let glow = night ? 0 : max(0, 1 - abs(dayProg - 0.5) * 2.2)
+        // timeline: 0–2.6 wide · 2.6–4.8 zoom in · 4.8+ close-up walk → 8.6+ sleep
+        let zoomS: CGFloat = e < 2.6 ? 1 : min(2.7, 1 + CGFloat(e - 2.6) / 2.2 * 1.7)
+        let walkStart = 4.6
+        let frac: CGFloat = e < walkStart ? 0.05 : min(0.46, 0.05 + CGFloat(e - walkStart) / 3.6 * 0.41)
+        let sleeping = e > 8.6
+        let daylight = e < 2.6 ? 0.85 : e < 8.6 ? max(0.12, 0.85 - (e - 2.6) / 6 * 0.73) : 0.12
+        let night = daylight <= 0.16
 
+        // path + hiker world position (computed before the camera transform)
+        var path = Path()
+        path.move(to: CGPoint(x: w*0.14, y: h*0.92))
+        path.addCurve(to: CGPoint(x: w*0.5, y: h*0.46), control1: CGPoint(x: w*0.44, y: h*0.86), control2: CGPoint(x: w*0.26, y: h*0.58))
+        let hiker = path.trimmedPath(from: 0, to: max(0.04, frac)).currentPoint ?? CGPoint(x: w*0.14, y: h*0.92)
+
+        // camera: push in around the hiker
+        ctx.translateBy(x: hiker.x, y: hiker.y)
+        ctx.scaleBy(x: zoomS, y: zoomS)
+        ctx.translateBy(x: -hiker.x, y: -hiker.y)
+
+        // sky
         let top = blendHex(0x0A0A12, 0x15263B, daylight * 0.85)
         let bottom = night ? blendHex(0x0E0E10, 0x14141C, 0.6) : blendHex(0x12100E, 0x21381F, daylight)
-        ctx.fill(Path(CGRect(x: 0, y: 0, width: w, height: h)),
-                 with: .linearGradient(Gradient(colors: [top, bottom]), startPoint: .zero, endPoint: CGPoint(x: 0, y: h)))
-        if glow > 0.05 {
-            ctx.fill(Path(CGRect(x: 0, y: h*0.45, width: w, height: h*0.55)),
-                     with: .linearGradient(Gradient(colors: [blendHex(0xFF7A1A, 0xC8FF4D, 0.4).opacity(glow*0.35), .clear]),
-                                           startPoint: CGPoint(x: 0, y: h), endPoint: CGPoint(x: 0, y: h*0.45)))
-        }
+        ctx.fill(Path(CGRect(x: -w, y: -h, width: w*3, height: h*3)),
+                 with: .linearGradient(Gradient(colors: [top, bottom]), startPoint: CGPoint(x: 0, y: -h), endPoint: CGPoint(x: 0, y: h)))
         if night {
-            let fade = min(1, (p - 0.62) / 0.12)
             for s in [(0.18,0.16),(0.34,0.27),(0.52,0.12),(0.7,0.22),(0.84,0.14),(0.26,0.4),(0.62,0.36)] {
-                ctx.fill(Path(ellipseIn: CGRect(x: w*s.0, y: h*s.1, width: 1.6, height: 1.6)), with: .color(.white.opacity(0.5*fade)))
+                ctx.fill(Path(ellipseIn: CGRect(x: w*s.0, y: h*s.1, width: 1.6, height: 1.6)), with: .color(.white.opacity(0.55)))
             }
         }
-        let celX = w * (0.12 + dayProg * 0.76)
-        let celY = h * (0.62 - daylight * 0.46)
+        // sun → moon
+        let celX = w * 0.2, celY = h * (0.6 - daylight * 0.42)
         if night {
-            let mx = w*0.74, my = h*0.2
-            ctx.fill(Path(ellipseIn: CGRect(x: mx-9, y: my-9, width: 18, height: 18)), with: .color(.white.opacity(0.85)))
-            ctx.fill(Path(ellipseIn: CGRect(x: mx-4, y: my-11, width: 16, height: 16)), with: .color(bottom))
+            ctx.fill(Path(ellipseIn: CGRect(x: w*0.74-9, y: h*0.2-9, width: 18, height: 18)), with: .color(.white.opacity(0.85)))
+            ctx.fill(Path(ellipseIn: CGRect(x: w*0.74-4, y: h*0.2-11, width: 16, height: 16)), with: .color(bottom))
         } else {
             ctx.fill(Path(ellipseIn: CGRect(x: celX-22, y: celY-22, width: 44, height: 44)), with: .color(blendHex(0xFFB24A, 0xC8FF4D, daylight).opacity(0.18)))
             ctx.fill(Path(ellipseIn: CGRect(x: celX-9, y: celY-9, width: 18, height: 18)), with: .color(blendHex(0xFFB24A, 0xEFFFAE, daylight)))
         }
-        func mtn(_ peakX: CGFloat, _ peakY: CGFloat, _ base: CGFloat, _ color: Color) {
-            var pa = Path()
-            pa.move(to: CGPoint(x: peakX - base, y: h)); pa.addLine(to: CGPoint(x: peakX, y: peakY)); pa.addLine(to: CGPoint(x: peakX + base, y: h)); pa.closeSubpath()
-            ctx.fill(pa, with: .color(color))
+        // mountains
+        func mtn(_ px: CGFloat, _ py: CGFloat, _ base: CGFloat, _ c: Color) {
+            var pa = Path(); pa.move(to: CGPoint(x: px-base, y: h)); pa.addLine(to: CGPoint(x: px, y: py)); pa.addLine(to: CGPoint(x: px+base, y: h)); pa.closeSubpath()
+            ctx.fill(pa, with: .color(c))
         }
-        let shade = night ? 0.0 : daylight * 0.10
-        mtn(w*0.30, h*0.20, w*0.52, blendHex(0x191920, 0x22323A, shade))
-        mtn(w*0.72, h*0.07, w*0.58, blendHex(0x111118, 0x1A2730, shade))
-        ctx.fill(Path(CGRect(x: 0, y: h*0.86, width: w, height: h*0.14)), with: .color(blendHex(0x0C0C10, 0x12180F, shade)))
-
-        let sx = w*0.72, sy = h*0.07
-        ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: sy)); $0.addLine(to: CGPoint(x: sx, y: sy-16)) }, with: .color(.white.opacity(0.85)), lineWidth: 1.5)
-        ctx.fill(Path { $0.move(to: CGPoint(x: sx, y: sy-16)); $0.addLine(to: CGPoint(x: sx+13, y: sy-12)); $0.addLine(to: CGPoint(x: sx, y: sy-8)) }, with: .color(Theme.acc))
-
-        let camp = CGPoint(x: w*0.5, y: h*0.5)
-        var path = Path()
-        path.move(to: CGPoint(x: w*0.14, y: h*0.9))
-        path.addCurve(to: camp, control1: CGPoint(x: w*0.42, y: h*0.84), control2: CGPoint(x: w*0.26, y: h*0.6))
+        let shade = daylight * 0.10
+        mtn(w*0.30, h*0.16, w*0.52, blendHex(0x191920, 0x22323A, shade))
+        mtn(w*0.72, h*0.03, w*0.58, blendHex(0x111118, 0x1A2730, shade))
+        ctx.fill(Path(CGRect(x: -w, y: h*0.86, width: w*3, height: h)), with: .color(blendHex(0x0C0C10, 0x12180F, shade)))
+        // summit flag (the goal — far away in the wide shot)
+        let sx = w*0.72, sy = h*0.03
+        ctx.stroke(Path { $0.move(to: CGPoint(x: sx, y: sy)); $0.addLine(to: CGPoint(x: sx, y: sy-15)) }, with: .color(.white.opacity(0.85)), lineWidth: 1.5)
+        ctx.fill(Path { $0.move(to: CGPoint(x: sx, y: sy-15)); $0.addLine(to: CGPoint(x: sx+12, y: sy-11)); $0.addLine(to: CGPoint(x: sx, y: sy-7)) }, with: .color(Theme.acc))
+        // path
         ctx.stroke(path, with: .color(Theme.acc.opacity(0.45)), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 5]))
-
-        if night {
-            ctx.fill(Path { $0.move(to: CGPoint(x: camp.x-12, y: camp.y)); $0.addLine(to: CGPoint(x: camp.x-2, y: camp.y-13)); $0.addLine(to: CGPoint(x: camp.x+8, y: camp.y)); $0.closeSubpath() }, with: .color(Color(hex: 0x2A2A30)))
-            let flick = 0.7 + 0.3 * sin(p * 60)
-            ctx.fill(Path(ellipseIn: CGRect(x: camp.x+11, y: camp.y-7, width: 12*flick, height: 14*flick)), with: .color(blendHex(0xFF7A1A, 0xC8FF4D, 0.3).opacity(0.9)))
-            ctx.fill(Path(ellipseIn: CGRect(x: camp.x+13, y: camp.y-4, width: 6, height: 8)), with: .color(blendHex(0xFFD27A, 0xEFFFAE, 0.4)))
-        } else if let pt = path.trimmedPath(from: 0, to: max(0.04, dayProg)).currentPoint {
-            ctx.draw(ctx.resolve(Text(Image(systemName: "figure.walk")).foregroundColor(Theme.acc).font(.system(size: 15, weight: .bold))), at: CGPoint(x: pt.x, y: pt.y - 9))
+        // hiker — walking, then lying down to sleep
+        if sleeping {
+            ctx.fill(Path(roundedRect: CGRect(x: hiker.x-9, y: hiker.y-4, width: 18, height: 7), cornerSize: CGSize(width: 3.5, height: 3.5)), with: .color(Theme.acc))
+            let flick = 0.75 + 0.25 * sin(e * 8)
+            ctx.fill(Path(ellipseIn: CGRect(x: hiker.x+11, y: hiker.y-6, width: 9*flick, height: 12*flick)), with: .color(blendHex(0xFF7A1A, 0xC8FF4D, 0.3).opacity(0.9)))
+            ctx.draw(ctx.resolve(Text("z z").font(.system(size: 8, weight: .bold)).foregroundColor(.white.opacity(0.6))), at: CGPoint(x: hiker.x, y: hiker.y - 14))
+        } else {
+            ctx.draw(ctx.resolve(Text(Image(systemName: "figure.walk")).foregroundColor(Theme.acc).font(.system(size: 14, weight: .bold))), at: CGPoint(x: hiker.x, y: hiker.y - 8))
         }
+    }
+}
+
+// Training-fix screen — the cinematic mountain + the quote that surfaces on the zoom-in.
+struct TrainingFixScene: View {
+    let years: Int
+    @State private var showQuote = false
+    private var lead: String { years >= 1 ? "\(years) \(years == 1 ? "year" : "years") of waiting. That stops now." : "The waiting stops now." }
+    var body: some View {
+        VStack(spacing: 14) {
+            MountainClimbView().frame(height: 188)
+            Text(lead).font(.system(size: 23, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+            Text(brandLimed("Every week you put in now shows up in the mirror. Don't stare at the summit. Just focus on today. We've got the rest."))
+                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
+            VStack(spacing: 4) {
+                Text("“A man on a thousand-mile walk has to forget his goal and say to himself every morning: today I'm going to cover twenty-five miles.”")
+                    .font(.system(size: 12, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2).foregroundStyle(Color(hex: 0xC8C8CE))
+                Text("— Leo Tolstoy").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+            }
+            .opacity(showQuote ? 1 : 0)
+            .animation(.easeIn(duration: 0.9), value: showQuote)
+        }
+        .onAppear { Task { try? await Task.sleep(nanoseconds: 4_700_000_000); await MainActor.run { showQuote = true } } }
     }
 }
 

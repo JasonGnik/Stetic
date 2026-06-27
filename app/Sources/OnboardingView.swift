@@ -153,18 +153,7 @@ struct OnboardingView: View {
 
     // MARK: TRAINING FIX — years of waiting stop now (+ mountain)
     private var trainingFixContent: some View {
-        let yrs = Int(data.timeWantedYears)
-        let lead = yrs >= 1 ? "\(yrs) \(yrs == 1 ? "year" : "years") of waiting. That stops now." : "The waiting stops now."
-        return VStack(spacing: 14) {
-            MountainClimbView().frame(height: 176)
-            Text(lead).font(.system(size: 23, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
-            Text(brandLimed("Every week you put in now shows up in the mirror — real, visible progress. Don't stare at the summit. Just focus on today. We've got the rest."))
-                .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
-            Text("“A man on a thousand-mile walk has to forget his goal and say to himself every morning: today I'm going to cover twenty-five miles.”")
-                .font(.system(size: 12, weight: .medium)).italic().multilineTextAlignment(.center).lineSpacing(2)
-                .foregroundStyle(Color(hex: 0xC8C8CE))
-            Text("— Leo Tolstoy").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
-        }
+        TrainingFixScene(years: Int(data.timeWantedYears))
     }
 
     // MARK: NUTRITION — freedom, on track every day
