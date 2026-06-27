@@ -652,8 +652,9 @@ struct RevealFunnelView: View {
     }
 }
 
-// Illustrative "with vs without" diverging curves (no real numbers).
-private struct WithVsWithoutChart: View {
+// Illustrative "with vs without" diverging curves (no real numbers). Reused by the intro's
+// "Don't stay static" slide, so it's internal (not file-private).
+struct WithVsWithoutChart: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width, h = geo.size.height

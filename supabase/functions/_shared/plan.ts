@@ -63,7 +63,7 @@ OUTPUT REQUIREMENTS:
 - macros: compute in this order:
   1) PROTEIN FIRST: ~1.1 g per lb of BODYWEIGHT (use weight if known, else estimate from height/build). Protein is 4 kcal/g.
   2) TDEE: Mifflin-St Jeor BMR [men: 10·kg + 6.25·cm − 5·age + 5; women: same but −161 instead of +5] × activity factor matching their OUTSIDE-GYM activity, then training on top: sedentary ≈ 1.4, light ≈ 1.55, active ≈ 1.725, very_active ≈ 1.9 (add ~0.1 since they also train).
-  3) Adjust TDEE for goal AND pace: lose_fat = deficit, gain_muscle/both = surplus. Scale the size by pace — slow ≈ ±250 kcal, recommended ≈ −450/+300, aggressive ≈ −650/+450.
+  3) Adjust TDEE for goal AND pace: lose_fat = deficit, gain_muscle = surplus, both/tone (recomp) = MAINTENANCE — eat at TDEE (only a small ±100 kcal nudge, never a real surplus or deficit), so they lose fat and build at the same bodyweight. Scale ONLY the deficit/surplus size by pace — slow ≈ ±250 kcal, recommended ≈ −450/+300, aggressive ≈ −650/+450. Recomp stays near maintenance regardless of pace.
   4) Remaining calories after protein are split 65% to CARBS / 35% to FAT (carbs 4 kcal/g, fat 9 kcal/g). Constraints: fat ≥ 0.3 g/lb of LEAN mass; carbs ≥ ~120 g.
   Give a short PLAIN-LANGUAGE rationale (why this calorie target and protein level fit their goal). Do NOT name any coach, program, methodology, or formula, and do NOT explain how the numbers were derived.
 - weekly_split: exactly ${days} TRAINING sessions — do NOT include rest/recovery days as entries (the user only logs training days). JP rep scheme — MATCH the ebook:

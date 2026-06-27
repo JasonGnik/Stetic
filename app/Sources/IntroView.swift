@@ -1,35 +1,55 @@
 import SwiftUI
 
-// Cinematic intro — 4 beats: the problem, the score/rank ladder, the science/sculpt, the ascent.
+// Intro — show what Stetic does with the real app, then "don't stay static".
+// Order: comparison (aesthetics, not mass) → score → plan + progression → nutrition → with/without chart.
 struct IntroView: View {
     var onDone: () -> Void
     @State private var i = Int(ProcessInfo.processInfo.environment["STETIC_INTRO_SLIDE"] ?? "") ?? 0
-    private let slides = IntroSlide.all
+
+    private enum Beat { case comparison; case shot(String); case chart }
+    private struct Slide { let beat: Beat; let title: String; let sub: String }
+
+    private let slides: [Slide] = [
+        .init(beat: .comparison, title: "Size isn't the goal.",
+              sub: "Most apps just make you bigger. Stetic builds the look — lean, proportioned, athletic."),
+        .init(beat: .shot("intro_score"), title: "Your physique, scored.",
+              sub: "One photo → a 1–10 aesthetic score, your rank, and the weak points capping your frame."),
+        .init(beat: .shot("intro_session"), title: "A plan that fixes your weak points.",
+              sub: "Built around what's holding you back — and it tells you exactly when to add weight."),
+        .init(beat: .shot("intro_meal"), title: "Get lean without the math.",
+              sub: "Scan any meal for instant calories and protein. Eat out, hit your macros, stay on track."),
+        .init(beat: .chart, title: "Don't stay static.",
+              sub: "Keep guessing and you stay where you are. With Stetic, your score climbs."),
+    ]
 
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
-                Spacer()
-                visual(i).frame(height: 250).id("v\(i)").transition(.opacity)
-                Spacer().frame(height: 28)
-                VStack(spacing: 12) {
+                Spacer(minLength: 10)
+                visual(slides[i].beat).id("v\(i)").transition(.opacity)
+                Spacer().frame(height: 22)
+                VStack(spacing: 9) {
                     Text(slides[i].title)
-                        .font(.system(size: 28, weight: .heavy)).multilineTextAlignment(.center)
+                        .font(.system(size: 27, weight: .heavy)).multilineTextAlignment(.center)
                         .foregroundStyle(Theme.txt).id("t\(i)").transition(.opacity)
                     Text(brandLimed(slides[i].sub))
                         .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(3)
                         .foregroundStyle(Theme.mut).id("s\(i)").transition(.opacity)
+                    if i == slides.count - 1 {
+                        Text("Use Stetic.").font(.system(size: 18, weight: .heavy))
+                            .foregroundStyle(Theme.acc).padding(.top, 2).transition(.opacity)
+                    }
                 }
                 .padding(.horizontal, 34)
-                Spacer()
+                Spacer(minLength: 10)
                 HStack(spacing: 7) {
                     ForEach(slides.indices, id: \.self) { k in
                         Capsule().fill(k == i ? Theme.acc : Theme.line)
                             .frame(width: k == i ? 20 : 7, height: 7).animation(.spring(response: 0.4), value: i)
                     }
                 }
-                .padding(.bottom, 22)
+                .padding(.bottom, 18)
                 Button { next() } label: {
                     Text(i == slides.count - 1 ? "Get started" : "Continue")
                         .font(.system(size: 16, weight: .bold))
@@ -46,101 +66,47 @@ struct IntroView: View {
         if i < slides.count - 1 { withAnimation(.easeInOut(duration: 0.35)) { i += 1 } } else { onDone() }
     }
 
-    @ViewBuilder private func visual(_ idx: Int) -> some View {
-        switch idx {
-        case 0: problemVisual
-        case 1: ladderVisual
-        case 2: sculptVisual
-        default: ascendVisual
+    @ViewBuilder private func visual(_ beat: Beat) -> some View {
+        switch beat {
+        case .comparison: comparisonVisual
+        case .shot(let name): shotVisual(name)
+        case .chart: WithVsWithoutChart().frame(height: 230).padding(.horizontal, 30)
         }
     }
 
-    // 0 — the problem: a body with weak points flagged
-    private var problemVisual: some View {
-        ZStack {
-            Circle().fill(Theme.acc.opacity(0.06)).frame(width: 200, height: 200)
-            Image(systemName: "figure.arms.open").font(.system(size: 78, weight: .semibold)).foregroundStyle(Theme.txt.opacity(0.8))
-            Image(systemName: "viewfinder").font(.system(size: 152, weight: .ultraLight)).foregroundStyle(Theme.acc)
+    // Mass-monster (low) vs lean aesthetic (high) — the shock factor.
+    private var comparisonVisual: some View {
+        HStack(spacing: 12) {
+            physiqueCard("intro_mass", score: "5.2", tint: Theme.red, label: "Mass monster")
+            physiqueCard("intro_aesthetic", score: "9.0", tint: Theme.acc, label: "Aesthetic")
         }
+        .frame(height: 260).padding(.horizontal, 22)
     }
-
-    // 1 — the rank ladder: all 8 tiers in their colors
-    private var ladderVisual: some View {
-        VStack(spacing: 12) {
-            ForEach([Array(Tier.allCases.prefix(4)), Array(Tier.allCases.suffix(4))], id: \.self) { row in
-                HStack(spacing: 10) {
-                    ForEach(row, id: \.self) { tier in
-                        VStack(spacing: 5) {
-                            RoundedRectangle(cornerRadius: 11)
-                                .fill(tier.color.opacity(0.12))
-                                .overlay(RoundedRectangle(cornerRadius: 11).stroke(tier.color, lineWidth: 1.5))
-                                .frame(width: 56, height: 56)
-                                .overlay(Image(systemName: tier.icon).font(.system(size: 22, weight: .semibold)).foregroundStyle(tier.color))
-                            Text(tier.label).font(.system(size: 9, weight: .bold)).foregroundStyle(tier.color)
-                                .lineLimit(1).minimumScaleFactor(0.7)
-                        }
-                    }
+    private func physiqueCard(_ img: String, score: String, tint: Color, label: String) -> some View {
+        // Color.clear sets the layout size; the .fill image is an overlay so it can't push the card wider.
+        Color.clear
+            .frame(maxWidth: .infinity).frame(height: 260)
+            .overlay(Image(uiImage: UIImage(named: img) ?? UIImage()).resizable().aspectRatio(contentMode: .fill))
+            .overlay(LinearGradient(colors: [.clear, .black.opacity(0.78)], startPoint: .center, endPoint: .bottom))
+            .overlay(alignment: .bottom) {
+                VStack(spacing: 2) {
+                    Text(score).font(.system(size: 30, weight: .heavy)).foregroundStyle(tint)
+                    Text(label).font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.txt)
                 }
+                .padding(.bottom, 12)
             }
-        }
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(tint.opacity(0.55), lineWidth: 1.5))
     }
 
-    // 2 — science / sculpt: a marble figure in an arched niche flanked by columns
-    private var sculptVisual: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            statueColumn
-            VStack(spacing: 0) {
-                ZStack(alignment: .bottom) {
-                    UnevenRoundedRectangle(cornerRadii: .init(topLeading: 52, topTrailing: 52), style: .continuous)
-                        .fill(Theme.card)
-                        .overlay(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 52, topTrailing: 52), style: .continuous)
-                            .stroke(Theme.acc.opacity(0.35), lineWidth: 1))
-                        .frame(width: 104, height: 150)
-                    Image(systemName: "figure.stand").font(.system(size: 92, weight: .ultraLight))
-                        .foregroundStyle(Color(hex: 0xD8DCE2)).offset(y: 4)   // marble
-                }
-                RoundedRectangle(cornerRadius: 3).fill(Theme.line).frame(width: 124, height: 9)
-                RoundedRectangle(cornerRadius: 3).fill(Theme.card).frame(width: 142, height: 9)
-            }
-            statueColumn
-        }
-        .frame(height: 230)
+    // A real app screen in a phone-ish frame.
+    private func shotVisual(_ name: String) -> some View {
+        Image(uiImage: UIImage(named: name) ?? UIImage()).resizable().aspectRatio(contentMode: .fit)
+            .frame(height: 320)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.line, lineWidth: 1))
+            .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
     }
-    private var statueColumn: some View {
-        VStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 2).fill(Theme.line).frame(width: 24, height: 6)
-            RoundedRectangle(cornerRadius: 2).fill(Theme.card).frame(width: 15, height: 150)
-            RoundedRectangle(cornerRadius: 2).fill(Theme.line).frame(width: 24, height: 7)
-            Spacer().frame(height: 11)
-        }
-    }
-
-    // 3 — ascend: rising bars in tier colors
-    private var ascendVisual: some View {
-        let tiers = Array(Tier.allCases.suffix(6))
-        return HStack(alignment: .bottom, spacing: 9) {
-            ForEach(Array(tiers.enumerated()), id: \.offset) { idx, tier in
-                RoundedRectangle(cornerRadius: 6).fill(tier.color)
-                    .frame(width: 26, height: 36 + CGFloat(idx) * 26)
-                    .shadow(color: tier.color.opacity(0.5), radius: 6)
-            }
-            Image(systemName: "arrow.up.right").font(.system(size: 26, weight: .bold)).foregroundStyle(Theme.acc).offset(y: -8)
-        }
-    }
-}
-
-struct IntroSlide {
-    let title: String; let sub: String
-    static let all = [
-        IntroSlide(title: "Stop guessing\nin the gym.",
-                   sub: "Most people train for years and never see what's actually holding their physique back. Stetic finds it in one scan."),
-        IntroSlide(title: "Know exactly\nwhere you stand.",
-                   sub: "Get scored 1–10 and ranked against the aesthetic ideal — from Bronze all the way to Greek God."),
-        IntroSlide(title: "Smart programming,\nnot bro science.",
-                   sub: "A plan built on how muscle actually grows, aimed at your weak points — so you progress faster and spend less time in the gym."),
-        IntroSlide(title: "Ascend.",
-                   sub: "Get lean, build the right muscle, and walk with confidence. Re-scan and watch your rank climb."),
-    ]
 }
 
 #Preview { IntroView(onDone: {}).preferredColorScheme(.dark) }

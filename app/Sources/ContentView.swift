@@ -15,6 +15,7 @@ struct ContentView: View {
         // Dev flags use the dev account and skip the sign-in gate.
         let devStart: Stage? = e["STETIC_HOME"] == "1" ? .home
             : e["STETIC_SKIP_ONBOARDING"] == "1" ? .main
+            : e["STETIC_INTRO_SLIDE"] != nil ? .intro
             : (e["STETIC_ONB_STEP"] != nil ? .onboarding : nil)
         _stage = State(initialValue: devStart ?? .loading)
     }

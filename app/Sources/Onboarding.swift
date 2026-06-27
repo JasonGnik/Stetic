@@ -148,9 +148,9 @@ enum OnbOptions {
                icon: "flame.fill", tint: Color(hex: 0xFF6B4A)),
         Option(id: "gain_muscle", label: "Build muscle", sub: "Gain weight — add lean size",
                icon: "figure.strengthtraining.traditional", tint: Theme.acc),
-        Option(id: "both", label: "Lean bulk", sub: "Gain slowly — size with minimal fat",
+        Option(id: "both", label: "Recomp", sub: "Stay around your weight — lose fat & build at once",
                icon: "arrow.triangle.2.circlepath", tint: Color(hex: 0x49B6FF)),
-        Option(id: "tone", label: "Tone up", sub: "Lean and defined, not bulky",
+        Option(id: "tone", label: "Tone up", sub: "Get lean & defined — stay around your weight",
                icon: "sparkles", tint: Color(hex: 0xFFC24B)),
     ]
     static let stakes = [
