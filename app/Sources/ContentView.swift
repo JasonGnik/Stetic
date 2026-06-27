@@ -51,8 +51,11 @@ struct ContentView: View {
             PlanView()
         } else if env["STETIC_FUNNEL_PHASE"] != nil {
             RevealFunnelView(name: "Jason", profile: nil, onFinish: {})
-        } else if env["STETIC_SCORECARD"] == "1" {
-            ScoreCardExport()
+        } else if let n = env["STETIC_SCORECARD"] {
+            ZStack { Theme.bg.ignoresSafeArea()
+                ScoreCardView(card: n == "3" ? ScoreCardExport.greekGodSample
+                                  : n == "2" ? ScoreCardExport.eliteSample : ScoreCard.sample) }
+                .preferredColorScheme(.dark)
         } else if env["STETIC_SETTINGS"] == "1" {
             SettingsView()
         } else if env["STETIC_SHARECARD"] == "1" {
@@ -222,4 +225,16 @@ struct ScoreCardExport: View {
             .init(group: "back", score: 7.4, visible: false, note: "Needs width"),
         ],
         verdict: "An elite, stage-ready frame. Your back width is the one thing between you and Greek God — prioritize lats and you complete the V-taper.")
+
+    static let greekGodSample = ScoreCard(
+        aesthetic_score: 9.4, rank_tier: "greek_god", body_fat: 7, symmetry: 9.7, potential: 9.8,
+        muscles: [
+            .init(group: "shoulders", score: 9.6, visible: true, note: "Boulder delts, perfect caps"),
+            .init(group: "abs", score: 9.5, visible: true, note: "Deep, dry, symmetrical"),
+            .init(group: "chest", score: 9.4, visible: true, note: "Full, square, defined"),
+            .init(group: "back", score: 9.3, visible: true, note: "Wide, dense V-taper"),
+            .init(group: "arms", score: 9.2, visible: true, note: "Peaked, balanced"),
+            .init(group: "legs", score: 9.0, visible: true, note: "Capped quads, full sweep"),
+        ],
+        verdict: "A near-flawless, Greek-god physique. Lean, proportional, and complete from every angle — this is the aesthetic ideal. Maintain and refine.")
 }
