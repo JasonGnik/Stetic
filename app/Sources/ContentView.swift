@@ -43,7 +43,9 @@ struct ContentView: View {
     #endif
 
     var body: some View {
-        if env["STETIC_SHOWPLAN"] == "1" {
+        if env["STETIC_REGEN"] == "1" {
+            RegenPlanSheet(finishing: false, currentDays: 3, onBuild: { _, _, _ in })
+        } else if env["STETIC_SHOWPLAN"] == "1" {
             PlanView()
         } else if env["STETIC_FUNNEL_PHASE"] != nil {
             RevealFunnelView(name: "Jason", profile: nil, onFinish: {})

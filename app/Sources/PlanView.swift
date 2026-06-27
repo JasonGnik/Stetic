@@ -8,7 +8,9 @@ struct PlanView: View {
     @State private var phase: Phase = .loading
     @State private var bundle: ScanAPI.PlanBundle?
     @State private var confirm: PlanAction?
+    @State private var regen: RegenMode?
 
+    enum RegenMode: Int, Identifiable { case new, finish; var id: Int { rawValue } }
     enum Phase: Equatable { case loading, ready, error(String) }
 
     enum PlanAction: Identifiable {
@@ -53,6 +55,25 @@ struct PlanView: View {
             Button(action.button, role: action.destructive ? .destructive : nil) { perform(action) }
             Button("Cancel", role: .cancel) {}
         } message: { action in Text(action.message) }
+        .sheet(item: $regen) { mode in
+            RegenPlanSheet(finishing: mode == .finish,
+                           currentDays: bundle?.content.weekly_split.count ?? 4,
+                           onBuild: { goal, days, pace in performRegen(mode, goal: goal, days: days, pace: pace) })
+        }
+    }
+
+    // Update the plan-driving inputs from the questionnaire, then archive/finish the old block and rebuild.
+    private func performRegen(_ mode: RegenMode, goal: String, days: Int, pace: String) {
+        let id = bundle?.id
+        Task {
+            try? await ScanAPI.shared.updatePlanInputs(goal: goal, daysPerWeek: days, pace: pace)
+            await MainActor.run { phase = .loading }
+            if mode == .finish, let id { try? await ScanAPI.shared.setPlanStatus(id, "finished") }
+            let fresh = try? await ScanAPI.shared.regeneratePlan(archiving: mode == .new ? id : nil)
+            await MainActor.run {
+                if let fresh { bundle = fresh; phase = .ready } else { Task { await reload() } }
+            }
+        }
     }
 
     private func load() async {
@@ -183,8 +204,8 @@ struct PlanView: View {
             if let onRescan {
                 Button { onRescan() } label: { Label("Re-scan my physique", systemImage: "camera.viewfinder") }
             }
-            Button { confirm = .newPlan } label: { Label("Generate a new plan", systemImage: "sparkles") }
-            Button { confirm = .finish } label: { Label("Finish this block", systemImage: "flag.checkered") }
+            Button { regen = .new } label: { Label("Generate a new plan", systemImage: "sparkles") }
+            Button { regen = .finish } label: { Label("Finish this block", systemImage: "flag.checkered") }
         } label: {
             Image(systemName: "ellipsis").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
                 .frame(width: 34, height: 34).background(Circle().fill(Theme.card))

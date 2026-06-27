@@ -185,6 +185,28 @@ actor ScanAPI {
         guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
     }
 
+    // Update just the plan-driving inputs (used when regenerating a plan with fresh answers).
+    func updatePlanInputs(goal: String, daysPerWeek: Int, pace: String) async throws {
+        try await ensureSession()
+        guard let uid = userId else { throw APIError.noSession }
+        let body = try JSONSerialization.data(withJSONObject: ["goal": goal, "days_per_week": daysPerWeek, "pace": pace])
+        let (data, s) = try await authed(restURL("profiles", query: [.init(name: "id", value: "eq.\(uid)")]),
+                                         method: "PATCH", body: body, prefer: "return=minimal")
+        guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
+    }
+
+    // Current plan-driving inputs, to pre-fill the regenerate questionnaire.
+    func planInputs() async throws -> (goal: String?, days: Int?, pace: String?) {
+        guard let uid = userId else { return (nil, nil, nil) }
+        let (data, s) = try await authed(restURL("profiles", query: [
+            .init(name: "select", value: "goal,days_per_week,pace"),
+            .init(name: "id", value: "eq.\(uid)"), .init(name: "limit", value: "1"),
+        ]), method: "GET")
+        struct Row: Decodable { let goal: String?; let days_per_week: Int?; let pace: String? }
+        guard s == 200, let rows = try? JSONDecoder().decode([Row].self, from: data), let r = rows.first else { return (nil, nil, nil) }
+        return (r.goal, r.days_per_week, r.pace)
+    }
+
     private func signUp() async throws {
         let url = Config.baseURL.appending(path: "auth/v1/signup")
         var req = URLRequest(url: url)
