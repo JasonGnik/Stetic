@@ -298,6 +298,163 @@ struct TransformationScreen: View {
     }
 }
 
+// MARK: - "How it works" auto-play demo (replaces the AHA generic figure)
+// Four beats with mini real-app mockups: scan → weak points → plan → progress.
+struct HowItWorksDemo: View {
+    @State private var beat = 0
+    private let beats = 4
+    private let titles = ["First, we scan your physique.", "We pinpoint your weak points.",
+                          "Your plan targets them.", "Then brings them up — week after week."]
+    private let subs = ["One photo → a real score and a read of your frame.",
+                        "The one or two lagging areas breaking your look.",
+                        "Built around fixing them — not junk volume.",
+                        "Re-scan and watch the gap close."]
+    var body: some View {
+        VStack(spacing: 16) {
+            ZStack { card }.frame(height: 226)
+            HStack(spacing: 6) {
+                ForEach(0..<beats, id: \.self) { i in
+                    Capsule().fill(i == beat ? Theme.acc : Theme.line)
+                        .frame(width: i == beat ? 18 : 6, height: 6)
+                        .animation(.spring(response: 0.3), value: beat)
+                }
+            }
+            VStack(spacing: 6) {
+                Text(titles[beat]).font(.system(size: 21, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
+                Text(subs[beat]).font(.system(size: 13.5)).multilineTextAlignment(.center).foregroundStyle(Theme.mut).lineSpacing(2)
+            }
+            .id(beat).transition(.opacity)
+        }
+        .onAppear { run() }
+    }
+    private var card: some View {
+        Group {
+            switch beat {
+            case 0: scanMini
+            case 1: weakMini
+            case 2: planMini
+            default: progressMini
+            }
+        }
+        .padding(15).frame(width: 252, height: 226)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Color(hex: 0x121214))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.line, lineWidth: 1)))
+        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+        .id(beat)
+    }
+    private var scanMini: some View {
+        VStack(spacing: 9) {
+            Text("STETIC SCORE").font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.mut)
+            ZStack {
+                PhysiqueFigure(tint: Color(hex: 0x55555D), lean: true).frame(width: 56, height: 92)
+                Rectangle().fill(Theme.acc.opacity(0.85)).frame(width: 96, height: 2)
+                ForEach(0..<4) { i in
+                    let c: [CGFloat] = [-48, 48, -48, 48], d: [CGFloat] = [-46, -46, 46, 46]
+                    Path { p in p.move(to: .init(x: 8, y: 0)); p.addLine(to: .init(x: 0, y: 0)); p.addLine(to: .init(x: 0, y: 8)) }
+                        .stroke(Theme.acc.opacity(0.7), lineWidth: 2)
+                        .scaleEffect(x: i % 2 == 0 ? 1 : -1, y: i < 2 ? 1 : -1).offset(x: c[i], y: d[i])
+                }
+            }.frame(height: 104)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text("7.2").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.txt)
+                Text("/10").font(.system(size: 12)).foregroundStyle(Theme.mut)
+            }
+        }
+    }
+    private var weakMini: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("YOUR FRAME").font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.mut)
+            bar("Chest", 0.82, false); bar("Arms", 0.74, false)
+            bar("Shoulders", 0.4, true); bar("Back", 0.46, true)
+            bar("Legs", 0.7, false); bar("Abs", 0.66, false)
+        }
+    }
+    private func bar(_ name: String, _ frac: CGFloat, _ weak: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text(name).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.txt).frame(width: 62, alignment: .leading)
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.line).frame(height: 6)
+                    Capsule().fill(weak ? Theme.red : Theme.acc).frame(width: g.size.width * frac, height: 6)
+                }
+            }.frame(height: 6)
+            Text(weak ? "weak" : "").font(.system(size: 8.5, weight: .bold)).foregroundStyle(Theme.red).frame(width: 28, alignment: .leading)
+        }
+    }
+    private var planMini: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("YOUR PLAN · PUSH").font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.mut)
+            planRow("Incline DB Press", "2 × 5–9", false)
+            planRow("Lateral Raise", "2 × 12–15", true)
+            planRow("Cable Lateral", "2 × 15–20", true)
+            planRow("Triceps Pushdown", "2 × 10–12", false)
+        }
+    }
+    private func planRow(_ name: String, _ sr: String, _ weak: Bool) -> some View {
+        HStack(spacing: 8) {
+            Circle().fill(weak ? Theme.red : Theme.acc).frame(width: 6, height: 6)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                if weak { Text("weak point").font(.system(size: 8.5, weight: .bold)).foregroundStyle(Theme.red) }
+            }
+            Spacer()
+            Text(sr).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
+        }
+        .padding(.vertical, 5).padding(.horizontal, 9)
+        .background(RoundedRectangle(cornerRadius: 9).fill(Color(hex: 0x17171A)))
+    }
+    private var progressMini: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("YOUR CLIMB").font(.system(size: 9, weight: .bold)).tracking(1.5).foregroundStyle(Theme.mut)
+            Canvas { ctx, size in
+                let w = size.width, h = size.height
+                let pts = [CGPoint(x: 0, y: h*0.82), CGPoint(x: w*0.34, y: h*0.6), CGPoint(x: w*0.66, y: h*0.34), CGPoint(x: w, y: h*0.12)]
+                var area = Path(); area.move(to: CGPoint(x: 0, y: h)); pts.forEach { area.addLine(to: $0) }; area.addLine(to: CGPoint(x: w, y: h)); area.closeSubpath()
+                ctx.fill(area, with: .color(Theme.acc.opacity(0.12)))
+                var line = Path(); line.move(to: pts[0]); pts.dropFirst().forEach { line.addLine(to: $0) }
+                ctx.stroke(line, with: .color(Theme.acc), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                ctx.fill(Path(ellipseIn: CGRect(x: pts.last!.x-5, y: pts.last!.y-5, width: 10, height: 10)), with: .color(Theme.acc))
+            }.frame(height: 116)
+            HStack {
+                Text("Week 1").font(.system(size: 10)).foregroundStyle(Theme.mut)
+                Spacer()
+                Text("Week 12  ").font(.system(size: 10)).foregroundStyle(Theme.mut)
+                Text("+1.8").font(.system(size: 12, weight: .heavy)).foregroundStyle(Theme.acc)
+            }
+        }
+    }
+    private func run() {
+        Task {
+            for b in 1..<beats {
+                try? await Task.sleep(nanoseconds: 2_300_000_000)
+                await MainActor.run { withAnimation(.easeInOut(duration: 0.45)) { beat = b } }
+            }
+        }
+    }
+}
+
+// Reusable composed-shape physique figure (used by the demo + before/after).
+struct PhysiqueFigure: View {
+    var tint: Color
+    var lean: Bool
+    var body: some View {
+        Canvas { ctx, size in
+            let w = size.width, h = size.height, cx = w/2
+            func cap(_ x: CGFloat, _ y: CGFloat, _ ww: CGFloat, _ hh: CGFloat) {
+                ctx.fill(Path(roundedRect: CGRect(x: x, y: y, width: ww, height: hh), cornerSize: CGSize(width: ww/2, height: ww/2)), with: .color(tint))
+            }
+            let shoulder: CGFloat = lean ? w*0.34 : w*0.25, waist: CGFloat = lean ? w*0.15 : w*0.24
+            ctx.fill(Path(ellipseIn: CGRect(x: cx-w*0.1, y: h*0.04, width: w*0.2, height: w*0.2)), with: .color(tint))
+            cap(cx-shoulder-w*0.1, h*0.26, w*0.11, h*0.42); cap(cx+shoulder-w*0.01, h*0.26, w*0.11, h*0.42)
+            cap(cx-w*0.17, h*0.62, w*0.13, h*0.36); cap(cx+w*0.04, h*0.62, w*0.13, h*0.36)
+            var torso = Path()
+            torso.move(to: CGPoint(x: cx-shoulder, y: h*0.26)); torso.addLine(to: CGPoint(x: cx+shoulder, y: h*0.26))
+            torso.addLine(to: CGPoint(x: cx+waist, y: h*0.64)); torso.addLine(to: CGPoint(x: cx-waist, y: h*0.64)); torso.closeSubpath()
+            ctx.fill(torso, with: .color(tint))
+        }
+    }
+}
+
 // MARK: - Before → after physique (projection payoff in the funnel)
 // Illustrative (pre-scan): a soft "now" figure → a lean, defined "potential" figure.
 struct BeforeAfterPhysique: View {

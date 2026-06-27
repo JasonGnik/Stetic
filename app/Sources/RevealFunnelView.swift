@@ -224,10 +224,10 @@ struct RevealFunnelView: View {
                 Text(brandLimed(name.isEmpty ? "Here's where you\ncould be." : "\(name), here's where\nyou could be."))
                     .font(.system(size: 27, weight: .heavy)).multilineTextAlignment(.center).foregroundStyle(Theme.txt)
             }
-            BeforeAfterPhysique().padding(.top, 26)
-            Text(brandLimed("A leaner, more complete frame — built around the weak points holding you back. That's what 12 focused weeks looks like."))
+            WithVsWithoutChart().frame(height: 184).padding(.horizontal, 30).padding(.top, 22)
+            Text(brandLimed("With a plan built on your weak points, every week shows — leaner, fuller, more complete. Most people stall without one. Stetic closes that gap."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(4)
-                .foregroundStyle(Theme.mut).padding(.horizontal, 34).padding(.top, 24)
+                .foregroundStyle(Theme.mut).padding(.horizontal, 34).padding(.top, 20)
             Spacer()
             primaryButton("See my potential") { withAnimation { phase = .bluff } }
         }
@@ -427,7 +427,7 @@ struct RevealFunnelView: View {
             .scrollIndicators(.hidden)
 
             Button {
-                if selectedPlan == "annual" { withAnimation { phase = .trialReminder } } else { purchaseAndScan() }
+                purchaseAndScan()   // trial-reminder screen removed — buy directly
             } label: {
                 HStack(spacing: 8) {
                     if purchasing { ProgressView().tint(Color(hex: 0x0E0E10)) }

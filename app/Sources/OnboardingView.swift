@@ -125,7 +125,7 @@ struct OnboardingView: View {
                 roadCard(icon: "flame.fill", tint: Theme.acc, head: "Start now",
                          body: "The best you've ever looked — in 12 weeks.")
             }
-            Text(brandLimed("The time passes whether you change or not. Most people waste it. This is for people who'd rather see results than float and wonder why nothing changes."))
+            Text(brandLimed("The time passes whether you change or not. Most people waste it. This is for people who'd rather see results than float around and wonder why nothing changes."))
                 .font(.system(size: 14)).multilineTextAlignment(.center).lineSpacing(3)
                 .foregroundStyle(Theme.mut)
         }
@@ -146,18 +146,9 @@ struct OnboardingView: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(tint.opacity(0.4), lineWidth: 1)))
     }
 
-    // MARK: AHA — an aesthetic physique is a complete one
+    // MARK: AHA — "how it works" auto-play demo (scan → weak points → plan → progress)
     private var ahaContent: some View {
-        VStack(spacing: 18) {
-            WeakPointSilhouette()
-                .frame(height: 150)
-            Text("An aesthetic physique is a *complete* one.")
-                .font(.system(size: 25, weight: .heavy)).multilineTextAlignment(.center)
-                .foregroundStyle(Theme.txt)
-            Text(brandLimed("The physiques you see in movies are balanced — shoulders, chest, back, all in proportion. Most guys are held back by one or two weak points they never notice. They just know they don't look how they want. Stetic finds yours — and builds your whole plan around fixing it."))
-                .font(.system(size: 15)).multilineTextAlignment(.center).lineSpacing(4)
-                .foregroundStyle(Theme.mut)
-        }
+        HowItWorksDemo()
     }
 
     // MARK: TRAINING FIX — years of waiting stop now (+ mountain)
