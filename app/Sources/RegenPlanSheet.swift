@@ -5,14 +5,16 @@ import SwiftUI
 struct RegenPlanSheet: View {
     let finishing: Bool
     let currentDays: Int
-    let onBuild: (_ goal: String, _ days: Int, _ pace: String) -> Void
+    let onBuild: (_ goal: String, _ days: Int, _ pace: String, _ weightKg: Double, _ goalWeightKg: Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var goal = "gain_muscle"
     @State private var days: Int
     @State private var pace = "recommended"
+    @State private var weightKg = 80.0
+    @State private var goalKg = 78.0
 
-    init(finishing: Bool, currentDays: Int, onBuild: @escaping (String, Int, String) -> Void) {
+    init(finishing: Bool, currentDays: Int, onBuild: @escaping (String, Int, String, Double, Double) -> Void) {
         self.finishing = finishing; self.currentDays = currentDays; self.onBuild = onBuild
         _days = State(initialValue: max(2, min(6, currentDays)))
     }
@@ -64,12 +66,14 @@ struct RegenPlanSheet: View {
                                 }
                             }
                         }
+                        section("BODY WEIGHT") { weightField($weightKg) }
+                        section("GOAL WEIGHT") { weightField($goalKg) }
                     }
                     .padding(.vertical, 14)
                 }
                 .scrollIndicators(.hidden)
 
-                Button { onBuild(goal, days, pace); dismiss() } label: {
+                Button { onBuild(goal, days, pace, weightKg, goalKg); dismiss() } label: {
                     Text(finishing ? "Finish & build my plan" : "Build my plan")
                         .font(.system(size: 16, weight: .bold))
                         .frame(maxWidth: .infinity).padding(15)
@@ -84,8 +88,19 @@ struct RegenPlanSheet: View {
                 if let g = i.goal { goal = g }
                 if let p = i.pace { pace = p }
                 if let d = i.days { days = max(2, min(6, d)) }
+                if let w = i.weightKg { weightKg = w }
+                if let gw = i.goalWeightKg { goalKg = gw }
             }
         }
+    }
+
+    private func weightField(_ value: Binding<Double>) -> some View {
+        VStack(spacing: 8) {
+            Text("\(Int((value.wrappedValue * 2.20462).rounded())) lb")
+                .font(.system(size: 26, weight: .heavy)).foregroundStyle(Theme.txt)
+            Slider(value: value, in: 40...160, step: 0.5).tint(Theme.acc)
+        }
+        .padding(.horizontal, 20)
     }
 
     @ViewBuilder private func section(_ title: String, @ViewBuilder _ content: () -> some View) -> some View {

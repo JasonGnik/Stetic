@@ -186,25 +186,26 @@ actor ScanAPI {
     }
 
     // Update just the plan-driving inputs (used when regenerating a plan with fresh answers).
-    func updatePlanInputs(goal: String, daysPerWeek: Int, pace: String) async throws {
+    func updatePlanInputs(goal: String, daysPerWeek: Int, pace: String, weightKg: Double, goalWeightKg: Double) async throws {
         try await ensureSession()
         guard let uid = userId else { throw APIError.noSession }
-        let body = try JSONSerialization.data(withJSONObject: ["goal": goal, "days_per_week": daysPerWeek, "pace": pace])
+        let body = try JSONSerialization.data(withJSONObject: ["goal": goal, "days_per_week": daysPerWeek, "pace": pace,
+                                                               "weight_kg": weightKg, "goal_weight_kg": goalWeightKg])
         let (data, s) = try await authed(restURL("profiles", query: [.init(name: "id", value: "eq.\(uid)")]),
                                          method: "PATCH", body: body, prefer: "return=minimal")
         guard s == 204 || s == 200 else { throw APIError.http(s, String(data: data, encoding: .utf8) ?? "") }
     }
 
     // Current plan-driving inputs, to pre-fill the regenerate questionnaire.
-    func planInputs() async throws -> (goal: String?, days: Int?, pace: String?) {
-        guard let uid = userId else { return (nil, nil, nil) }
+    func planInputs() async throws -> (goal: String?, days: Int?, pace: String?, weightKg: Double?, goalWeightKg: Double?) {
+        guard let uid = userId else { return (nil, nil, nil, nil, nil) }
         let (data, s) = try await authed(restURL("profiles", query: [
-            .init(name: "select", value: "goal,days_per_week,pace"),
+            .init(name: "select", value: "goal,days_per_week,pace,weight_kg,goal_weight_kg"),
             .init(name: "id", value: "eq.\(uid)"), .init(name: "limit", value: "1"),
         ]), method: "GET")
-        struct Row: Decodable { let goal: String?; let days_per_week: Int?; let pace: String? }
-        guard s == 200, let rows = try? JSONDecoder().decode([Row].self, from: data), let r = rows.first else { return (nil, nil, nil) }
-        return (r.goal, r.days_per_week, r.pace)
+        struct Row: Decodable { let goal: String?; let days_per_week: Int?; let pace: String?; let weight_kg: Double?; let goal_weight_kg: Double? }
+        guard s == 200, let rows = try? JSONDecoder().decode([Row].self, from: data), let r = rows.first else { return (nil, nil, nil, nil, nil) }
+        return (r.goal, r.days_per_week, r.pace, r.weight_kg, r.goal_weight_kg)
     }
 
     private func signUp() async throws {

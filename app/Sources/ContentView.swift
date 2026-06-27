@@ -44,7 +44,7 @@ struct ContentView: View {
 
     var body: some View {
         if env["STETIC_REGEN"] == "1" {
-            RegenPlanSheet(finishing: false, currentDays: 3, onBuild: { _, _, _ in })
+            RegenPlanSheet(finishing: false, currentDays: 3, onBuild: { _, _, _, _, _ in })
         } else if env["STETIC_WORKOUTTIME"] == "1" {
             WorkoutTimeSheet(daysPerWeek: 4, onDone: {})
         } else if env["STETIC_SHOWPLAN"] == "1" {

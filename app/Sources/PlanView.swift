@@ -68,15 +68,15 @@ struct PlanView: View {
         .sheet(item: $regen) { mode in
             RegenPlanSheet(finishing: mode == .finish,
                            currentDays: bundle?.content.weekly_split.count ?? 4,
-                           onBuild: { goal, days, pace in performRegen(mode, goal: goal, days: days, pace: pace) })
+                           onBuild: { goal, days, pace, w, gw in performRegen(goal: goal, days: days, pace: pace, weightKg: w, goalWeightKg: gw) })
         }
     }
 
     // Update the plan-driving inputs from the questionnaire, then archive/finish the old block and rebuild.
-    private func performRegen(_ mode: RegenMode, goal: String, days: Int, pace: String) {
+    private func performRegen(goal: String, days: Int, pace: String, weightKg: Double, goalWeightKg: Double) {
         let id = activeId   // archive the active plan (nil when building from the empty state)
         Task {
-            try? await ScanAPI.shared.updatePlanInputs(goal: goal, daysPerWeek: days, pace: pace)
+            try? await ScanAPI.shared.updatePlanInputs(goal: goal, daysPerWeek: days, pace: pace, weightKg: weightKg, goalWeightKg: goalWeightKg)
             await MainActor.run { phase = .loading }
             let fresh = try? await ScanAPI.shared.regeneratePlan(archiving: id)
             await MainActor.run {
