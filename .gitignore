@@ -12,3 +12,11 @@ app/Stetic.xcodeproj/
 # copyrighted reference ebooks
 *.pdf
 scoring-harness/_originals/
+
+# Secrets — never commit signing/API keys (App Store Connect, IAP, certs)
+*.p8
+*.pem
+*.p12
+*.mobileprovision
+AuthKey_*
+SubscriptionKey_*
