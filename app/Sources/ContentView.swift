@@ -6,7 +6,6 @@ struct ContentView: View {
     @State private var userName = ""
     @State private var pendingProfile: ScanAPI.ProfileInput?   // held until sign-in (right before paywall)
     @State private var pendingIdentity = IdentityInputs()      // onboarding answers for the funnel's identity beat
-    @State private var showLogin = false                       // returning-user log-in sheet
     @AppStorage("steticOnboarded") private var onboarded = false
 
     enum Stage { case loading, welcome, intro, onboarding, main, home }
@@ -114,8 +113,7 @@ struct ContentView: View {
                     ZStack { Theme.bg.ignoresSafeArea() }.task { await checkSession() }
                 case .welcome:
                     ZStack(alignment: .top) {
-                        WelcomeView(onContinue: { withAnimation { stage = .intro } },
-                                    onLogin: { showLogin = true })
+                        WelcomeView { withAnimation { stage = .intro } }
                         #if DEBUG
                         Button { Task { await devSkip() } } label: {
                             Text("Dev: skip to app →").font(.system(size: 12, weight: .semibold))
@@ -148,16 +146,6 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .steticLoggedOut)) { _ in
                 onboarded = false; userName = ""; pendingProfile = nil
                 withAnimation { stage = .welcome }
-            }
-            // Returning user logging back in → straight to their app, no onboarding.
-            .sheet(isPresented: $showLogin) {
-                SignInView(title: "Welcome back",
-                           subtitle: "Log in to pick up right where you left off.") {
-                    Task {
-                        if let uid = await ScanAPI.shared.currentUserID() { await PurchaseManager.shared.identify(uid) }
-                        await MainActor.run { showLogin = false; onboarded = true; withAnimation { stage = .home } }
-                    }
-                }
             }
         }
     }
