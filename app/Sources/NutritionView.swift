@@ -19,6 +19,8 @@ struct NutritionView: View {
     @State private var showCraving = false
     @State private var showCalCelebration = false
     @AppStorage("calGoalHitDate") private var calGoalHitDate = ""   // last day we celebrated hitting calories
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var shownDay = LogDate.today   // the calendar day `meals` belongs to
 
     // manual / edit fields
     @State private var mName = ""
@@ -90,6 +92,11 @@ struct NutritionView: View {
         .overlay { if showCalCelebration { calCelebration } }
         .onChange(of: cals) { _, newCals in checkCalGoal(newCals) }
         .task { await reload() }
+        // Roll over to the new day when we come back to the foreground (or a dev day-jump),
+        // so the totals reset on a real calendar-date basis instead of staying stale.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active && LogDate.today != shownDay { Task { await reload() } }
+        }
         .sheet(isPresented: $showManual) { manualSheet.keyboardDone() }
         .sheet(isPresented: $showIdeas) {
             MealIdeasView(onLog: { meal in Task { addingType = meal.type; await save(meal.asMeal) } },
@@ -306,7 +313,10 @@ struct NutritionView: View {
     }
 
     // MARK: actions
-    private func reload() async { meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? [] }
+    private func reload() async {
+        shownDay = LogDate.today
+        meals = (try? await ScanAPI.shared.meals(on: LogDate.today)) ?? []
+    }
 
     private func save(_ est: MealEstimate) async {
         try? await ScanAPI.shared.logMeal(est, mealType: addingType.rawValue)

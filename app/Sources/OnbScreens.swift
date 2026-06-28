@@ -161,9 +161,9 @@ struct TrainingFixScene: View {
         for id in ["looks", "muscle", "fat_loss", "strength"] where motivation.contains(id) {
             switch id {
             case "looks":    return "lean and confident"
-            case "muscle":   return "built the way you want"
+            case "muscle":   return "the build you want"
             case "fat_loss": return "lean and defined"
-            case "strength": return "visibly stronger"
+            case "strength": return "noticeably stronger"
             default: break
             }
         }
@@ -186,7 +186,7 @@ struct TrainingFixScene: View {
                     .animation(.spring(response: 0.5, dampingFraction: 0.6), value: show12)
             }
             VStack(spacing: 9) {
-                Text(brandLimed("Twelve weeks of a real plan and you're \(outcome). You could've already been there — \(years >= 1 ? "for years." : "this whole time.")"))
+                Text(brandLimed("Twelve weeks of a Stetic plan and you'll see a real difference — visibly closer to \(outcome). You could've already been there — \(years >= 1 ? "for years." : "this whole time.")"))
                     .font(.system(size: 14.5)).multilineTextAlignment(.center).lineSpacing(3).foregroundStyle(Theme.mut)
                 Text("You can't change the past.\nBut the 12 weeks start today.")
                     .font(.system(size: 17, weight: .bold)).multilineTextAlignment(.center).lineSpacing(2).foregroundStyle(Theme.txt)
