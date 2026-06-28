@@ -477,7 +477,13 @@ struct RevealFunnelView: View {
             .padding(.bottom, 14)
             #endif
         }
-        .task { await purchases.loadOffering() }
+        .task {
+            await purchases.loadOffering()
+            // Already entitled (returning subscriber, or a reviewer's complimentary
+            // entitlement)? Don't charge again — go straight into the scan.
+            await purchases.refresh()
+            if purchases.isPro { startRealScan() }
+        }
     }
 
     // Placeholder testimonials — swap for real App Store reviews before launch.
