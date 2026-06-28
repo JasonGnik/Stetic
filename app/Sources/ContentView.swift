@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var userName = ""
     @State private var pendingProfile: ScanAPI.ProfileInput?   // held until sign-in (right before paywall)
     @State private var pendingIdentity = IdentityInputs()      // onboarding answers for the funnel's identity beat
+    @State private var showLogin = false                       // returning-user log-in sheet
     @AppStorage("steticOnboarded") private var onboarded = false
 
     enum Stage { case loading, welcome, intro, onboarding, main, home }
@@ -107,41 +108,63 @@ struct ContentView: View {
                 .init(name: "Incline Dumbbell Curl", sets: 2, reps: "10-15", target: "biceps", note: nil),
             ]), onDone: {})
         } else {
-            switch stage {
-            case .loading:
-                ZStack { Theme.bg.ignoresSafeArea() }.task { await checkSession() }
-            case .welcome:
-                ZStack(alignment: .top) {
-                    WelcomeView { withAnimation { stage = .intro } }
-                    #if DEBUG
-                    Button { Task { await devSkip() } } label: {
-                        Text("Dev: skip to app →").font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Theme.acc)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Capsule().fill(Theme.card))
+            Group {
+                switch stage {
+                case .loading:
+                    ZStack { Theme.bg.ignoresSafeArea() }.task { await checkSession() }
+                case .welcome:
+                    ZStack(alignment: .top) {
+                        WelcomeView(onContinue: { withAnimation { stage = .intro } },
+                                    onLogin: { showLogin = true })
+                        #if DEBUG
+                        Button { Task { await devSkip() } } label: {
+                            Text("Dev: skip to app →").font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Theme.acc)
+                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .background(Capsule().fill(Theme.card))
+                        }
+                        .padding(.top, 8)
+                        #endif
                     }
-                    .padding(.top, 8)
-                    #endif
+                case .intro:
+                    IntroView { withAnimation { stage = .onboarding } }
+                case .onboarding:
+                    OnboardingView { data in
+                        userName = data.name
+                        pendingProfile = data.payload   // saved after sign-in, inside the funnel
+                        pendingIdentity = IdentityInputs(years: Int(data.timeWantedYears),
+                                                         obstacles: Array(data.obstacles),
+                                                         resultsBehind: data.resultsFeeling == "behind")
+                        withAnimation { stage = .main }
+                    }
+                case .main:
+                    RevealFunnelView(name: userName, profile: pendingProfile, identity: pendingIdentity,
+                                     onFinish: { onboarded = true; withAnimation { stage = .home } })
+                case .home:
+                    MainTabView(name: userName)
                 }
-            case .intro:
-                IntroView { withAnimation { stage = .onboarding } }
-            case .onboarding:
-                OnboardingView { data in
-                    userName = data.name
-                    pendingProfile = data.payload   // saved after sign-in, inside the funnel
-                    pendingIdentity = IdentityInputs(years: Int(data.timeWantedYears),
-                                                     obstacles: Array(data.obstacles),
-                                                     resultsBehind: data.resultsFeeling == "behind")
-                    withAnimation { stage = .main }
+            }
+            // Log out / delete account anywhere in the app → back to the welcome screen.
+            .onReceive(NotificationCenter.default.publisher(for: .steticLoggedOut)) { _ in
+                onboarded = false; userName = ""; pendingProfile = nil
+                withAnimation { stage = .welcome }
+            }
+            // Returning user logging back in → straight to their app, no onboarding.
+            .sheet(isPresented: $showLogin) {
+                SignInView(title: "Welcome back",
+                           subtitle: "Log in to pick up right where you left off.") {
+                    Task {
+                        if let uid = await ScanAPI.shared.currentUserID() { await PurchaseManager.shared.identify(uid) }
+                        await MainActor.run { showLogin = false; onboarded = true; withAnimation { stage = .home } }
+                    }
                 }
-            case .main:
-                RevealFunnelView(name: userName, profile: pendingProfile, identity: pendingIdentity,
-                                 onFinish: { onboarded = true; withAnimation { stage = .home } })
-            case .home:
-                MainTabView(name: userName)
             }
         }
     }
+}
+
+extension Notification.Name {
+    static let steticLoggedOut = Notification.Name("steticLoggedOut")
 }
 
 #Preview {

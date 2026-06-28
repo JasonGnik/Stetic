@@ -4,6 +4,7 @@ import SwiftUI
 // Gender-neutral (sex isn't asked until onboarding).
 struct WelcomeView: View {
     var onContinue: () -> Void
+    var onLogin: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -28,7 +29,14 @@ struct WelcomeView: View {
                         .background(RoundedRectangle(cornerRadius: 13).fill(Theme.acc))
                         .foregroundStyle(Color(hex: 0x0E0E10))
                 }
-                .padding(.horizontal, 22).padding(.bottom, 14)
+                .padding(.horizontal, 22).padding(.bottom, onLogin == nil ? 14 : 4)
+                if let onLogin {
+                    Button { onLogin() } label: {
+                        Text("Already have an account?  ").font(.system(size: 14)).foregroundStyle(Theme.mut)
+                        + Text("Log in").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.acc)
+                    }
+                    .padding(.bottom, 16)
+                }
             }
         }
     }

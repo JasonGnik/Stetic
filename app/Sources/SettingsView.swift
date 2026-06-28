@@ -7,6 +7,10 @@ struct SettingsView: View {
     @AppStorage("healthConnected") private var healthConnected = false
     @AppStorage(AppClock.offsetKey) private var debugDayOffset = 0
     @State private var showRestoreNote = false
+    @State private var showLogOut = false
+    @State private var showDelete = false
+    @State private var deleting = false
+    @State private var deleteError: String?
 
     var body: some View {
         NavigationStack {
@@ -34,6 +38,17 @@ struct SettingsView: View {
                     }
                     group("SUBSCRIPTION") {
                         Button { showRestoreNote = true } label: { row("Restore purchases", "arrow.clockwise") }
+                    }
+                    group("ACCOUNT") {
+                        Button { showLogOut = true } label: { row("Log out", "rectangle.portrait.and.arrow.right") }
+                        Button { showDelete = true } label: {
+                            HStack(spacing: 12) {
+                                if deleting { ProgressView().tint(Color(hex: 0xFF5A4D)).frame(width: 20) }
+                                else { Image(systemName: "trash.fill").foregroundStyle(Color(hex: 0xFF5A4D)).frame(width: 20) }
+                                Text("Delete account").font(.system(size: 14, weight: .semibold)).foregroundStyle(Color(hex: 0xFF5A4D))
+                                Spacer()
+                            }.rowStyle()
+                        }.disabled(deleting)
                     }
                     group("ABOUT") {
                         linkRow("Privacy Policy", "https://jasongnik.github.io/stetic-legal/privacy.html")
@@ -76,8 +91,41 @@ struct SettingsView: View {
             .alert("Restore purchases", isPresented: $showRestoreNote) {
                 Button("OK", role: .cancel) {}
             } message: { Text("Nothing to restore yet — purchases will appear here once you subscribe.") }
+            .alert("Log out?", isPresented: $showLogOut) {
+                Button("Cancel", role: .cancel) {}
+                Button("Log out", role: .destructive) {
+                    ScanAPI.shared.signOut()
+                    dismiss()
+                    NotificationCenter.default.post(name: .steticLoggedOut, object: nil)
+                }
+            } message: { Text("You can log back in any time with the same account.") }
+            .alert("Delete account?", isPresented: $showDelete) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) { deleteAccount() }
+            } message: {
+                Text("This permanently deletes your account, scans, plans and history. This can't be undone.")
+            }
+            .alert("Couldn't delete account", isPresented: .constant(deleteError != nil)) {
+                Button("OK") { deleteError = nil }
+            } message: { Text(deleteError ?? "") }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private func deleteAccount() {
+        deleting = true
+        Task {
+            do {
+                try await ScanAPI.shared.deleteAccount()
+                await MainActor.run {
+                    deleting = false
+                    dismiss()
+                    NotificationCenter.default.post(name: .steticLoggedOut, object: nil)
+                }
+            } catch {
+                await MainActor.run { deleting = false; deleteError = "Please try again, or contact support." }
+            }
+        }
     }
 
     private var appVersion: String {

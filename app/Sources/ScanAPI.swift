@@ -119,6 +119,22 @@ actor ScanAPI {
         clearPlanCache()
     }
 
+    // Permanently delete the account + all data (App Store 5.1.1(v)), then sign out.
+    func deleteAccount() async throws {
+        try await ensureSession()
+        guard let token = accessToken else { throw APIError.noSession }
+        let url = Config.baseURL.appending(path: "functions/v1/delete-account")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        let status = code(resp)
+        guard status == 200 else { throw APIError.http(status, String(data: data, encoding: .utf8) ?? "") }
+        signOut()
+    }
+
     private func storeSession(_ data: Data, _ status: Int) throws {
         guard status == 200,
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
