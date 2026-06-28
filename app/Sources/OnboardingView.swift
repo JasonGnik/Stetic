@@ -481,14 +481,14 @@ struct OnboardingView: View {
     private var canAdvance: Bool {
         switch step {
         case .name: return !data.name.trimmingCharacters(in: .whitespaces).isEmpty
-        case .motivation: return true   // optional
+        case .motivation: return !data.motivation.isEmpty   // pick at least one reason
         case .timeWanted: return true
         case .resultsFeeling: return data.resultsFeeling != nil
         case .sex: return data.sex != nil
         case .pace: return data.pace != nil
         case .activity: return data.activity != nil
         case .goal: return data.goal != nil
-        case .obstacles: return true   // optional
+        case .obstacles: return !data.obstacles.isEmpty   // pick at least one
         case .experience: return data.experience != nil
         case .currentSplit: return true   // optional
         case .days: return data.daysPerWeek != nil
