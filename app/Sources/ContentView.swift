@@ -43,7 +43,9 @@ struct ContentView: View {
     #endif
 
     var body: some View {
-        if let shot = env["STETIC_ASHOT"], let i = Int(shot), AppStoreShot.all.indices.contains(i) {
+        if env["STETIC_APPICON"] == "1" {
+            AppIconView()
+        } else if let shot = env["STETIC_ASHOT"], let i = Int(shot), AppStoreShot.all.indices.contains(i) {
             AppStoreShot.all[i]
         } else if env["STETIC_REGEN"] == "1" {
             RegenPlanSheet(finishing: false, currentDays: 3, onBuild: { _, _, _, _, _ in })
